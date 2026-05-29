@@ -1,0 +1,75 @@
+site_name: Zanken
+site_description: A Niri-based Linux workspace derived from omarchy
+site_url: https://selfAnnihilator.github.io/zanken
+repo_url: https://github.com/selfAnnihilator/zanken
+repo_name: selfAnnihilator/zanken
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/icon.png
+  favicon: assets/icon.png
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Keybinds: keybinds.md
+  - Themes: themes/index.md
+  - Commands:
+    - Overview: commands/index.md
+    - Audio & Media: commands/audio.md
+    - Brightness: commands/brightness.md
+    - Capture: commands/capture.md
+    - System: commands/system.md
+    - Themes: commands/themes.md
+    - Launch: commands/launch.md
+    - Toggle: commands/toggle.md
+    - Install: commands/install.md
+    - Hardware: commands/hardware.md
+    - All Commands: commands/all.md

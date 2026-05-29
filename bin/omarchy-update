@@ -1,0 +1,6 @@
+#!/bin/bash
+# Isolated from upstream — omarchy updates disabled.
+echo "This installation is isolated from the official omarchy repo."
+echo "Updates from basecamp/omarchy are disabled."
+echo ""
+echo "To update system packages: sudo pacman -Syyu"

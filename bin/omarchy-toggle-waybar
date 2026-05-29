@@ -1,0 +1,9 @@
+#!/bin/bash
+# niri override: toggle waybar without uwsm-app
+omarchy-toggle waybar-off
+
+if pgrep -x waybar >/dev/null; then
+  pkill -x waybar
+else
+  setsid waybar >/dev/null 2>&1 &
+fi

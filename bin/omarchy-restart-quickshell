@@ -1,0 +1,4 @@
+#!/bin/bash
+pkill -f 'qs.*-c.*desktop' 2>/dev/null || true
+sleep 0.3
+QT_QPA_PLATFORMTHEME=qt6ct setsid /usr/bin/qs -n -d -c desktop >/dev/null 2>&1 &

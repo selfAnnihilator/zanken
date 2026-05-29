@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Show current monospace font
+# omarchy:examples=omarchy font current
+
+cat ~/.config/zanken/current/mono-font 2>/dev/null || echo "JetBrainsMono Nerd Font"

@@ -1,0 +1,5 @@
+#!/bin/bash
+# niri override: restart app without uwsm-app
+pkill -x "$1" 2>/dev/null || true
+sleep 0.3
+setsid "$@" >/dev/null 2>&1 &

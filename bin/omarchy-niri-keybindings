@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# omarchy:summary=Display niri keybindings from config.kdl using fzf or stdout
+
+CONFIG="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
+# Optional positional override (used by NiriKeybinds.qml)
+[[ -n $2 ]] && CONFIG="$2"
+
+awk_script='
+function prettify_action(action,    out, part) {
+    if (action ~ /^spawn /) {
+        out = ""
+        sub(/^spawn[[:space:]]+/, "", action)
+        gsub(/\/[^ "]*\//, "", action)
+        while (match(action, /"([^"]*)"/, m)) {
+            part = m[1]; sub(/.*\//, "", part)
+            out = out (out == "" ? "" : " ") part
+            sub(/"[^"]*"[[:space:]]*/, "", action)
+        }
+        return out
+    }
+    gsub(/-/, " ", action); return action
+}
+function format_key(key) { gsub(/Mod/, "Super", key); return key }
+
+/^binds[[:space:]]*\{/              { in_binds=1; next }
+in_binds && /^[[:space:]]*\}[[:space:]]*$/ { in_binds=0; next }
+!in_binds { next }
+
+/^[[:space:]]*\/\// {
+    line=$0; sub(/^[[:space:]]*\/\/[[:space:]]*/,"",line)
+    gsub(/^[[:space:]]+|[[:space:]]+$/,"",line)
+    if (line != "") section=line; next
+}
+/^[[:space:]]*[A-Za-z_].*\{/ {
+    line=$0; sub(/^[[:space:]]*/,"",line)
+    key=line
+    sub(/[[:space:]]*(repeat|cooldown-ms|allow-when-locked)[^{]*\{.*/,"",key)
+    sub(/[[:space:]]*\{.*/,"",key)
+    gsub(/^[[:space:]]+|[[:space:]]+$/,"",key)
+    action=line
+    sub(/^[^{]*\{[[:space:]]*/,"",action)
+    sub(/[[:space:]]*\}.*/,"",action)
+    sub(/;[[:space:]]*$/,"",action)
+    gsub(/^[[:space:]]+|[[:space:]]+$/,"",action)
+    if (key==""||action=="") next
+    if (key~/^(Super\+Wheel|Mod\+Wheel|XF86)/) next
+    pretty_key=format_key(key); pretty_action=prettify_action(action)
+    if (tsv) printf "%s\t%s\t%s\n", pretty_key, pretty_action, section
+    else     printf "%-28s  →  %-38s  [%s]\n", pretty_key, pretty_action, section
+}
+'
+
+if [[ ! -f $CONFIG ]]; then
+    echo "Config not found: $CONFIG" >&2
+    exit 1
+fi
+
+if [[ $1 == "--print-tsv" ]]; then
+    awk -v tsv=1 "$awk_script" "$CONFIG"
+    exit 0
+fi
+
+awk "$awk_script" "$CONFIG" | fzf \
+    --no-sort \
+    --prompt="  Keybindings › " \
+    --layout=reverse \
+    --height=70% \
+    --border=rounded \
+    --color="prompt:bold,pointer:green" \
+    --header="Niri Keybindings  ·  Esc to close" \
+    --bind="q:abort,esc:abort,enter:abort"

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# omarchy:summary=Restart Walker and related user services
+# no-op on niri (bar is Quickshell)
+exit 0

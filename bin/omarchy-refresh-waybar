@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# omarchy:summary=Reset Waybar config to Omarchy defaults
+# no-op on niri (bar is Quickshell)
+exit 0

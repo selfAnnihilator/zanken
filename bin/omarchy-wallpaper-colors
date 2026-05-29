@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+# omarchy:summary=Extract the most vibrant accent color from a wallpaper image
+# omarchy:args=<image-path>
+
+import subprocess, sys, re, colorsys
+
+def extract_accent(path: str) -> str:
+    result = subprocess.run(
+        ['magick', path, '+dither', '-colors', '32', '-unique-colors', 'txt:-'],
+        capture_output=True, text=True, timeout=30
+    )
+    if result.returncode != 0 or not result.stdout:
+        return '#7aa2f7'
+
+    colors = re.findall(r'#([0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?', result.stdout)
+    if not colors:
+        return '#7aa2f7'
+
+    best, best_score = None, -1
+    for h in colors:
+        r, g, b = int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255
+        _, sat, val = colorsys.rgb_to_hsv(r, g, b)
+        if sat < 0.30 or val < 0.20 or val > 0.90:
+            continue
+        score = sat * 0.65 + val * 0.35
+        if score > best_score:
+            best_score, best = score, '#' + h.lower()
+
+    return best or '#7aa2f7'
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Usage: omarchy-wallpaper-colors <image>", file=sys.stderr)
+        sys.exit(1)
+    print(extract_accent(sys.argv[1]))

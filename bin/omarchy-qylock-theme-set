@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# omarchy:summary=Set the qylock lockscreen and SDDM theme
+# omarchy:group=style
+# omarchy:name=sddm theme
+# omarchy:examples=omarchy sddm theme
+
+THEMES_DIR="$HOME/.local/share/qylock/themes"
+CONFIG="$HOME/.config/qylock/theme"
+
+if [ ! -d "$THEMES_DIR" ]; then
+    notify-send "qylock" "Themes not found at $THEMES_DIR. Run install.sh first." -t 5000
+    exit 1
+fi
+
+CURRENT=$(cat "$CONFIG" 2>/dev/null || echo "")
+
+# Build flat theme list: top-level themes + sub-themes (e.g. clockwork/orbital)
+list_themes() {
+    for d in "$THEMES_DIR"/*/; do
+        [ -d "$d" ] || continue
+        n=$(basename "$d")
+        if [ -f "$d/Main.qml" ]; then
+            echo "$n"
+        else
+            for sd in "$d"*/; do
+                [ -d "$sd" ] || continue
+                [ -f "$sd/Main.qml" ] || continue
+                echo "$n/$(basename $sd)"
+            done
+        fi
+    done
+}
+
+# Accept theme name as first arg (called from OmniMenu); otherwise prompt via walker
+if [ -n "$1" ]; then
+    SELECTION="$1"
+else
+    SELECTION=$(list_themes | omarchy-launch-walker --dmenu --width 400 --minheight 1 --maxheight 500 -p "Lock Screen Theme…" 2>/dev/null)
+    [ -z "$SELECTION" ] && exit 0
+fi
+
+[ ! -f "$THEMES_DIR/$SELECTION/Main.qml" ] && { notify-send "qylock" "Theme not found: $SELECTION" -t 3000; exit 1; }
+
+echo "$SELECTION" > "$CONFIG"
+
+# Notify immediately — lockscreen picks up the config on next lock
+notify-send "Lock Screen Theme" "Changed to: $SELECTION" -t 3000
+
+# Update SDDM theme in background — use leaf dir name as SDDM theme name
+SDDM_NAME=$(basename "$SELECTION")
+if command -v pkexec >/dev/null 2>&1; then
+    pkexec bash -c "
+        cp -r '$THEMES_DIR/$SELECTION' /usr/share/sddm/themes/
+        printf '[Theme]\nCurrent=$SDDM_NAME\n' > /etc/sddm.conf
+        mkdir -p /etc/sddm.conf.d
+        printf '[Theme]\nCurrent=$SDDM_NAME\n' > /etc/sddm.conf.d/theme.conf
+    " 2>/dev/null && notify-send "Lock Screen Theme" "SDDM login screen also updated" -t 2000 || true
+fi

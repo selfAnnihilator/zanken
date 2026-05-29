@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# omarchy:summary=Open the Omarchy background switcher
+# omarchy:group=theme
+# omarchy:name=bg-switcher
+# omarchy:aliases=omarchy background
+
+OMARCHY_PATH=${OMARCHY_PATH:-$HOME/.local/share/omarchy}
+current_background=$(readlink -f "$HOME/.config/zanken/current/background" 2>/dev/null)
+
+selected=$(omarchy-menu-images \
+  --selected "$current_background" \
+  "$HOME/Pictures/wallpaper")
+
+if [[ -n "$selected" ]]; then
+  omarchy-theme-bg-set "$selected"
+fi

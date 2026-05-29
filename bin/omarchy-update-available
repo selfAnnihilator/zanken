@@ -1,0 +1,3 @@
+#!/bin/bash
+# No-op — isolated from upstream. No update checks.
+exit 0

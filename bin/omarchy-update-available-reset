@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# omarchy:summary=Ensure Waybar icon offering the available update is removed
+
+exit 0

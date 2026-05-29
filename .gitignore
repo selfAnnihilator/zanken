@@ -1,2 +1,1 @@
-# Wallpapers stored in ~/Pictures/wallpapers/ — not tracked in git
-themes/*/backgrounds/
+# Wallpapers tracked in themes/*/backgrounds/ and seeded to ~/Pictures/wallpapers/

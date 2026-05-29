@@ -1,14 +1,14 @@
 # Commands
 
-Zanken ships 308 `omarchy-*` scripts. All are on `$PATH` via `~/zanken/bin/`.
+Zanken ships 308 `zanken-*` scripts. All are on `$PATH` via `~/zanken/bin/`.
 
 ## Usage
 
 ```bash
-omarchy <group>           # List commands in a group
-omarchy <command>         # Run a command
-omarchy audio             # e.g. list audio commands
-omarchy-audio-input-mute  # e.g. run directly
+zanken <group>           # List commands in a group
+zanken <command>         # Run a command
+zanken audio             # e.g. list audio commands
+zanken-audio-input-mute  # e.g. run directly
 ```
 
 ## Command groups

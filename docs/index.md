@@ -1,6 +1,6 @@
 # Zanken
 
-**Zanken** is a Niri-based Linux workspace derived from [omarchy](https://omarchy.org) by DHH. It replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping omarchy's 300+ script layer intact.
+**Zanken** is a Niri-based Linux workspace derived from [zanken](https://github.com/selfAnnihilator/zanken) by DHH. It replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping zanken's 300+ script layer intact.
 
 ## What it is
 
@@ -9,7 +9,7 @@
 - **Notifications**: [Elephant](https://github.com/nickel-org/elephant)
 - **Terminal**: [Foot](https://codeberg.org/dnkl/foot)
 - **Launcher**: [Fuzzel](https://codeberg.org/dnkl/fuzzel)
-- **Scripts**: 308 `omarchy-*` shell scripts covering everything from theming to hardware detection
+- **Scripts**: 308 `zanken-*` shell scripts covering everything from theming to hardware detection
 - **Themes**: 21 built-in color themes, dynamic wallpaper-based palette generation via matugen
 
 ## What it is not
@@ -28,7 +28,7 @@ See [Installation](installation.md) for full details.
 
 ```
 zanken/
-├── bin/          # 308 omarchy-* scripts
+├── bin/          # 308 zanken-* scripts
 ├── config/       # Base configs (sourced by dotfiles)
 ├── default/      # Default app configs (foot, alacritty, waybar, etc.)
 ├── themes/       # 21 built-in color themes
@@ -36,9 +36,9 @@ zanken/
 └── migrations/   # Version migration scripts
 ```
 
-## Differences from omarchy
+## Differences from zanken
 
-| Feature | omarchy | zanken |
+| Feature | zanken | zanken |
 |---------|---------|--------|
 | Compositor | Hyprland | Niri |
 | Bar | Waybar | Quickshell |

@@ -1,6 +1,4 @@
 #!/bin/bash
-# Isolated from upstream — zanken fork does not sync with omarchy.
-echo "This installation is isolated from the official zanken repo."
-echo "Updates from upstream/zanken are disabled."
+git -C "$HOME/zanken" pull --rebase 2>&1 || echo "zanken pull failed — check network/ssh"
 echo ""
 echo "To update system packages: sudo pacman -Syyu"

@@ -31,7 +31,7 @@ Zanken includes 21 built-in color themes. Themes update the terminal, bar colors
 ## Switching themes
 
 ```bash
-omarchy-theme-set tokyo-night
+zanken-theme-set tokyo-night
 ```
 
 Or use the Quickshell palette: `Mod+D` → search "theme".
@@ -41,7 +41,7 @@ Or use the Quickshell palette: `Mod+D` → search "theme".
 Zanken supports extracting a color palette from the current wallpaper using [matugen](https://github.com/InioX/matugen). When a wallpaper is set, the bar accent colors, foot terminal, and qutebrowser all update to match.
 
 ```bash
-omarchy-theme-bg-set ~/Pictures/my-wallpaper.jpg
+zanken-theme-bg-set ~/Pictures/my-wallpaper.jpg
 ```
 
 ## Creating a custom theme
@@ -65,7 +65,7 @@ background = "#your-bg"
 
 Then apply:
 ```bash
-omarchy-theme-set my-theme
+zanken-theme-set my-theme
 ```
 
 ## Theme hooks

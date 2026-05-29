@@ -10,9 +10,9 @@
 
 # Command Naming
 
-All commands start with `omarchy-`. Prefixes indicate purpose.
+All commands start with `zanken-`. Prefixes indicate purpose.
 
-The authoritative command group list lives in `bin/omarchy` in `GROUP_DESCRIPTIONS`. Keep `GROUP_DESCRIPTIONS` updated when adding a new command prefix.
+The authoritative command group list lives in `bin/zanken` in `GROUP_DESCRIPTIONS`. Keep `GROUP_DESCRIPTIONS` updated when adding a new command prefix.
 
 Common prefixes include:
 
@@ -35,29 +35,29 @@ Other current prefixes include:
 
 # Command Metadata
 
-Commands in `bin/` can declare CLI metadata in comments near the top of the file. `bin/omarchy` scans the first 80 lines, and tests expect command metadata to remain valid.
+Commands in `bin/` can declare CLI metadata in comments near the top of the file. `bin/zanken` scans the first 80 lines, and tests expect command metadata to remain valid.
 
 Supported metadata keys:
 
-- `# omarchy:summary=...` - short help text
-- `# omarchy:group=...` - command group when it differs from the filename-derived prefix
-- `# omarchy:name=...` - command name within the group
-- `# omarchy:args=...` - usage arguments
-- `# omarchy:examples=...` - examples separated with ` | `
-- `# omarchy:alias=...` / `# omarchy:aliases=...` - alternate routes
-- `# omarchy:hidden=true` - hide from default command listings
-- `# omarchy:requires-sudo=true` - mark commands that require sudo
+- `# zanken:summary=...` - short help text
+- `# zanken:group=...` - command group when it differs from the filename-derived prefix
+- `# zanken:name=...` - command name within the group
+- `# zanken:args=...` - usage arguments
+- `# zanken:examples=...` - examples separated with ` | `
+- `# zanken:alias=...` / `# zanken:aliases=...` - alternate routes
+- `# zanken:hidden=true` - hide from default command listings
+- `# zanken:requires-sudo=true` - mark commands that require sudo
 
 Prefer explicit metadata for user-facing commands. Keep routes consistent with the filename unless there is a deliberate alias or compatibility route.
 
 Example:
 
 ```bash
-# omarchy:summary=Take a screenshot
-# omarchy:group=capture
-# omarchy:args=[smart|region|windows|fullscreen] [slurp|copy]
-# omarchy:examples=omarchy screenshot | omarchy capture screenshot region
-# omarchy:aliases=omarchy screenshot
+# zanken:summary=Take a screenshot
+# zanken:group=capture
+# zanken:args=[smart|region|windows|fullscreen] [slurp|copy]
+# zanken:examples=zanken screenshot | zanken capture screenshot region
+# zanken:aliases=zanken screenshot
 ```
 
 # Install Scripts
@@ -69,7 +69,7 @@ Install stage files follow this pattern:
 - `install/*/all.sh` lists scripts in execution order
 - leaf scripts are sourced by `run_logged $OMARCHY_INSTALL/path/to/script.sh`
 - avoid `exit` in sourced install scripts unless intentionally aborting the install
-- use `$OMARCHY_INSTALL` and `$OMARCHY_PATH` instead of hard-coded Omarchy paths
+- use `$OMARCHY_INSTALL` and `$OMARCHY_PATH` instead of hard-coded Zanken paths
 - keep hardware-specific logic under `install/config/hardware/`
 - prefer helper commands for package and command checks where available
 
@@ -79,12 +79,12 @@ Raw `command -v`, `pacman`, and `pacman-key` are acceptable in bootstrap/preflig
 
 Use these instead of raw shell commands:
 
-- `omarchy-cmd-missing` / `omarchy-cmd-present` - check for commands
-- `omarchy-pkg-missing` / `omarchy-pkg-present` - check for packages
-- `omarchy-pkg-add` - install packages (handles both pacman and AUR)
-- `omarchy-pkg-drop` - remove packages; use this instead of raw `pacman -R*`
-- `omarchy-notification-send` - send desktop notifications; do not call `notify-send` directly
-- `omarchy-hw-asus-rog` - detect ASUS ROG hardware (and similar `hw-*` commands)
+- `zanken-cmd-missing` / `zanken-cmd-present` - check for commands
+- `zanken-pkg-missing` / `zanken-pkg-present` - check for packages
+- `zanken-pkg-add` - install packages (handles both pacman and AUR)
+- `zanken-pkg-drop` - remove packages; use this instead of raw `pacman -R*`
+- `zanken-notification-send` - send desktop notifications; do not call `notify-send` directly
+- `zanken-hw-asus-rog` - detect ASUS ROG hardware (and similar `hw-*` commands)
 
 Exceptions are allowed for bootstrap, preflight, migration, and package-helper scripts where the helper may not be available yet, where the helper itself is being implemented, or where direct package-manager behavior is required.
 
@@ -96,7 +96,7 @@ Exceptions are allowed for bootstrap, preflight, migration, and package-helper s
 
 # Visual Changes
 
-When making visual changes, such as Waybar styles or desktop appearance, always take and analyze a screenshot after applying the change to verify the result. Use `omarchy capture screenshot fullscreen save` for fullscreen screenshots.
+When making visual changes, such as Waybar styles or desktop appearance, always take and analyze a screenshot after applying the change to verify the result. Use `zanken capture screenshot fullscreen save` for fullscreen screenshots.
 
 For interactive UI work, use `wtype` to simulate keyboard input when available. Example: start the UI in the background, wait briefly for focus, then run `wtype -k Right -k Return` to exercise keyboard selection and confirm the resulting command output or state change. Prefer this over manual-only verification when a UI returns a selected value or changes a symlink/config.
 
@@ -107,23 +107,23 @@ When testing layer-shell UI, capture the reference and candidate states as separ
 To copy a default config to user config with automatic backup:
 
 ```bash
-omarchy-refresh-config hypr/hyprlock.conf
+zanken-refresh-config hypr/hyprlock.conf
 ```
 
-This copies `~/.local/share/omarchy/config/hypr/hyprlock.conf` to `~/.config/hypr/hyprlock.conf`.
+This copies `~/.local/share/zanken/config/hypr/hyprlock.conf` to `~/.config/hypr/hyprlock.conf`.
 
 # Migrations
 
-To create a new migration, run `omarchy-dev-add-migration --no-edit`. This creates a migration file named after the unix timestamp of the last commit.
+To create a new migration, run `zanken-dev-add-migration --no-edit`. This creates a migration file named after the unix timestamp of the last commit.
 
 New migration format:
 - File permissions must be `0644` (`-rw-r--r--`); migrations are sourced, not executed directly
 - No shebang line
 - Start with an `echo` describing what the migration does
-- Use `$OMARCHY_PATH` to reference the omarchy directory
-- Prefer helper commands such as `omarchy-cmd-present`, `omarchy-cmd-missing`, `omarchy-pkg-present`, and `omarchy-pkg-missing`
+- Use `$OMARCHY_PATH` to reference the zanken directory
+- Prefer helper commands such as `zanken-cmd-present`, `zanken-cmd-missing`, `zanken-pkg-present`, and `zanken-pkg-missing`
 
-Some older migrations predate these rules. Do not copy older migrations that start with shebangs, omit the leading `echo`, or hard-code `~/.local/share/omarchy`.
+Some older migrations predate these rules. Do not copy older migrations that start with shebangs, omit the leading `echo`, or hard-code `~/.local/share/zanken`.
 
 Migrations may use raw `pacman`, `command -v`, or direct config edits when needed for historical compatibility or one-off repair work.
 
@@ -131,7 +131,7 @@ Example:
 ```bash
 echo "Disable fingerprint in hyprlock if fingerprint auth is not configured"
 
-if omarchy-cmd-missing fprintd-list || ! fprintd-list "$USER" 2>/dev/null | grep -q "finger"; then
+if zanken-cmd-missing fprintd-list || ! fprintd-list "$USER" 2>/dev/null | grep -q "finger"; then
   sed -i 's/fingerprint:enabled = .*/fingerprint:enabled = false/' ~/.config/hypr/hyprlock.conf
 fi
 ```

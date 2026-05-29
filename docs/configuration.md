@@ -19,7 +19,7 @@ Scripts are resolved in this order:
 
 1. `~/.config/zanken/bin/` — your personal overrides (highest priority)
 2. `~/zanken/bin/` — base zanken scripts (308 scripts)
-3. `~/.local/share/omarchy/bin/` — install cache (fallback)
+3. `~/.local/share/zanken/bin/` — install cache (fallback)
 
 Add personal scripts or override base scripts by placing them in `~/.config/zanken/bin/`.
 
@@ -34,7 +34,7 @@ current/
 └── mono-font       # Active monospace font name
 ```
 
-These are updated automatically when you run `omarchy-theme-set <theme>`.
+These are updated automatically when you run `zanken-theme-set <theme>`.
 
 ## Weather location
 
@@ -99,5 +99,5 @@ The bar source is at `~/.config/quickshell/desktop/`. Key files:
 
 Restart the bar after edits:
 ```bash
-omarchy-restart-quickshell
+zanken-restart-quickshell
 ```

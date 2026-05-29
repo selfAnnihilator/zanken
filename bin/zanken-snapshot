@@ -7,7 +7,7 @@
 set -e
 
 COMMAND="$1"
-ZANKEN_PATH=${ZANKEN_PATH:-$HOME/.local/share/zanken}
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
 
 if [[ -z $COMMAND ]]; then
   echo "Usage: zanken-snapshot <create|restore>" >&2

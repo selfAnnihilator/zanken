@@ -3,7 +3,7 @@
 # zanken:summary=Open a generic image selector menu
 # zanken:args=[--selected <image>] [--colors-file <path>] [--print-name] [--show-labels] [--filterable] [--lazy-thumbnails] [--cache-only] <image-dir>...
 
-ZANKEN_PATH=${ZANKEN_PATH:-$HOME/.local/share/zanken}
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
 
 selected_image=""
 colors_file=""

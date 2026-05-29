@@ -2,7 +2,7 @@
 
 # zanken:summary=Open the Omarchy theme switcher
 
-ZANKEN_PATH=${ZANKEN_PATH:-$HOME/.local/share/zanken}
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
 USER_THEMES_PATH="$HOME/.config/zanken/themes"
 ZANKEN_THEMES_PATH="$ZANKEN_PATH/themes"
 CACHE_PATH="${XDG_CACHE_HOME:-$HOME/.cache}/zanken/theme-selector"

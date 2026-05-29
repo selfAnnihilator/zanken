@@ -5,7 +5,7 @@
 # zanken:name=bg-switcher
 # zanken:aliases=zanken background
 
-ZANKEN_PATH=${ZANKEN_PATH:-$HOME/.local/share/zanken}
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
 current_background=$(readlink -f "$HOME/.config/zanken/current/background" 2>/dev/null)
 
 selected=$(zanken-menu-images \

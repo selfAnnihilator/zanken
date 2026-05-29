@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# zanken:summary=Toggle screensaver availability
+
+zanken-toggle \
+  --enabled-notification "󱄄   Screensaver disabled" \
+  --disabled-notification "󱄄   Screensaver enabled" \
+  screensaver-off

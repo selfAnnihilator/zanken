@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Print the current Omarchy git branch
+
+echo $(git -C "$ZANKEN_PATH" rev-parse --abbrev-ref HEAD)

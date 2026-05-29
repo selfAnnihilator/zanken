@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# zanken:summary=Reset all Omarchy user configs to the defaults
+# zanken:requires-sudo=true
+
+set -e
+
+# Overwrite all user configs with the Omarchy defaults.
+
+if (( EUID == 0 )); then
+  echo "Error: This script should not be run as root"
+  exit 1
+fi
+
+echo "Resetting all Omarchy configs"
+cp -R ~/.local/share/zanken/config/* ~/.config/
+cp ~/.local/share/zanken/default/bashrc ~/.bashrc
+echo '[[ -f ~/.bashrc ]] && . ~/.bashrc' | tee ~/.bash_profile >/dev/null
+
+$(bash $ZANKEN_PATH/install/config/theme.sh)
+
+zanken-refresh-limine
+zanken-refresh-plymouth
+zanken-nvim-setup

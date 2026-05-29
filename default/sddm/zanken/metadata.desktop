@@ -1,0 +1,6 @@
+[SddmGreeterTheme]
+Name=Zanken
+Description=Minimal terminal-style login theme matching the Limine bootloader aesthetic
+Author=Zanken
+Type=sddm-theme
+Version=1.0

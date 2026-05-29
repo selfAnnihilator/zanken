@@ -1,0 +1,4 @@
+#!/bin/bash
+# zanken:summary=Pick and apply a monospace font via fzf
+f=$(zanken-font-list | fzf --prompt="Font › " --layout=reverse --height=40%)
+[ -n "$f" ] && zanken-font-set "$f"

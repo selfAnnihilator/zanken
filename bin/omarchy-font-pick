@@ -1,4 +1,0 @@
-#!/bin/bash
-# omarchy:summary=Pick and apply a monospace font via fzf
-f=$(omarchy-font-list | fzf --prompt="Font › " --layout=reverse --height=40%)
-[ -n "$f" ] && omarchy-font-set "$f"

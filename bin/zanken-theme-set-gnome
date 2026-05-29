@@ -1,0 +1,4 @@
+#!/bin/bash
+# zanken:summary=Apply theme to GNOME (no-op on niri)
+# zanken:hidden=true
+exit 0

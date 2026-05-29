@@ -1,4 +1,0 @@
-#!/bin/bash
-# omarchy:summary=Apply theme to GNOME (no-op on niri)
-# omarchy:hidden=true
-exit 0

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Launch the Omarchy audio controls TUI (provided by wiremix).
+
+zanken-launch-or-focus-tui wiremix

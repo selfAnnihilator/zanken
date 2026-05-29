@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Show the current battery status notification
+
+zanken-notification-send -g 󰁹 -u low "$(zanken-battery-status)"

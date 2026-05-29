@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# zanken:summary=Launch a TUI or focus an existing terminal window for it
+# zanken:args=<command> [args...]
+
+APP_ID="org.zanken.$(basename "$1")"
+LAUNCH_COMMAND="zanken-launch-tui $@"
+
+exec zanken-launch-or-focus "$APP_ID" "$LAUNCH_COMMAND"

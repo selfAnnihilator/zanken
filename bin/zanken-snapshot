@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# zanken:summary=Create or restore system snapshots with snapper
+# zanken:args=<create|restore>
+# zanken:requires-sudo=true
+
+set -e
+
+COMMAND="$1"
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/.local/share/zanken}
+
+if [[ -z $COMMAND ]]; then
+  echo "Usage: zanken-snapshot <create|restore>" >&2
+  exit 1
+fi
+
+if ! command -v snapper &>/dev/null; then
+  exit 127 # zanken-update can use this to just ignore if snapper is not available
+fi
+
+case "$COMMAND" in
+create)
+  DESC="$(zanken-version)"
+
+  echo -e "\e[32mCreate system snapshot\e[0m"
+
+  # Get existing snapper config names from CSV output
+  mapfile -t CONFIGS < <(sudo snapper --csvout list-configs | awk -F, 'NR>1 {print $1}')
+
+  for config in "${CONFIGS[@]}"; do
+    sudo snapper -c "$config" create -c number -d "$DESC"
+    sudo snapper -c "$config" cleanup number
+  done
+  echo
+  ;;
+restore)
+  sudo limine-snapper-restore
+  ;;
+esac

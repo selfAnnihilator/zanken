@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# zanken:summary=Overwrite the user tmux config with the Omarchy default and reload tmux.
+
+zanken-refresh-config tmux/tmux.conf
+zanken-restart-tmux

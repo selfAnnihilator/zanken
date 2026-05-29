@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# zanken:summary=Install Heroic Games Launcher (Epic, GOG, Amazon Prime Gaming) with graphics drivers.
+# zanken:requires-sudo=true
+
+set -e
+
+echo "Installing Heroic Games Launcher..."
+zanken-pkg-add heroic-games-launcher-bin
+zanken-install-gaming-gpu-lib32
+
+setsid gtk-launch heroic >/dev/null 2>&1 &

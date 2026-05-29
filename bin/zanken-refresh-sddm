@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# zanken:summary=Refresh the SDDM theme from default
+# zanken:requires-sudo=true
+
+sudo rm -rf /usr/share/sddm/themes/zanken
+sudo cp -r $ZANKEN_PATH/default/sddm/zanken /usr/share/sddm/themes/zanken

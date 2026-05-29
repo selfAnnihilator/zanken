@@ -1,4 +1,0 @@
-#!/bin/bash
-# No-op — isolated from upstream. Branch switching disabled.
-echo "Branch switching disabled — isolated from upstream."
-exit 0

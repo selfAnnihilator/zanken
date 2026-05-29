@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# zanken:summary=Set the correct power profile on boot based on current AC/battery state.
+
+if zanken-battery-present && ! zanken-ac-present; then
+  zanken-powerprofiles-set battery
+else
+  zanken-powerprofiles-set ac
+fi

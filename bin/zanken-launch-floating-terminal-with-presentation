@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# zanken:summary=Launch a floating terminal with the Omarchy presentation wrapper
+# zanken:args=<command>
+
+cmd="$*"
+exec setsid uwsm-app -- xdg-terminal-exec --app-id=org.zanken.terminal --title=Zanken -e bash -c "zanken-show-logo; $cmd; if (( \$? != 130 )); then zanken-show-done; fi"

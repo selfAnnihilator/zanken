@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# zanken:summary=Shut down after closing application windows
+# zanken:examples=omarchy shutdown | omarchy system shutdown
+# zanken:aliases=zanken shutdown
+
+zanken-state clear re*-required
+
+# Schedule the shutdown to happen after closing windows (detached from terminal)
+nohup bash -c "sleep 2 && systemctl poweroff --no-wall" >/dev/null 2>&1 &
+
+# Now close all windows
+zanken-hyprland-window-close-all
+sleep 1 # Allow apps like Chrome to shutdown correctly

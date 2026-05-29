@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# zanken:summary=Open the Voxtype configuration file
+
+set -e
+
+# Used by Voxtype waybar module to open config on right click
+
+exec zanken-launch-editor ~/.config/voxtype/config.toml

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# zanken:summary=Restore the default Omarchy Plymouth boot theme and SDDM login screen
+# zanken:requires-sudo=true
+
+theme_dir="/usr/share/plymouth/themes/zanken"
+
+sudo find ~/.local/share/zanken/default/plymouth -maxdepth 1 -type f -exec cp -t "$theme_dir/" {} +
+sudo plymouth-set-default-theme zanken
+
+if zanken-cmd-present limine-mkinitcpio; then
+  sudo limine-mkinitcpio
+else
+  sudo mkinitcpio -P
+fi
+
+zanken-refresh-sddm

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# zanken:summary=Edit, set, or reset screensaver branding
+# zanken:group=branding
+# zanken:name=screensaver
+# zanken:args=<image|text|reset>
+# zanken:examples=omarchy branding screensaver image | omarchy branding screensaver text | omarchy branding screensaver reset
+
+set -euo pipefail
+
+SOURCE_DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}"
+
+case "${1:-}" in
+image)
+  image=$(zanken-menu-file "Pick png/svg from $SOURCE_DIR" "${SOURCE_DIR}" "svg png")
+  if [[ -n $image ]] && zanken-transcode-ascii "$image" ~/.config/zanken/branding/screensaver.txt; then
+    zanken-launch-screensaver force >/dev/null 2>&1
+  fi
+  ;;
+text)
+  zanken-launch-editor ~/.config/zanken/branding/screensaver.txt >/dev/null 2>&1 && zanken-launch-screensaver force >/dev/null 2>&1
+  ;;
+reset)
+  cp "$ZANKEN_PATH/logo.txt" ~/.config/zanken/branding/screensaver.txt && zanken-launch-screensaver force >/dev/null 2>&1
+  ;;
+*)
+  echo "Usage: zanken-branding-screensaver <image|text|reset>" >&2
+  exit 1
+  ;;
+esac

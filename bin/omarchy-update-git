@@ -1,3 +1,0 @@
-#!/bin/bash
-# No-op — isolated from upstream git remote.
-exit 0

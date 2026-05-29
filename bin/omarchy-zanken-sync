@@ -1,8 +1,0 @@
-#!/bin/bash
-# omarchy:summary=Sync zanken shell with remote
-# omarchy:group=update
-
-echo "Syncing zanken from remote..."
-git -C "$HOME/zanken" pull --rebase
-echo ""
-echo "Zanken is up to date."

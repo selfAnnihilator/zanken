@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Launch Walker and ensure its Elephant data provider is running
+# no-op on niri (bar is Quickshell)
+exit 0

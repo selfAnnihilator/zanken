@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# zanken:summary=Prompt for text input with Walker
+# zanken:group=menu
+# zanken:name=input
+# zanken:args=prompt [walker args...]
+# zanken:examples=omarchy menu input Reminder|zanken-menu-input "Reminder in minutes" --width 400
+
+set -euo pipefail
+
+prompt="${1:-Input}"
+if (( $# > 0 )); then
+  shift
+fi
+
+zanken-launch-walker --dmenu --inputonly --width 295 --minheight 1 --maxheight 1 -p "$prompt…" "$@" 2>/dev/null

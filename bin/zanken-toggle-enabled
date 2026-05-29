@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# zanken:summary=Check if a toggle is enabled (flag file exists)
+# zanken:args=<flag-name>
+
+[[ -f "$HOME/.local/state/zanken/toggles/$1" ]]

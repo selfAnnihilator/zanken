@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Detect ASUS Zenbook UX5406AA series laptops on Intel Panther Lake.
+
+zanken-hw-match "ux5406aa" && zanken-hw-intel-ptl

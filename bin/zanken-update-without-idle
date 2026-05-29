@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# zanken:summary=No-op now that zanken-update-perform is responsible for idle management.
+# zanken:hidden=true

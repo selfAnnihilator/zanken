@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Print the installed Omarchy version
+
+cat $ZANKEN_PATH/version

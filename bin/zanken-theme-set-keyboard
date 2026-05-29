@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# zanken:summary=Apply the current theme keyboard color to supported keyboards
+# zanken:hidden=true
+
+zanken-theme-set-keyboard-asus-rog
+zanken-theme-set-keyboard-f16

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# zanken:summary=Finish the installation of Omarchy with items that can only be done after logging in.
+# zanken:requires-sudo=true
+
+set -e
+
+FIRST_RUN_MODE=~/.local/state/zanken/first-run.mode
+
+if [[ -f $FIRST_RUN_MODE ]]; then
+  rm -f "$FIRST_RUN_MODE"
+
+  bash "$ZANKEN_PATH/install/first-run/battery-monitor.sh"
+  bash "$ZANKEN_PATH/install/first-run/recover-internal-monitor.sh"
+  bash "$ZANKEN_PATH/install/first-run/cleanup-reboot-sudoers.sh"
+  bash "$ZANKEN_PATH/install/first-run/firewall.sh"
+  bash "$ZANKEN_PATH/install/first-run/dns-resolver.sh"
+  bash "$ZANKEN_PATH/install/first-run/gnome-theme.sh"
+  bash "$ZANKEN_PATH/install/first-run/gdk-scale.sh"
+  bash "$ZANKEN_PATH/install/first-run/swayosd.sh"
+  bash "$ZANKEN_PATH/install/first-run/gtk-primary-paste.sh"
+  bash "$ZANKEN_PATH/install/first-run/elephant.sh"
+  zanken-hook-install post-update "$ZANKEN_PATH/install/first-run/install-voxtype.hook"
+  sudo rm -f /etc/sudoers.d/first-run
+
+  bash "$ZANKEN_PATH/install/first-run/welcome.sh"
+  bash "$ZANKEN_PATH/install/first-run/wifi.sh"
+fi

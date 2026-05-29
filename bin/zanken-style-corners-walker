@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Set or toggle rounded Walker corners
+# no-op on niri (bar is Quickshell)
+exit 0

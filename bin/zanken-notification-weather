@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Show the current weather notification
+
+zanken-notification-send -g $(zanken-weather-icon) -u low "$(zanken-weather-status)"

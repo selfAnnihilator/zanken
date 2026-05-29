@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# zanken:summary=Set the current background image
+# zanken:args=<path-to-image>
+# zanken:examples=omarchy theme bg set ~/Pictures/background.png
+
+if [[ -z $1 ]]; then
+  echo "Usage: zanken-theme-bg-set <path-to-image>" >&2
+  exit 1
+fi
+
+BACKGROUND="$(realpath "$1")"
+CURRENT_BACKGROUND_LINK="$HOME/.config/zanken/current/background"
+
+if [[ ! -f "$BACKGROUND" ]]; then
+  echo "File does not exist: $BACKGROUND" >&2
+  exit 1
+fi
+
+# Create symlink to the new background
+ln -nsf "$BACKGROUND" "$CURRENT_BACKGROUND_LINK"
+
+# Kill existing swaybg and start new one
+pkill -x swaybg
+setsid uwsm-app -- swaybg -i "$CURRENT_BACKGROUND_LINK" -m fill >/dev/null 2>&1 &
+
+# Extract accent color from wallpaper and apply to niri, GTK, quickshell
+if command -v zanken-wallpaper-colors &>/dev/null; then
+  ACCENT=$(zanken-wallpaper-colors "$BACKGROUND" 2>/dev/null)
+  if [[ "$ACCENT" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+    zanken-theme-bg-colors-apply "$ACCENT" &
+  fi
+fi

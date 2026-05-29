@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Set Waybar position
-# no-op on niri (bar is Quickshell)
-exit 0

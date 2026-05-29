@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Overwrite the user configs for the Walker application launcher (which also powers the Omarchy Menu) and restart the services.
-# no-op on niri (bar is Quickshell)
-exit 0

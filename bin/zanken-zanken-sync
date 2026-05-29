@@ -1,0 +1,8 @@
+#!/bin/bash
+# zanken:summary=Sync zanken shell with remote
+# zanken:group=update
+
+echo "Syncing zanken from remote..."
+git -C "$HOME/zanken" pull --rebase
+echo ""
+echo "Zanken is up to date."

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# zanken:summary=Wrapper for swayosd-client that targets the currently focused monitor.
+# zanken:args=<swayosd-client-args...>
+
+if [[ -n "$NIRI_SOCKET" ]]; then
+    MONITOR=$(niri msg -j focused-output 2>/dev/null | jq -r '.name // empty' 2>/dev/null)
+else
+    MONITOR=$(zanken-hyprland-monitor-focused)
+fi
+exec swayosd-client ${MONITOR:+--monitor "$MONITOR"} "$@"

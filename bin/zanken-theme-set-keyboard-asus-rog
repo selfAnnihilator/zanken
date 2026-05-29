@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# zanken:summary=Apply the current theme keyboard color to ASUS ROG keyboards
+# zanken:hidden=true
+
+ASUSCTL_THEME=~/.config/zanken/current/theme/keyboard.rgb
+
+if zanken-cmd-present asusctl; then
+  asusctl aura effect static -c $(sed 's/^#//' $ASUSCTL_THEME)
+fi

@@ -1,4 +1,13 @@
 #!/bin/bash
-# zanken:summary=Apply theme to GNOME (no-op on niri)
+# zanken:summary=Apply GTK/GNOME color-scheme for current theme
 # zanken:hidden=true
-exit 0
+
+THEME_DIR="$HOME/.config/zanken/current/theme"
+
+if [ -f "$THEME_DIR/light.mode" ]; then
+    gsettings set org.gnome.desktop.interface color-scheme 'default'
+    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+else
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+fi

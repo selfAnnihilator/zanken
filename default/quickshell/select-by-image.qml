@@ -24,7 +24,7 @@ ShellRoot {
   property string doneFile: ""
   property string filterText: ""
   property var doneFilesToRelease: []
-  property string socketPath: (Quickshell.env("XDG_RUNTIME_DIR") || ("/run/user/" + Quickshell.env("UID"))) + "/omarchy-image-selector.sock"
+  property string socketPath: (Quickshell.env("XDG_RUNTIME_DIR") || ("/run/user/" + Quickshell.env("UID"))) + "/zanken-image-selector.sock"
   property color accent: "#798186"
   property color background: "#101315"
   property color foreground: "#cacccc"
@@ -360,7 +360,7 @@ ShellRoot {
     visible: root.opened && root.imagesLoaded
     anchors { top: true; bottom: true; left: true; right: true }
     color: "transparent"
-    WlrLayershell.namespace: "omarchy-image-selector"
+    WlrLayershell.namespace: "zanken-image-selector"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     exclusionMode: ExclusionMode.Ignore

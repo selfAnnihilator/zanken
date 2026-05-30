@@ -30,12 +30,8 @@ case "$TYPE" in
     OUTPUT=$(niri msg outputs 2>/dev/null | awk '/^Output:/{print $2; exit}')
     OUTPUT="${OUTPUT:-eDP-1}"
 
-    AUDIO_DEV=$(pactl list short sources 2>/dev/null \
-      | awk '/\.monitor/{print $2; exit}')
-
     ARGS=(--screen-root "$OUTPUT" --fps 30)
     [[ -d "$WE_ASSETS" ]] && ARGS+=(--assets-dir "$WE_ASSETS")
-    [[ -n "$AUDIO_DEV" ]] && ARGS+=(--audio-device "$AUDIO_DEV") || ARGS+=(--silent)
 
     setsid linux-wallpaperengine "${ARGS[@]}" "$WE_ID" >/dev/null 2>&1 &
 

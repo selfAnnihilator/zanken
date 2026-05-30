@@ -11,3 +11,8 @@ else
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
     gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 fi
+
+# Deploy GTK4 theme CSS so file manager and other GTK4 apps pick up theme colors
+if [ -f "$THEME_DIR/gtk4.css" ]; then
+    cp "$THEME_DIR/gtk4.css" "$HOME/.config/gtk-4.0/zanken-theme.css"
+fi

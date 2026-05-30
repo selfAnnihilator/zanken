@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# zanken:summary=Open the Wallpaper Engine wallpaper picker
+# zanken:group=theme
+# zanken:name=we-switcher
+
+zanken-wallpaper-engine-picker

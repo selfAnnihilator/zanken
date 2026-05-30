@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# zanken:summary=Scan WE library and open grid picker
+
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
+WE_WORKSHOP="$HOME/.local/share/Steam/steamapps/workshop/content/431960"
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zanken/we-picker"
+socket_path="${XDG_RUNTIME_DIR:-/run/user/$UID}/zanken-we-picker.sock"
+picker_qml="$ZANKEN_PATH/default/quickshell/wallpaper-engine-picker.qml"
+
+mkdir -p "$cache_dir"
+
+generate_thumbnail() {
+  local image="$1"
+  local thumbnail="$2"
+  local lock="$thumbnail.lock"
+  local tmp="$thumbnail.$$.jpg"
+
+  if mkdir "$lock" 2>/dev/null; then
+    magick "${image}[0]" -auto-orient \
+      -resize '400x225^' -gravity center -extent '400x225' \
+      -strip -quality 82 "$tmp" 2>/dev/null
+    if [[ -f $tmp ]]; then
+      mv -f "$tmp" "$thumbnail"
+    else
+      rm -f "$tmp"
+    fi
+    rmdir "$lock" 2>/dev/null || true
+  else
+    for ((i = 0; i < 3000; i++)); do
+      [[ -f $thumbnail ]] && return
+      [[ -d $lock ]] || break
+      sleep 0.01
+    done
+  fi
+}
+
+rows=""
+for we_dir in "$WE_WORKSHOP"/*/; do
+  [[ -d "$we_dir" ]] || continue
+  project="$we_dir/project.json"
+  [[ -f "$project" ]] || continue
+
+  we_id=$(basename "$we_dir")
+  title=$(jq -r '.title // "Wallpaper \(.)"' "$project" 2>/dev/null | tr -d '\n')
+  type=$(jq -r '.type // "scene"' "$project" 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d '\n')
+  [[ -z "$title" ]] && title="Wallpaper $we_id"
+
+  preview=$(find "$we_dir" -maxdepth 1 \
+    \( -name 'preview.jpg' -o -name 'preview.png' -o -name 'preview.gif' \) \
+    ! -name '*.mp4' | head -1)
+
+  if [[ -z "$preview" ]]; then
+    preview=$(find "$we_dir" -maxdepth 1 -name 'preview.*' ! -name '*.mp4' | head -1)
+  fi
+
+  if [[ -n "$preview" ]]; then
+    sig=$(stat -Lc '%s:%Y' "$preview" 2>/dev/null)
+    hash=$(printf '%s\t%s' "$preview" "$sig" | md5sum | cut -d ' ' -f 1)
+    thumbnail="$cache_dir/$hash.jpg"
+    [[ -f "$thumbnail" ]] || generate_thumbnail "$preview" "$thumbnail"
+  fi
+
+  thumb="${thumbnail:-}"
+  [[ -z "$thumb" ]] && thumb="$preview"
+  [[ -z "$thumb" ]] && continue
+
+  row="${we_dir%/}"$'\t'"$thumb"$'\t'"$title"$'\t'"$type"
+  if [[ -z "$rows" ]]; then
+    rows="$row"
+  else
+    rows+=$'\n'"$row"
+  fi
+done
+
+[[ -z "$rows" ]] && { echo "No WE wallpapers found in $WE_WORKSHOP" >&2; exit 1; }
+
+rows_payload=${rows//$'\t'/$'\f'}
+rows_payload=${rows_payload//$'\n'/$'\v'}
+
+selection_file=$(mktemp)
+done_file=$(mktemp)
+rm -f "$done_file"
+trap 'rm -f "$selection_file" "$done_file"' EXIT
+
+ensure_picker() {
+  if [[ -S $socket_path && $picker_qml -nt $socket_path ]]; then
+    quickshell kill -p "$picker_qml" >/dev/null 2>&1 || true
+    rm -f "$socket_path"
+  fi
+
+  if [[ ! -S $socket_path ]]; then
+    quickshell kill -p "$picker_qml" >/dev/null 2>&1 || true
+    quickshell -d -p "$picker_qml" >/dev/null
+
+    for ((i = 0; i < 200; i++)); do
+      [[ -S $socket_path ]] && break
+      sleep 0.01
+    done
+  fi
+
+  [[ -S $socket_path ]]
+}
+
+send_request() {
+  printf '%s\t%s\t%s\n' "$rows_payload" "$selection_file" "$done_file" |
+    socat -u - "UNIX-CONNECT:$socket_path"
+}
+
+if ! ensure_picker; then
+  echo "WE picker failed to start" >&2
+  exit 1
+fi
+
+if ! send_request; then
+  rm -f "$socket_path"
+  if ! ensure_picker || ! send_request; then
+    echo "WE picker failed to accept request" >&2
+    exit 1
+  fi
+fi
+
+while [[ ! -e $done_file ]]; do
+  sleep 0.01
+done
+
+if [[ -s $selection_file ]]; then
+  chosen=$(<"$selection_file")
+  [[ -n "$chosen" ]] && zanken-theme-we-set "$chosen"
+fi

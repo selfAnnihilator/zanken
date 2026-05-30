@@ -9,6 +9,9 @@ if [[ -z $1 ]]; then
   exit 1
 fi
 
+pkill -x linux-wallpaperengine 2>/dev/null || true
+rm -f "$HOME/.config/zanken/current/we-wallpaper"
+
 BACKGROUND="$(realpath "$1")"
 CURRENT_BACKGROUND_LINK="$HOME/.config/zanken/current/background"
 

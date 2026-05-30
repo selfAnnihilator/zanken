@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# zanken:summary=Apply a Wallpaper Engine wallpaper
+# zanken:args=<wallpaper-dir>
+
+WE_DIR="$(realpath "$1")"
+WE_ID="$(basename "$WE_DIR")"
+PROJECT="$WE_DIR/project.json"
+WE_ASSETS="$HOME/.local/share/Steam/steamapps/common/wallpaper_engine/assets"
+WE_MARKER="$HOME/.config/zanken/current/we-wallpaper"
+
+[[ -f "$PROJECT" ]] || { echo "No project.json: $WE_DIR" >&2; exit 1; }
+TYPE=$(jq -r '.type // "scene"' "$PROJECT" | tr '[:upper:]' '[:lower:]')
+
+pkill -x linux-wallpaperengine 2>/dev/null || true
+pkill -x swaybg              2>/dev/null || true
+pkill -x mpvpaper             2>/dev/null || true
+
+case "$TYPE" in
+  video)
+    VIDEO=$(find "$WE_DIR" -maxdepth 1 -type f \
+      \( -iname '*.mp4' -o -iname '*.webm' \) | sort | head -1)
+    [[ -n "$VIDEO" ]] && exec zanken-theme-bg-set "$VIDEO"
+    exit 1
+    ;;
+  scene|*)
+    printf '%s\n' "$WE_DIR" > "$WE_MARKER"
+    rm -f "$HOME/.config/zanken/current/background"
+
+    OUTPUT=$(niri msg outputs 2>/dev/null | awk '/^Output:/{print $2; exit}')
+    OUTPUT="${OUTPUT:-eDP-1}"
+
+    AUDIO_DEV=$(pactl list short sources 2>/dev/null \
+      | awk '/\.monitor/{print $2; exit}')
+
+    ARGS=(--screen-root "$OUTPUT" --fps 30)
+    [[ -d "$WE_ASSETS" ]] && ARGS+=(--assets-dir "$WE_ASSETS")
+    [[ -n "$AUDIO_DEV" ]] && ARGS+=(--audio-device "$AUDIO_DEV") || ARGS+=(--silent)
+
+    setsid linux-wallpaperengine "${ARGS[@]}" "$WE_ID" >/dev/null 2>&1 &
+
+    PREVIEW=$(find "$WE_DIR" -maxdepth 1 \
+      \( -name 'preview.jpg' -o -name 'preview.png' -o -name 'preview.gif' \) \
+      ! -name '*.mp4' | head -1)
+    if [[ -n "$PREVIEW" ]] && command -v zanken-wallpaper-colors &>/dev/null; then
+      ACCENT=$(zanken-wallpaper-colors "$PREVIEW" 2>/dev/null)
+      [[ "$ACCENT" =~ ^#[0-9A-Fa-f]{6}$ ]] && zanken-theme-bg-colors-apply "$ACCENT" &
+    fi
+    ;;
+esac

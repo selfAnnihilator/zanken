@@ -2,6 +2,15 @@
 
 # zanken:summary=Start the correct wallpaper renderer based on current background type
 
+WE_MARKER="$HOME/.config/zanken/current/we-wallpaper"
+if [[ -f "$WE_MARKER" ]]; then
+  WE_DIR=$(< "$WE_MARKER")
+  if [[ -d "$WE_DIR" ]]; then
+    exec zanken-theme-we-set "$WE_DIR"
+  fi
+  rm -f "$WE_MARKER"
+fi
+
 LINK="$HOME/.config/zanken/current/background"
 
 [[ -e "$LINK" ]] || exit 0

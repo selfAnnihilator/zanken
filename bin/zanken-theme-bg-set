@@ -26,6 +26,17 @@ case "${ext,,}" in
     pkill -x mpvpaper 2>/dev/null
     setsid mpvpaper -o "loop=yes no-audio hwdec=auto" '*' "$CURRENT_BACKGROUND_LINK" \
       >/dev/null 2>&1 &
+
+    if command -v zanken-wallpaper-colors &>/dev/null && command -v ffmpeg &>/dev/null; then
+      FRAME=$(mktemp --suffix=.jpg)
+      if ffmpeg -ss 3 -i "$BACKGROUND" -vframes 1 -q:v 2 "$FRAME" -y >/dev/null 2>&1; then
+        ACCENT=$(zanken-wallpaper-colors "$FRAME" 2>/dev/null)
+        if [[ "$ACCENT" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+          zanken-theme-bg-colors-apply "$ACCENT" &
+        fi
+      fi
+      rm -f "$FRAME"
+    fi
     ;;
   *)
     pkill -x mpvpaper 2>/dev/null

@@ -14,6 +14,8 @@ lazy_thumbnails=false
 prepare_only=false
 cache_only=false
 image_dirs=()
+video_dirs=()
+start_tab=0
 
 usage() {
   echo "Usage: zanken-menu-images [--selected <image>] [--colors-file <path>] [--print-name] [--show-labels] [--filterable] [--lazy-thumbnails] [--cache-only] <image-dir>..."
@@ -62,6 +64,16 @@ while [[ $# -gt 0 ]]; do
     --cache-only)
       cache_only=true
       shift
+      ;;
+    --video-dir)
+      if (( $# < 2 )); then usage >&2; exit 1; fi
+      video_dirs+=("$2")
+      shift 2
+      ;;
+    --start-tab)
+      if (( $# < 2 )); then usage >&2; exit 1; fi
+      [[ "$2" == "video" ]] && start_tab=1 || start_tab=0
+      shift 2
       ;;
     --help|-h)
       usage
@@ -130,7 +142,7 @@ for dir in "${image_dirs[@]}"; do
       image_files+=("$image")
       image_signature=$(stat -Lc '%s:%Y' "$image") || continue
       rows_signature+="$image:$image_signature"$'\n'
-    done < <(find -L "$dir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.mov' \) -print0 2>/dev/null | sort -z)
+    done < <(find -L "$dir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' \) -print0 2>/dev/null | sort -z)
   fi
 done
 
@@ -237,6 +249,31 @@ if [[ -f $colors_file ]]; then
   colors_payload=${colors_payload//$'\n'/$'\v'}
 fi
 
+video_rows=""
+if (( ${#video_dirs[@]} > 0 )); then
+  video_files=()
+  for dir in "${video_dirs[@]}"; do
+    if [[ -d $dir ]]; then
+      while IFS= read -r -d '' vfile; do
+        video_files+=("$vfile")
+      done < <(find -L "$dir" -maxdepth 1 -type f \( -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.mov' \) -print0 2>/dev/null | sort -z)
+    fi
+  done
+
+  for vfile in "${video_files[@]}"; do
+    vthumbnail=$(thumbnail_for "$vfile")
+    [[ -n $vthumbnail ]] || continue
+    if [[ -z $video_rows ]]; then
+      video_rows="$vfile"$'\t'"$vthumbnail"
+    else
+      video_rows+=$'\n'"$vfile"$'\t'"$vthumbnail"
+    fi
+  done
+fi
+
+video_rows_payload=${video_rows//$'\t'/$'\f'}
+video_rows_payload=${video_rows_payload//$'\n'/$'\v'}
+
 if [[ $cache_only == true || $prepare_only == true ]]; then
   exit 0
 fi
@@ -264,7 +301,7 @@ ensure_selector() {
 }
 
 send_request() {
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rows_payload" "$selected_list_image" "$selection_file" "$done_file" "$colors_payload" "$show_labels" "$filterable" |
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rows_payload" "$selected_list_image" "$selection_file" "$done_file" "$colors_payload" "$show_labels" "$filterable" "$video_rows_payload" "$start_tab" |
     socat -u - "UNIX-CONNECT:$socket_path"
 }
 

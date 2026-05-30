@@ -35,6 +35,12 @@ ShellRoot {
   property int sliceSpacing: -30
   property int skewOffset: 28
   property int bottomChromeHeight: showLabels ? (filterable ? 104 : 74) : (filterable ? 60 : 30)
+  property var imagesData: []
+  property var videosData: []
+  property int activeTab: 0
+  property bool hasTabs: videosData.length > 0
+  property int tabBarHeight: hasTabs ? 36 : 0
+  property int carouselTopMargin: hasTabs ? tabBarHeight + 16 : 30
 
   function fileUrl(path) {
     return "file://" + path.split("/").map(encodeURIComponent).join("/")
@@ -208,14 +214,13 @@ ShellRoot {
     root.opened = false
   }
 
-  function loadRows(rows) {
+  function parseRows(rows) {
     var newImages = []
     var seen = {}
     var paths = rows.split("\n")
     for (var i = 0; i < paths.length; i++) {
       var row = paths[i]
       if (!row) continue
-
       var columns = row.split("\t")
       var path = columns[0]
       if (!path) continue
@@ -228,15 +233,27 @@ ShellRoot {
         thumbnailPath: columns[1] || path
       })
     }
+    return newImages
+  }
 
-    root.imageArray = newImages
+  function switchTab(tab) {
+    if (tab === activeTab) return
+    activeTab = tab
+    imageArray = tab === 0 ? imagesData : videosData
+    selectedIndex = 0
+    carousel.forceActiveFocus()
+  }
+
+  function loadRows(rows) {
+    root.imagesData = parseRows(rows)
+    root.imageArray = root.activeTab === 0 ? root.imagesData : root.videosData
     root.select(root.selectedImageIndex(), true)
     root.imagesLoaded = true
     root.opened = true
     carousel.forceActiveFocus()
   }
 
-  function openSelector(nextImageDirs, nextImageRows, nextSelectedImage, nextSelectionFile, nextDoneFile, nextColorsFile, nextColorsRaw, nextShowLabels, nextFilterable) {
+  function openSelector(nextImageDirs, nextImageRows, nextSelectedImage, nextSelectionFile, nextDoneFile, nextColorsFile, nextColorsRaw, nextShowLabels, nextFilterable, nextVideoRows, nextInitialTab) {
     if (requestActive && doneFile && doneFile !== nextDoneFile)
       finishDoneFile(doneFile)
 
@@ -254,12 +271,25 @@ ShellRoot {
     colorsFile = nextColorsFile || (Quickshell.env("HOME") + "/.config/omarchy/current/theme/quickshell.json")
     if (nextColorsRaw)
       loadColors(nextColorsRaw)
+
+    activeTab = nextInitialTab || 0
+    imagesData = []
+    videosData = []
     imageArray = []
     selectedIndex = 0
     imagesLoaded = false
     opened = false
+
+    if (nextVideoRows)
+      videosData = parseRows(nextVideoRows)
+
     if (imageRows) {
-      loadRows(imageRows)
+      imagesData = parseRows(imageRows)
+      imageArray = activeTab === 0 ? imagesData : videosData
+      select(selectedImageIndex(), true)
+      imagesLoaded = true
+      opened = true
+      carousel.forceActiveFocus()
     } else {
       loadImagesProc.output = ""
       loadImagesProc.running = true
@@ -319,7 +349,7 @@ ShellRoot {
             return
           }
 
-          root.openSelector("", root.decodeField(fields[0]), fields[1] || "", fields[2] || "", fields[3] || "", "", root.decodeField(fields[4]), fields[5] || "false", fields[6] || "false")
+          root.openSelector("", root.decodeField(fields[0]), fields[1] || "", fields[2] || "", fields[3] || "", "", root.decodeField(fields[4]), fields[5] || "false", fields[6] || "false", root.decodeField(fields[7] || ""), parseInt(fields[8] || "0"))
           clientSocket.connected = false
         }
       }
@@ -378,15 +408,64 @@ ShellRoot {
     Item {
       id: card
       width: Math.min(parent.width - 80, root.expandedWidth + 13 * (root.sliceWidth + root.sliceSpacing) + 40)
-      height: root.expandedHeight + 30 + root.bottomChromeHeight
+      height: root.expandedHeight + root.carouselTopMargin + root.bottomChromeHeight
       anchors.centerIn: parent
 
       MouseArea { anchors.fill: parent; onClicked: {} }
 
       Item {
+        id: tabBar
+        visible: root.hasTabs
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        height: root.tabBarHeight
+        width: tabRow.width
+
+        Row {
+          id: tabRow
+          anchors.centerIn: parent
+          spacing: 32
+
+          Repeater {
+            model: ["Images", "Videos"]
+            delegate: Item {
+              required property string modelData
+              required property int index
+
+              implicitWidth: tabLabel.width + 24
+              implicitHeight: root.tabBarHeight
+
+              Rectangle {
+                anchors.fill: parent
+                radius: 4
+                color: root.activeTab === index ? root.withAlpha(root.accent, 0.16) : "transparent"
+                border.color: root.activeTab === index ? root.accent : "transparent"
+                border.width: 1.5
+              }
+
+              Text {
+                id: tabLabel
+                anchors.centerIn: parent
+                text: modelData
+                color: root.activeTab === index ? root.foreground : root.withAlpha(root.foreground, 0.4)
+                font.pixelSize: 13
+                font.weight: root.activeTab === index ? Font.DemiBold : Font.Normal
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.switchTab(index)
+              }
+            }
+          }
+        }
+      }
+
+      Item {
         id: carousel
         anchors.top: parent.top
-        anchors.topMargin: 30
+        anchors.topMargin: root.carouselTopMargin
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bottomChromeHeight
         anchors.horizontalCenter: parent.horizontalCenter
@@ -416,8 +495,11 @@ ShellRoot {
           } else if (event.key === Qt.Key_Left || (event.key === Qt.Key_Tab && event.modifiers & Qt.ShiftModifier) || event.key === Qt.Key_Backtab) {
             root.selectAdjacent(-1)
             event.accepted = true
-          } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Tab) {
+          } else if (event.key === Qt.Key_Right || (event.key === Qt.Key_Tab && !root.hasTabs)) {
             root.selectAdjacent(1)
+            event.accepted = true
+          } else if (event.key === Qt.Key_Tab && root.hasTabs) {
+            root.switchTab(root.activeTab === 0 ? 1 : 0)
             event.accepted = true
           } else if (root.filterable && event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127 && (event.modifiers === Qt.NoModifier || event.modifiers === Qt.ShiftModifier)) {
             root.updateFilter(root.filterText + event.text)

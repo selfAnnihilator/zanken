@@ -10,6 +10,7 @@ current_background=$(readlink -f "$HOME/.config/zanken/current/background" 2>/de
 
 selected=$(zanken-menu-images \
   --lazy-thumbnails \
+  --video-dir "$HOME/Videos/wallpaper" \
   --selected "$current_background" \
   "$HOME/Pictures/wallpaper")
 

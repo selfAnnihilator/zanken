@@ -3,7 +3,40 @@
 # zanken:summary=Scan WE library and open grid picker
 
 ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
-WE_WORKSHOP="$HOME/.local/share/Steam/steamapps/workshop/content/431960"
+
+find_we_workshop() {
+  local vdf lib
+  for vdf in \
+    "$HOME/.local/share/Steam/steamapps/libraryfolders.vdf" \
+    "$HOME/.steam/root/steamapps/libraryfolders.vdf" \
+    "$HOME/.steam/steam/steamapps/libraryfolders.vdf"
+  do
+    [[ -f "$vdf" ]] || continue
+    while IFS= read -r line; do
+      if [[ "$line" =~ \"path\"[[:space:]]+\"([^\"]+)\" ]]; then
+        lib="${BASH_REMATCH[1]}"
+        [[ -d "$lib/steamapps/workshop/content/431960" ]] && \
+          echo "$lib/steamapps/workshop/content/431960" && return
+      fi
+    done < "$vdf"
+  done
+  # fallback common paths
+  for lib in \
+    "$HOME/.local/share/Steam" \
+    "$HOME/.steam/steam" \
+    "$HOME/.steam/root"
+  do
+    [[ -d "$lib/steamapps/workshop/content/431960" ]] && \
+      echo "$lib/steamapps/workshop/content/431960" && return
+  done
+  echo ""
+}
+
+WE_WORKSHOP=$(find_we_workshop)
+if [[ -z "$WE_WORKSHOP" ]]; then
+  echo "Wallpaper Engine workshop content not found. Install WE via Steam." >&2
+  exit 1
+fi
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zanken/we-picker"
 socket_path="${XDG_RUNTIME_DIR:-/run/user/$UID}/zanken-we-picker.sock"
 picker_qml="$ZANKEN_PATH/default/quickshell/wallpaper-engine-picker.qml"

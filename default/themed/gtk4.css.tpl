@@ -37,21 +37,25 @@
     --headerbar-fg-color: {{ foreground }};
     --accent-color: {{ accent }};
     --accent-bg-color: {{ accent }};
-    /* Kill libadwaita shade overlays that create the focused hue */
     --headerbar-shade-color: transparent;
     --headerbar-darker-shade-color: transparent;
     --shade-color: transparent;
     --scrollbar-outline-color: transparent;
 }
 
+/* Cover all focus states — libadwaita mixes accent into bg on :focus-within */
 window,
-window.backdrop {
+window.backdrop,
+window:focus,
+window:focus-within {
     background-color: rgba({{ background_rgb }}, 0.82) !important;
     color: {{ foreground }};
 }
 
 headerbar,
-headerbar.backdrop {
+headerbar.backdrop,
+headerbar:focus,
+headerbar:focus-within {
     background-color: rgba({{ background_rgb }}, 0.82) !important;
     box-shadow: none;
     color: {{ foreground }};
@@ -59,14 +63,17 @@ headerbar.backdrop {
 
 .sidebar-pane,
 .sidebar-pane.backdrop,
+.sidebar-pane:focus-within,
 .navigation-sidebar,
-.navigation-sidebar.backdrop {
+.navigation-sidebar.backdrop,
+.navigation-sidebar:focus-within {
     background-color: rgba({{ background_rgb }}, 0.82) !important;
     color: {{ foreground }};
 }
 
 .view,
-.view.backdrop {
+.view.backdrop,
+.view:focus-within {
     background-color: rgba({{ background_rgb }}, 0.82) !important;
     color: {{ foreground }};
 }

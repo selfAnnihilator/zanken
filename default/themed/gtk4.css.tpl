@@ -1,16 +1,18 @@
 /* zanken GTK4 theme — generated from colors.toml */
 
-@define-color window_bg_color rgba({{ background_rgb }}, 0.80);
-@define-color view_bg_color rgba({{ background_rgb }}, 0.80);
-@define-color headerbar_bg_color rgba({{ background_rgb }}, 0.88);
-@define-color headerbar_backdrop_color rgba({{ background_rgb }}, 0.70);
-@define-color sidebar_bg_color rgba({{ background_rgb }}, 0.68);
-@define-color sidebar_backdrop_color rgba({{ background_rgb }}, 0.58);
-@define-color secondary_sidebar_bg_color rgba({{ background_rgb }}, 0.75);
+/* @define-color for GTK3-style references */
+@define-color window_bg_color rgba({{ background_rgb }}, 0.82);
+@define-color view_bg_color rgba({{ background_rgb }}, 0.82);
+@define-color headerbar_bg_color rgba({{ background_rgb }}, 0.82);
+@define-color headerbar_backdrop_color rgba({{ background_rgb }}, 0.82);
+@define-color sidebar_bg_color rgba({{ background_rgb }}, 0.82);
+@define-color sidebar_backdrop_color rgba({{ background_rgb }}, 0.82);
+@define-color sidebar_border_color rgba({{ background_rgb }}, 0.82);
+@define-color secondary_sidebar_bg_color rgba({{ background_rgb }}, 0.82);
 @define-color card_bg_color rgba({{ background_rgb }}, 0.55);
 @define-color popover_bg_color rgba({{ background_rgb }}, 0.92);
 @define-color dialog_bg_color rgba({{ background_rgb }}, 0.92);
-@define-color overview_bg_color rgba({{ background_rgb }}, 0.80);
+@define-color overview_bg_color rgba({{ background_rgb }}, 0.82);
 
 @define-color window_fg_color {{ foreground }};
 @define-color view_fg_color {{ foreground }};
@@ -21,3 +23,50 @@
 
 @define-color accent_color {{ accent }};
 @define-color accent_bg_color {{ accent }};
+
+/* CSS custom properties — overrides noctalia :root block for libadwaita focused state */
+:root {
+    --window-bg-color: rgba({{ background_rgb }}, 0.82);
+    --view-bg-color: rgba({{ background_rgb }}, 0.82);
+    --headerbar-bg-color: rgba({{ background_rgb }}, 0.82);
+    --headerbar-backdrop-color: rgba({{ background_rgb }}, 0.82);
+    --sidebar-bg-color: rgba({{ background_rgb }}, 0.82);
+    --sidebar-backdrop-color: rgba({{ background_rgb }}, 0.82);
+    --sidebar-border-color: rgba({{ background_rgb }}, 0.82);
+    --secondary-sidebar-bg-color: rgba({{ background_rgb }}, 0.82);
+    --card-bg-color: rgba({{ background_rgb }}, 0.55);
+    --popover-bg-color: rgba({{ background_rgb }}, 0.92);
+    --dialog-bg-color: rgba({{ background_rgb }}, 0.92);
+    --window-fg-color: {{ foreground }};
+    --view-fg-color: {{ foreground }};
+    --headerbar-fg-color: {{ foreground }};
+    --accent-color: {{ accent }};
+    --accent-bg-color: {{ accent }};
+}
+
+/* Explicit selectors — force focused and backdrop to look identical */
+window,
+window.backdrop {
+    background-color: rgba({{ background_rgb }}, 0.82);
+    color: {{ foreground }};
+}
+
+headerbar,
+headerbar.backdrop {
+    background-color: rgba({{ background_rgb }}, 0.82);
+    color: {{ foreground }};
+}
+
+.sidebar-pane,
+.sidebar-pane.backdrop,
+.navigation-sidebar,
+.navigation-sidebar.backdrop {
+    background-color: rgba({{ background_rgb }}, 0.82);
+    color: {{ foreground }};
+}
+
+.view,
+.view.backdrop {
+    background-color: rgba({{ background_rgb }}, 0.82);
+    color: {{ foreground }};
+}

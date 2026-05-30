@@ -9,6 +9,6 @@ ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
 current=$(readlink -f "$HOME/.config/zanken/current/background" 2>/dev/null)
 
 chosen=$(zanken-menu-images --lazy-thumbnails --show-labels \
-  --selected "$current" "$HOME/Pictures/wallpaper-video")
+  --selected "$current" "$HOME/Videos/wallpaper")
 
 [[ -n "$chosen" ]] && zanken-theme-bg-set "$chosen"

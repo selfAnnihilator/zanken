@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# zanken:summary=Open video wallpaper picker
+# zanken:group=theme
+# zanken:name=videobg-switcher
+# zanken:aliases=zanken video-wallpaper
+
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
+current=$(readlink -f "$HOME/.config/zanken/current/background" 2>/dev/null)
+
+choice=$(printf 'Normal Video Wallpaper\nWallpaper Engine (coming soon)' \
+  | zanken-launch-walker --dmenu -p "Video Wallpaper")
+
+case "$choice" in
+  "Normal Video Wallpaper")
+    chosen=$(zanken-menu-images --lazy-thumbnails --show-labels \
+      --selected "$current" "$HOME/Pictures/wallpaper-video")
+    [[ -n "$chosen" ]] && zanken-theme-bg-set "$chosen"
+    ;;
+  "Wallpaper Engine"*)
+    zanken-notification-send "Coming soon" "Wallpaper Engine support not yet implemented"
+    ;;
+esac

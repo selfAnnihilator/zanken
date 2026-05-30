@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# zanken:summary=Start the correct wallpaper renderer based on current background type
+
+LINK="$HOME/.config/zanken/current/background"
+
+[[ -e "$LINK" ]] || exit 0
+
+REAL=$(readlink -f "$LINK")
+ext="${REAL##*.}"
+
+case "${ext,,}" in
+  mp4|webm|mkv|avi|mov|gif)
+    exec mpvpaper -o "loop=yes no-audio hwdec=auto" '*' "$LINK"
+    ;;
+  *)
+    exec swaybg -i "$LINK" -m fill
+    ;;
+esac

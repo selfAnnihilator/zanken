@@ -17,17 +17,26 @@ if [[ ! -f "$BACKGROUND" ]]; then
   exit 1
 fi
 
-# Create symlink to the new background
 ln -nsf "$BACKGROUND" "$CURRENT_BACKGROUND_LINK"
 
-# Kill existing swaybg and start new one
-pkill -x swaybg
-setsid swaybg -i "$CURRENT_BACKGROUND_LINK" -m fill >/dev/null 2>&1 &
+ext="${BACKGROUND##*.}"
+case "${ext,,}" in
+  mp4|webm|mkv|avi|mov|gif)
+    pkill -x swaybg 2>/dev/null
+    pkill -x mpvpaper 2>/dev/null
+    setsid mpvpaper -o "loop=yes no-audio hwdec=auto" '*' "$CURRENT_BACKGROUND_LINK" \
+      >/dev/null 2>&1 &
+    ;;
+  *)
+    pkill -x mpvpaper 2>/dev/null
+    pkill -x swaybg 2>/dev/null
+    setsid swaybg -i "$CURRENT_BACKGROUND_LINK" -m fill >/dev/null 2>&1 &
 
-# Extract accent color from wallpaper and apply to niri, GTK, quickshell
-if command -v zanken-wallpaper-colors &>/dev/null; then
-  ACCENT=$(zanken-wallpaper-colors "$BACKGROUND" 2>/dev/null)
-  if [[ "$ACCENT" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
-    zanken-theme-bg-colors-apply "$ACCENT" &
-  fi
-fi
+    if command -v zanken-wallpaper-colors &>/dev/null; then
+      ACCENT=$(zanken-wallpaper-colors "$BACKGROUND" 2>/dev/null)
+      if [[ "$ACCENT" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+        zanken-theme-bg-colors-apply "$ACCENT" &
+      fi
+    fi
+    ;;
+esac

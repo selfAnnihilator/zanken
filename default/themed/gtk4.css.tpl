@@ -1,6 +1,5 @@
 /* zanken GTK4 theme — generated from colors.toml */
 
-/* @define-color for GTK3-style references */
 @define-color window_bg_color rgba({{ background_rgb }}, 0.82);
 @define-color view_bg_color rgba({{ background_rgb }}, 0.82);
 @define-color headerbar_bg_color rgba({{ background_rgb }}, 0.82);
@@ -13,18 +12,15 @@
 @define-color popover_bg_color rgba({{ background_rgb }}, 0.92);
 @define-color dialog_bg_color rgba({{ background_rgb }}, 0.92);
 @define-color overview_bg_color rgba({{ background_rgb }}, 0.82);
-
 @define-color window_fg_color {{ foreground }};
 @define-color view_fg_color {{ foreground }};
 @define-color headerbar_fg_color {{ foreground }};
 @define-color sidebar_fg_color {{ foreground }};
 @define-color card_fg_color {{ foreground }};
 @define-color popover_fg_color {{ foreground }};
-
 @define-color accent_color {{ accent }};
 @define-color accent_bg_color {{ accent }};
 
-/* CSS custom properties — overrides noctalia :root block for libadwaita focused state */
 :root {
     --window-bg-color: rgba({{ background_rgb }}, 0.82);
     --view-bg-color: rgba({{ background_rgb }}, 0.82);
@@ -32,7 +28,6 @@
     --headerbar-backdrop-color: rgba({{ background_rgb }}, 0.82);
     --sidebar-bg-color: rgba({{ background_rgb }}, 0.82);
     --sidebar-backdrop-color: rgba({{ background_rgb }}, 0.82);
-    --sidebar-border-color: rgba({{ background_rgb }}, 0.82);
     --secondary-sidebar-bg-color: rgba({{ background_rgb }}, 0.82);
     --card-bg-color: rgba({{ background_rgb }}, 0.55);
     --popover-bg-color: rgba({{ background_rgb }}, 0.92);
@@ -42,18 +37,23 @@
     --headerbar-fg-color: {{ foreground }};
     --accent-color: {{ accent }};
     --accent-bg-color: {{ accent }};
+    /* Kill libadwaita shade overlays that create the focused hue */
+    --headerbar-shade-color: transparent;
+    --headerbar-darker-shade-color: transparent;
+    --shade-color: transparent;
+    --scrollbar-outline-color: transparent;
 }
 
-/* Explicit selectors — force focused and backdrop to look identical */
 window,
 window.backdrop {
-    background-color: rgba({{ background_rgb }}, 0.82);
+    background-color: rgba({{ background_rgb }}, 0.82) !important;
     color: {{ foreground }};
 }
 
 headerbar,
 headerbar.backdrop {
-    background-color: rgba({{ background_rgb }}, 0.82);
+    background-color: rgba({{ background_rgb }}, 0.82) !important;
+    box-shadow: none;
     color: {{ foreground }};
 }
 
@@ -61,12 +61,12 @@ headerbar.backdrop {
 .sidebar-pane.backdrop,
 .navigation-sidebar,
 .navigation-sidebar.backdrop {
-    background-color: rgba({{ background_rgb }}, 0.82);
+    background-color: rgba({{ background_rgb }}, 0.82) !important;
     color: {{ foreground }};
 }
 
 .view,
 .view.backdrop {
-    background-color: rgba({{ background_rgb }}, 0.82);
+    background-color: rgba({{ background_rgb }}, 0.82) !important;
     color: {{ foreground }};
 }

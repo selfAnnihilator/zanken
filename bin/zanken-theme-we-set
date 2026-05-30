@@ -30,10 +30,10 @@ case "$TYPE" in
     OUTPUT=$(niri msg outputs 2>/dev/null | awk '/^Output:/{print $2; exit}')
     OUTPUT="${OUTPUT:-eDP-1}"
 
-    ARGS=(--screen-root "$OUTPUT" --fps 30)
+    ARGS=(--screen-root "$OUTPUT" --bg "$WE_ID" --scaling fill --clamp border --fps 30)
     [[ -d "$WE_ASSETS" ]] && ARGS+=(--assets-dir "$WE_ASSETS")
 
-    setsid linux-wallpaperengine "${ARGS[@]}" "$WE_ID" >/dev/null 2>&1 &
+    setsid linux-wallpaperengine "${ARGS[@]}" >/dev/null 2>&1 &
 
     PREVIEW=$(find "$WE_DIR" -maxdepth 1 \
       \( -name 'preview.jpg' -o -name 'preview.png' -o -name 'preview.gif' \) \

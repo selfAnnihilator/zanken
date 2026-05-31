@@ -97,3 +97,30 @@ for target, names in mapping.items():
             os.remove(name)
         os.symlink(target, name)
 PYEOF
+
+# Set Hornet as active cursor theme in GTK3, GTK4, and ~/.icons/default
+mkdir -p "$HOME/.config/gtk-3.0"
+if [ -f "$HOME/.config/gtk-3.0/settings.ini" ]; then
+    sed -i 's/^gtk-cursor-theme-name=.*/gtk-cursor-theme-name=Hornet/' "$HOME/.config/gtk-3.0/settings.ini"
+else
+    printf '[Settings]\ngtk-cursor-theme-name=Hornet\ngtk-cursor-theme-size=24\n' > "$HOME/.config/gtk-3.0/settings.ini"
+fi
+
+mkdir -p "$HOME/.config/gtk-4.0"
+if [ -f "$HOME/.config/gtk-4.0/settings.ini" ]; then
+    sed -i 's/^gtk-cursor-theme-name=.*/gtk-cursor-theme-name=Hornet/' "$HOME/.config/gtk-4.0/settings.ini"
+    grep -q 'gtk-cursor-theme-size' "$HOME/.config/gtk-4.0/settings.ini" || sed -i '/gtk-cursor-theme-name/a gtk-cursor-theme-size=24' "$HOME/.config/gtk-4.0/settings.ini"
+else
+    printf '[Settings]\ngtk-cursor-theme-name=Hornet\ngtk-cursor-theme-size=24\n' > "$HOME/.config/gtk-4.0/settings.ini"
+fi
+
+mkdir -p "$HOME/.icons/default"
+cat > "$HOME/.icons/default/index.theme" <<'EOF'
+[Icon Theme]
+Name=Default
+Comment=Default cursor theme
+Inherits=Hornet
+EOF
+
+gsettings set org.gnome.desktop.interface cursor-theme Hornet 2>/dev/null || true
+gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true

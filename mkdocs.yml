@@ -1,9 +1,9 @@
 site_name: Zanken
-site_description: A Niri-based Linux workspace derived from omarchy
+site_description: A Niri-based Linux workspace derived from Omarchy
 site_url: https://selfAnnihilator.github.io/zanken
 repo_url: https://github.com/selfAnnihilator/zanken
 repo_name: selfAnnihilator/zanken
-edit_uri: edit/main/docs/
+edit_uri: edit/dev/docs/
 
 theme:
   name: material

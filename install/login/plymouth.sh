@@ -1,4 +1,10 @@
-if [[ $(plymouth-set-default-theme) != "omarchy" ]]; then
-  sudo cp -r "$HOME/.local/share/omarchy/default/plymouth" /usr/share/plymouth/themes/omarchy/
-  sudo plymouth-set-default-theme omarchy
-fi
+THEME_SRC="${OMARCHY_PATH:-$HOME/zanken}/install/config/plymouth-zanken"
+THEME_DEST="/usr/share/plymouth/themes/zanken"
+
+sudo mkdir -p "$THEME_DEST"
+sudo cp "$THEME_SRC"/*.png "$THEME_DEST/"
+sudo cp "$THEME_SRC"/zanken.script "$THEME_DEST/"
+sudo cp "$THEME_SRC"/zanken.plymouth "$THEME_DEST/"
+
+sudo plymouth-set-default-theme zanken
+sudo mkinitcpio -P

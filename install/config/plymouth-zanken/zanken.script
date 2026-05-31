@@ -23,8 +23,10 @@ frames[15] = Image("logo_15.png");
 frames[16] = Image("logo_16.png");
 
 global.FRAME_COUNT  = 17;   # 0 = clean, 1-16 = shine
-global.SHINE_PAUSE  = 180;  # ~3.6 s hold between sweeps (at 50 fps)
+global.SHINE_PAUSE  = 180;  # ~3.6 s hold between double-sweeps (at 50 fps)
+global.SHINE_GAP    = 30;   # ~0.6 s gap between the two consecutive sweeps
 global.FRAME_SPEED  = 2;    # advance shine frame every N ticks (~25 fps sweep)
+global.sweep_count  = 0;    # how many sweeps done in current burst
 
 logo.sprite = Sprite(frames[0]);
 logo.x = Window.GetWidth()  / 2 - frames[0].GetWidth()  / 2;
@@ -34,6 +36,7 @@ logo.sprite.SetPosition(logo.x, logo.y, 1);
 global.anim_tick    = 0;
 global.shine_frame  = 0;   # 0 = idle/clean, 1-16 = sweep in progress
 global.wait_ticks   = 0;
+global.sweep_count  = 0;
 
 # ── Progress bar ─────────────────────────────────────────────────
 global.fake_progress_limit    = 0.7;
@@ -124,9 +127,12 @@ fun refresh_callback() {
 
   # Shine animation
   if (global.shine_frame == 0) {
-    # Idle: waiting to start next sweep
+    # Idle: waiting between bursts or between consecutive sweeps
     global.wait_ticks++;
-    if (global.wait_ticks >= global.SHINE_PAUSE) {
+    local_gap = global.SHINE_GAP;
+    if (global.sweep_count >= 2) local_gap = global.SHINE_PAUSE;
+    if (global.wait_ticks >= local_gap) {
+      if (global.sweep_count >= 2) global.sweep_count = 0;
       global.shine_frame = 1;
       global.wait_ticks  = 0;
       global.anim_tick   = 0;
@@ -139,6 +145,7 @@ fun refresh_callback() {
       global.shine_frame++;
       if (global.shine_frame >= global.FRAME_COUNT) {
         global.shine_frame = 0;
+        global.sweep_count++;
         logo.sprite.SetImage(frames[0]);
       } else {
         logo.sprite.SetImage(frames[global.shine_frame]);

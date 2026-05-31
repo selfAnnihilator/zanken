@@ -50,6 +50,10 @@ zanken/
 └── migrations/   # Version migration scripts
 ```
 
+## Credits
+
+Quickshell bar and popups derived from [bjarneo/quickshell](https://github.com/bjarneo/quickshell).
+
 ## Differences from Omarchy
 
 | Feature | Omarchy | Zanken |

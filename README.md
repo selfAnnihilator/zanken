@@ -12,6 +12,8 @@ A Niri-based Linux workspace derived from [Omarchy](https://github.com/basecamp/
 | Wallpaper selection | Now Playing popup |
 | ![Music player](docs/assets/screenshots/screenshot-2026-05-31_12-09-01.png) | ![Lock screen](docs/assets/screenshots/screenshot-2026-05-31_12-13-53.png) |
 | rmpc music player | Lock screen (qylock) |
+| ![Dashboard](docs/assets/screenshots/dashboard.png) | |
+| Quickshell dashboard | |
 
 Replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping Omarchy's 300+ script layer intact.
 

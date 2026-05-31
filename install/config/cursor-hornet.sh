@@ -8,11 +8,11 @@ TMP_DIR="$(mktemp -d)"
 
 mkdir -p "$CURSORS_DIR"
 
-# Extract and convert .ani files
+# Extract and convert .ani files (zip contains a subdirectory, use find)
 unzip -q "$ZIP_SRC" -d "$TMP_DIR"
-for f in "$TMP_DIR"/*.ani; do
+while IFS= read -r -d '' f; do
   win2xcur "$f" -o "$CURSORS_DIR/"
-done
+done < <(find "$TMP_DIR" -name "*.ani" -print0)
 rm -rf "$TMP_DIR"
 
 # Write theme metadata

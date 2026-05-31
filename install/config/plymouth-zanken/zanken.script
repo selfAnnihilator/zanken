@@ -3,42 +3,37 @@
 Window.SetBackgroundTopColor(0, 0, 0);
 Window.SetBackgroundBottomColor(0, 0, 0);
 
-# ── Logo ──────────────────────────────────────────────────────────
-logo.image = Image("logo.png");
-logo.sprite = Sprite(logo.image);
-logo.x = Window.GetWidth()  / 2 - logo.image.GetWidth()  / 2;
-logo.y = Window.GetHeight() / 2 - logo.image.GetHeight() / 2;
+# ── Pre-load logo frames (logo.png = clean, logo_01..16 = shine sweep) ──
+frames[0]  = Image("logo.png");
+frames[1]  = Image("logo_01.png");
+frames[2]  = Image("logo_02.png");
+frames[3]  = Image("logo_03.png");
+frames[4]  = Image("logo_04.png");
+frames[5]  = Image("logo_05.png");
+frames[6]  = Image("logo_06.png");
+frames[7]  = Image("logo_07.png");
+frames[8]  = Image("logo_08.png");
+frames[9]  = Image("logo_09.png");
+frames[10] = Image("logo_10.png");
+frames[11] = Image("logo_11.png");
+frames[12] = Image("logo_12.png");
+frames[13] = Image("logo_13.png");
+frames[14] = Image("logo_14.png");
+frames[15] = Image("logo_15.png");
+frames[16] = Image("logo_16.png");
+
+global.FRAME_COUNT  = 17;   # 0 = clean, 1-16 = shine
+global.SHINE_PAUSE  = 180;  # ~3.6 s hold between sweeps (at 50 fps)
+global.FRAME_SPEED  = 2;    # advance shine frame every N ticks (~25 fps sweep)
+
+logo.sprite = Sprite(frames[0]);
+logo.x = Window.GetWidth()  / 2 - frames[0].GetWidth()  / 2;
+logo.y = Window.GetHeight() / 2 - frames[0].GetHeight() / 2;
 logo.sprite.SetPosition(logo.x, logo.y, 1);
 
-# ── Shine strip ───────────────────────────────────────────────────
-shine.image = Image("shine.png");
-shine.sprite = Sprite(shine.image);
-shine.sprite.SetPosition(-shine.image.GetWidth(), logo.y, 2);
-shine.sprite.SetOpacity(0);
-
-# Shine animation state
-global.shine_active   = 0;
-global.shine_x        = 0;
-global.shine_wait     = 0;   # frames to wait before next sweep
-global.SHINE_PAUSE    = 200; # ~4 s at 50 fps between sweeps
-global.SHINE_SPEED    = 24;  # pixels per frame
-
-# Text occupies x=260..540 within the 800px logo image
-global.TEXT_X_START   = 260;
-global.TEXT_X_END     = 540;
-
-fun start_shine() {
-  global.shine_active = 1;
-  global.shine_x      = logo.x + global.TEXT_X_START - shine.image.GetWidth();
-  shine.sprite.SetPosition(global.shine_x, logo.y, 2);
-  shine.sprite.SetOpacity(1);
-}
-
-fun shine_done() {
-  shine.sprite.SetOpacity(0);
-  global.shine_active = 0;
-  global.shine_wait   = 0;
-}
+global.anim_tick    = 0;
+global.shine_frame  = 0;   # 0 = idle/clean, 1-16 = sweep in progress
+global.wait_ticks   = 0;
 
 # ── Progress bar ─────────────────────────────────────────────────
 global.fake_progress_limit    = 0.7;
@@ -57,7 +52,7 @@ progress_bar.original_image = Image("progress_bar.png");
 progress_bar.sprite  = Sprite();
 progress_bar.image   = progress_bar.original_image.Scale(1, progress_bar.original_image.GetHeight());
 
-entry_y = logo.y + logo.image.GetHeight() + 40;
+entry_y = logo.y + frames[0].GetHeight() + 40;
 
 progress_box.x = Window.GetWidth() / 2 - progress_box.image.GetWidth() / 2;
 progress_box.y = entry_y + 10;
@@ -115,25 +110,40 @@ fun hide_password_dialog() {
 # ── Refresh callback ─────────────────────────────────────────────
 fun refresh_callback() {
   global.animation_frame++;
+  global.anim_tick++;
 
   # Fake progress
   if (global.fake_progress_active == 1) {
-    elapsed   = global.animation_frame / 50.0;
-    ratio     = elapsed / global.fake_progress_duration;
+    elapsed = global.animation_frame / 50.0;
+    ratio   = elapsed / global.fake_progress_duration;
     if (ratio > 1.0) ratio = 1.0;
-    eased     = 1 - ((1 - ratio) * (1 - ratio));
+    eased   = 1 - ((1 - ratio) * (1 - ratio));
     global.fake_progress = eased * global.fake_progress_limit;
     update_progress_bar(global.fake_progress);
   }
 
-  # Shine sweep
-  if (global.shine_active == 1) {
-    global.shine_x = global.shine_x + global.SHINE_SPEED;
-    shine.sprite.SetPosition(global.shine_x, logo.y, 2);
-    if (global.shine_x > logo.x + global.TEXT_X_END) shine_done();
+  # Shine animation
+  if (global.shine_frame == 0) {
+    # Idle: waiting to start next sweep
+    global.wait_ticks++;
+    if (global.wait_ticks >= global.SHINE_PAUSE) {
+      global.shine_frame = 1;
+      global.wait_ticks  = 0;
+      global.anim_tick   = 0;
+      logo.sprite.SetImage(frames[1]);
+    }
   } else {
-    global.shine_wait++;
-    if (global.shine_wait >= global.SHINE_PAUSE) start_shine();
+    # Sweep in progress
+    if (global.anim_tick >= global.FRAME_SPEED) {
+      global.anim_tick = 0;
+      global.shine_frame++;
+      if (global.shine_frame >= global.FRAME_COUNT) {
+        global.shine_frame = 0;
+        logo.sprite.SetImage(frames[0]);
+      } else {
+        logo.sprite.SetImage(frames[global.shine_frame]);
+      }
+    }
   }
 }
 
@@ -146,7 +156,6 @@ fun display_normal_callback() {
   if ((mode == "boot" || mode == "resume") && global.password_shown == 1) {
     show_progress_bar();
   }
-  start_shine();
 }
 
 fun display_password_callback(prompt, bullets) {

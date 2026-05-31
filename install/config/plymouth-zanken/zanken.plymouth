@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Zanken
+Description=Zanken boot splash with animated shine
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/zanken
+ScriptFile=/usr/share/plymouth/themes/zanken/zanken.script

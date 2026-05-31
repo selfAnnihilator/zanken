@@ -1,13 +1,13 @@
 # Zanken
 
-A Niri-based Linux workspace derived from [zanken](https://github.com/selfAnnihilator/zanken).
+A Niri-based Linux workspace derived from [Omarchy](https://github.com/basecamp/omarchy).
 
-Replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping zanken's 300+ script layer intact.
+Replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping Omarchy's 300+ script layer intact.
 
 ## Install
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/install.sh) --clean
 ```
 
 ## What's included
@@ -16,7 +16,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/mai
 - **[Quickshell](https://quickshell.outfoxxed.me/)** — QML bar with audio, wifi, bluetooth, music, weather popups
 - **308 scripts** — `zanken-*` commands for everything from themes to hardware detection
 - **21 built-in themes** — tokyo-night, catppuccin, kanagawa, gruvbox, nord, and more
-- **Dynamic wallpaper colors** — palette extracted from wallpaper via matugen
+- **Dynamic wallpaper colors** — palette extracted from wallpaper via zanken-wallpaper-colors
 
 ## Documentation
 
@@ -50,9 +50,9 @@ zanken/
 └── migrations/   # Version migration scripts
 ```
 
-## Differences from zanken
+## Differences from Omarchy
 
-| Feature | zanken | zanken |
+| Feature | Omarchy | Zanken |
 |---------|---------|--------|
 | Compositor | Hyprland | Niri |
 | Bar | Waybar | Quickshell |

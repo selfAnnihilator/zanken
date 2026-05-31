@@ -4,7 +4,7 @@
 # zanken:args=<packages...>
 
 if zanken-pkg-missing "$@"; then
-  yay -S --noconfirm --needed "$@" || exit 1
+  yay -S --noconfirm --needed --cleanafter "$@" || exit 1
 fi
 
 for pkg in "$@"; do

@@ -3,6 +3,13 @@
 # Exit immediately if a command exits with a non-zero status
 set -eEo pipefail
 
+# Parse flags
+ZANKEN_CLEAN=0
+for arg in "$@"; do
+  [[ "$arg" == "--clean" ]] && ZANKEN_CLEAN=1
+done
+export ZANKEN_CLEAN
+
 # Define Omarchy locations
 export OMARCHY_PATH="$HOME/.local/share/omarchy"
 export OMARCHY_INSTALL="$OMARCHY_PATH/install"

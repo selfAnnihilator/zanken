@@ -124,3 +124,7 @@ EOF
 
 gsettings set org.gnome.desktop.interface cursor-theme Hornet 2>/dev/null || true
 gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
+
+# libXcursor searches ~/.icons, not ~/.local/share/icons — symlink so it finds the theme
+mkdir -p "$HOME/.icons"
+ln -snf "$HOME/.local/share/icons/Hornet" "$HOME/.icons/Hornet"

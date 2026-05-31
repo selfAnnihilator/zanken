@@ -20,7 +20,7 @@ Replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling comp
 ## Install
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/install.sh) --clean
+bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/main/install.sh) --clean
 ```
 
 ## What's included

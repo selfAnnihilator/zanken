@@ -19,7 +19,7 @@ Zanken is not a distro. It is a dotfiles + script layer that runs on top of Arch
 ## Quickstart
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/install.sh) --clean
+bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/main/install.sh) --clean
 ```
 
 See [Installation](installation.md) for full details.

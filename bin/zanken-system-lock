@@ -7,6 +7,8 @@
 
 LOCK_SCRIPT="$HOME/.local/share/qylock/quickshell-lockscreen/lock.sh"
 
+qs -c desktop ipc call idle disable 2>/dev/null || true
+
 if ! pgrep -f "lock_shell.qml" >/dev/null; then
     bash "$LOCK_SCRIPT" &
 fi

@@ -8,7 +8,7 @@
 - **Bar**: [Quickshell](https://quickshell.outfoxxed.me/) — QML-based desktop shell with popups for audio, wifi, bluetooth, music, weather
 - **Notifications**: [Elephant](https://github.com/nickel-org/elephant)
 - **Terminal**: [Foot](https://codeberg.org/dnkl/foot)
-- **Launcher**: [Walker](https://github.com/abenz1267/walker)
+- **Launcher**: OmniMenu — built-in Quickshell search (`Mod+Space`)
 - **Scripts**: 308 `zanken-*` shell scripts covering everything from theming to hardware detection
 - **Themes**: 21 built-in color themes, dynamic wallpaper-based palette generation via zanken-wallpaper-colors
 

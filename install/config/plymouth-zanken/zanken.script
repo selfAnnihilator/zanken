@@ -23,9 +23,13 @@ global.shine_wait     = 0;   # frames to wait before next sweep
 global.SHINE_PAUSE    = 200; # ~4 s at 50 fps between sweeps
 global.SHINE_SPEED    = 24;  # pixels per frame
 
+# Text occupies x=260..540 within the 800px logo image
+global.TEXT_X_START   = 260;
+global.TEXT_X_END     = 540;
+
 fun start_shine() {
   global.shine_active = 1;
-  global.shine_x      = logo.x - shine.image.GetWidth();
+  global.shine_x      = logo.x + global.TEXT_X_START - shine.image.GetWidth();
   shine.sprite.SetPosition(global.shine_x, logo.y, 2);
   shine.sprite.SetOpacity(1);
 }
@@ -126,7 +130,7 @@ fun refresh_callback() {
   if (global.shine_active == 1) {
     global.shine_x = global.shine_x + global.SHINE_SPEED;
     shine.sprite.SetPosition(global.shine_x, logo.y, 2);
-    if (global.shine_x > logo.x + logo.image.GetWidth()) shine_done();
+    if (global.shine_x > logo.x + global.TEXT_X_END) shine_done();
   } else {
     global.shine_wait++;
     if (global.shine_wait >= global.SHINE_PAUSE) start_shine();

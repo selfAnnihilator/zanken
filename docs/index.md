@@ -1,6 +1,6 @@
 # Zanken
 
-**Zanken** is a Niri-based Linux workspace derived from [zanken](https://github.com/selfAnnihilator/zanken) by DHH. It replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping zanken's 300+ script layer intact.
+**Zanken** is a Niri-based Linux workspace derived from [Omarchy](https://github.com/basecamp/omarchy) by DHH. It replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping Omarchy's 300+ script layer intact.
 
 ## What it is
 
@@ -8,9 +8,9 @@
 - **Bar**: [Quickshell](https://quickshell.outfoxxed.me/) — QML-based desktop shell with popups for audio, wifi, bluetooth, music, weather
 - **Notifications**: [Elephant](https://github.com/nickel-org/elephant)
 - **Terminal**: [Foot](https://codeberg.org/dnkl/foot)
-- **Launcher**: [Fuzzel](https://codeberg.org/dnkl/fuzzel)
+- **Launcher**: [Walker](https://github.com/abenz1267/walker)
 - **Scripts**: 308 `zanken-*` shell scripts covering everything from theming to hardware detection
-- **Themes**: 21 built-in color themes, dynamic wallpaper-based palette generation via matugen
+- **Themes**: 21 built-in color themes, dynamic wallpaper-based palette generation via zanken-wallpaper-colors
 
 ## What it is not
 
@@ -19,7 +19,7 @@ Zanken is not a distro. It is a dotfiles + script layer that runs on top of Arch
 ## Quickstart
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/install.sh) --clean
 ```
 
 See [Installation](installation.md) for full details.
@@ -30,15 +30,15 @@ See [Installation](installation.md) for full details.
 zanken/
 ├── bin/          # 308 zanken-* scripts
 ├── config/       # Base configs (sourced by dotfiles)
-├── default/      # Default app configs (foot, alacritty, waybar, etc.)
+├── default/      # Default app configs (foot, quickshell, etc.)
 ├── themes/       # 21 built-in color themes
 ├── install/      # Install phase scripts
 └── migrations/   # Version migration scripts
 ```
 
-## Differences from zanken
+## Differences from Omarchy
 
-| Feature | zanken | zanken |
+| Feature | Omarchy | Zanken |
 |---------|---------|--------|
 | Compositor | Hyprland | Niri |
 | Bar | Waybar | Quickshell |

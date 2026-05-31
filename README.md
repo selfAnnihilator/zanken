@@ -54,6 +54,8 @@ zanken/
 
 Quickshell bar and popups derived from [bjarneo/quickshell](https://github.com/bjarneo/quickshell).
 
+Lock screen and SDDM theme derived from [Darkkal44/qylock](https://github.com/Darkkal44/qylock).
+
 ## Differences from Omarchy
 
 | Feature | Omarchy | Zanken |

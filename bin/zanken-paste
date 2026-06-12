@@ -1,0 +1,12 @@
+#!/bin/bash
+# Smart paste: Shift+Insert for terminals, Ctrl+V for everything else
+APP_ID=$(niri msg --json focused-window 2>/dev/null | jq -r '.app_id // ""')
+
+case "$APP_ID" in
+  foot*|kitty|com.mitchellh.ghostty|org.wezfurlong.wezterm|Alacritty|alacritty)
+    wtype -M shift -k Insert -m shift
+    ;;
+  *)
+    wtype -M ctrl -k v -m ctrl
+    ;;
+esac

@@ -11,6 +11,12 @@ fi
 package=$1
 command=${2:-$1}
 
+# codex ships fast-moving releases; exempt it from the 5-day release-age gate.
+release_age=7200
+if [[ $package == "@openai/codex" || $command == "codex" ]]; then
+  release_age=0
+fi
+
 mkdir -p "$HOME/.local/bin"
 
 cat > "$HOME/.local/bin/$command" <<EOF
@@ -29,7 +35,7 @@ if zanken-cmd-missing pnpm; then
   hash -r
 fi
 
-export PNPM_CONFIG_MINIMUM_RELEASE_AGE=7200
+export PNPM_CONFIG_MINIMUM_RELEASE_AGE=$release_age
 
 ensure_bin_runtime() {
   local bin_path=\$1

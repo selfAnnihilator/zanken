@@ -3,23 +3,45 @@
 # zanken:summary=Designed to be run by systemd timer every 30 seconds and alerts if battery is low
 # zanken:hidden=true
 
-BATTERY_THRESHOLD=10
-NOTIFICATION_FLAG="/run/user/$UID/zanken_battery_notified"
+BATTERY_WARNING_THRESHOLD=25
+BATTERY_CRITICAL_THRESHOLD=10
+WARNING_FLAG="/run/user/$UID/zanken_battery_warning_notified"
+CRITICAL_FLAG="/run/user/$UID/zanken_battery_critical_notified"
 BATTERY_LEVEL=$(zanken-battery-remaining)
 BATTERY_STATE=$(upower -i $(upower -e | grep 'BAT') | grep -E "state" | awk '{print $2}')
 
-send_notification() {
-  notify-send -u critical "󱐋 Time to recharge!" "Battery is down to ${1}%" -i battery-caution -t 30000
+send_warning() {
+  notify-send -u critical "󱠈 Battery Low" "Battery at ${1}% — consider charging soon" -i battery-caution -t 30000
+  zanken-hook battery-warning "$1"
+}
+
+send_critical() {
+  notify-send -u critical "󱐋 Battery Critical!" "Battery at ${1}% — charge now!" -i battery-caution -t 0
   zanken-hook battery-low "$1"
 }
 
 if [[ -n $BATTERY_LEVEL && $BATTERY_LEVEL =~ ^[0-9]+$ ]]; then
-  if [[ $BATTERY_STATE == "discharging" ]] && (( BATTERY_LEVEL <= BATTERY_THRESHOLD )); then
-    if [[ ! -f $NOTIFICATION_FLAG ]]; then
-      send_notification $BATTERY_LEVEL
-      touch $NOTIFICATION_FLAG
+  if [[ $BATTERY_STATE == "discharging" ]]; then
+    # Critical alert (≤10%)
+    if (( BATTERY_LEVEL <= BATTERY_CRITICAL_THRESHOLD )); then
+      if [[ ! -f $CRITICAL_FLAG ]]; then
+        send_critical $BATTERY_LEVEL
+        touch $CRITICAL_FLAG
+      fi
+    else
+      rm -f $CRITICAL_FLAG
+    fi
+
+    # Warning alert (10% < level ≤ 25%)
+    if (( BATTERY_LEVEL > BATTERY_CRITICAL_THRESHOLD && BATTERY_LEVEL <= BATTERY_WARNING_THRESHOLD )); then
+      if [[ ! -f $WARNING_FLAG ]]; then
+        send_warning $BATTERY_LEVEL
+        touch $WARNING_FLAG
+      fi
+    elif (( BATTERY_LEVEL > BATTERY_WARNING_THRESHOLD )); then
+      rm -f $WARNING_FLAG
     fi
   else
-    rm -f $NOTIFICATION_FLAG
+    rm -f $WARNING_FLAG $CRITICAL_FLAG
   fi
 fi

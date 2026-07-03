@@ -6,10 +6,31 @@
 # zanken:examples=omarchy system lock
 
 LOCK_SCRIPT="$HOME/.local/share/qylock/quickshell-lockscreen/lock.sh"
+LOCK_QML="$HOME/.local/share/qylock/quickshell-lockscreen/lock_shell.qml"
+
+current_session_id() {
+    loginctl list-sessions --no-legend 2>/dev/null | awk -v user="$USER" '$3 == user { print $1; exit }'
+}
+
+current_session_locked() {
+    local session_id
+    session_id="$(current_session_id)"
+    [[ -n "$session_id" ]] && [[ "$(loginctl show-session "$session_id" -p LockedHint --value 2>/dev/null)" == "yes" ]]
+}
 
 qs -c desktop ipc call idle disable 2>/dev/null || true
 
-if ! pgrep -f "lock_shell.qml" >/dev/null; then
+if pgrep -u "$USER" -f "$LOCK_QML" >/dev/null; then
+    if current_session_locked; then
+        exit 0
+    fi
+
+    pkill -u "$USER" -f "$LOCK_QML" 2>/dev/null || true
+    pkill -u "$USER" -f "$LOCK_SCRIPT" 2>/dev/null || true
+    sleep 0.2
+fi
+
+if ! pgrep -u "$USER" -f "$LOCK_QML" >/dev/null; then
     bash "$LOCK_SCRIPT" &
 fi
 
@@ -21,7 +42,7 @@ fi
 if [[ ${OMARCHY_LOCK_ONLY:-false} != "true" ]]; then
     (
         sleep 3
-        pgrep -f "lock_shell.qml" >/dev/null || exit 0
+        pgrep -u "$USER" -f "$LOCK_QML" >/dev/null || exit 0
         zanken-brightness-keyboard off
         zanken-brightness-display off
     ) &

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# zanken:summary=Launch an app or focus an existing Niri window matching a pattern
+# zanken:args=<window-pattern> <launch-command...>
+
+set -euo pipefail
+
+if (($# < 2)); then
+  echo "Usage: zanken-niri-launch-or-focus <window-pattern> <launch-command...>"
+  exit 1
+fi
+
+WINDOW_PATTERN="$1"
+shift
+
+WINDOW_ID=$(
+  niri msg --json windows 2>/dev/null |
+    jq -r --arg p "$WINDOW_PATTERN" '
+      .[]
+      | select(((.app_id // "") | test($p; "i")) or ((.title // "") | test($p; "i")))
+      | .id
+    ' |
+    head -n1
+)
+
+if [[ -n "$WINDOW_ID" ]]; then
+  exec niri msg action focus-window --id "$WINDOW_ID"
+fi
+
+exec setsid "$@"

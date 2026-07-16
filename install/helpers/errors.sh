@@ -122,7 +122,7 @@ catch_errors() {
 
     case "$choice" in
     "Retry installation")
-      bash ~/.local/share/omarchy/install.sh
+      bash "$ZANKEN_PATH/install.sh"
       break
       ;;
     "View full log")

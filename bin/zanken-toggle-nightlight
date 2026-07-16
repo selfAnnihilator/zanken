@@ -1,25 +1,17 @@
 #!/bin/bash
 
-# zanken:summary=Toggle nightlight screen temperature
+# zanken:summary=Toggle nightlight screen temperature on Niri
 # zanken:examples=omarchy toggle nightlight
 
 ON_TEMP=4000
 OFF_TEMP=6000
 
-# Ensure hyprsunset is running
-if ! pgrep -x hyprsunset; then
-  setsid uwsm-app -- hyprsunset &
-  sleep 1 # Give it time to register
-fi
-
-# Query the current temperature
-CURRENT_TEMP=$(hyprctl hyprsunset temperature 2>/dev/null | grep -oE '[0-9]+')
-
-
-if [[ $CURRENT_TEMP == $OFF_TEMP ]]; then
-  hyprctl hyprsunset temperature $ON_TEMP
-  notify-send -u low "  Nightlight screen temperature"
+if pgrep -x wlsunset >/dev/null; then
+  pkill -x wlsunset
+  zanken-notification-send -g "" "Daylight screen temperature"
 else
-  hyprctl hyprsunset temperature $OFF_TEMP
-  notify-send -u low "   Daylight screen temperature"
+  # Equal high and low temperatures make wlsunset apply a constant tint. The
+  # explicit manual schedule avoids depending on GeoClue or a saved location.
+  setsid wlsunset -t "$ON_TEMP" -T "$ON_TEMP" -S 00:00 -s 00:01 >/dev/null 2>&1 &
+  zanken-notification-send -g "" "Nightlight screen temperature"
 fi

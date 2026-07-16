@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# zanken:summary=Lock the session from the screensaver action
+# zanken:args=[force]
+
+case "${1:-force}" in
+force)
+  exec zanken-system-lock
+  ;;
+*)
+  echo "Usage: zanken-launch-screensaver [force]" >&2
+  exit 1
+  ;;
+esac

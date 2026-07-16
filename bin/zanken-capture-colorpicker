@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# zanken:summary=Pick a screen color and copy its hex value
+
+set -euo pipefail
+
+geometry=$(slurp -p)
+color=$(grim -g "$geometry" -t ppm - | magick ppm:- -depth 8 -format '%[hex:p{0,0}]' info:)
+
+if [[ ! $color =~ ^[0-9A-Fa-f]{6}$ ]]; then
+  echo "Could not read a color from the selected pixel" >&2
+  exit 1
+fi
+
+printf '#%s' "$color" | wl-copy
+zanken-notification-send -g "󰃉" "Color copied" "#$color"

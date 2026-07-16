@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# zanken:summary=Enable, disable, or toggle the Niri touchpad
+# zanken:args=[on|off|toggle]
+
+set -euo pipefail
+
+mode="${1:-toggle}"
+config="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
+marker="// zanken-touchpad-disabled"
+
+if [[ $mode != "on" && $mode != "off" && $mode != "toggle" ]]; then
+  echo "Usage: zanken-toggle-touchpad [on|off|toggle]" >&2
+  exit 1
+fi
+
+if [[ ! -f $config ]]; then
+  echo "Niri config not found: $config" >&2
+  exit 1
+fi
+
+disabled=false
+grep -Fq "$marker" "$config" && disabled=true
+
+if [[ $mode == "toggle" ]]; then
+  [[ $disabled == true ]] && mode="on" || mode="off"
+fi
+
+if [[ $mode == "on" && $disabled == false ]] || [[ $mode == "off" && $disabled == true ]]; then
+  exit 0
+fi
+
+temporary_config=$(mktemp "${config}.XXXXXX")
+trap 'rm -f "$temporary_config"' EXIT
+
+if [[ $mode == "off" ]]; then
+  sed "/^[[:space:]]*touchpad[[:space:]]*{[[:space:]]*$/a\\    off $marker" "$config" >"$temporary_config"
+else
+  sed "/^[[:space:]]*off[[:space:]]*\/\/ zanken-touchpad-disabled$/d" "$config" >"$temporary_config"
+fi
+
+niri validate --config "$temporary_config"
+mv "$temporary_config" "$config"
+trap - EXIT
+
+if [[ $mode == "off" ]]; then
+  zanken-notification-send -g "󰍭" "Touchpad disabled"
+else
+  zanken-notification-send -g "󰍭" "Touchpad enabled"
+fi

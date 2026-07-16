@@ -1,11 +1,13 @@
 # Changes require a restart to take effect.
 
-# Ensure Omarchy bins are in the path
-export OMARCHY_PATH=$HOME/.local/share/omarchy
-export PATH=$OMARCHY_PATH/bin:$PATH:$HOME/.local/bin
+# Keep the inherited OMARCHY_PATH variable as a compatibility alias while
+# third-party and user scripts finish moving to Zanken names.
+export ZANKEN_PATH=$HOME/zanken
+export OMARCHY_PATH=$ZANKEN_PATH
+export PATH=$ZANKEN_PATH/bin:$PATH:$HOME/.local/bin
 
 # Set default terminal and editor
 source ~/.config/uwsm/default
 
 # Activate mise if present on the system
-omarchy-cmd-present mise && eval "$(mise activate bash --shims)"
+zanken-cmd-present mise && eval "$(mise activate bash --shims)"

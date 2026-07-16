@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# zanken:summary=Close all Niri windows gracefully
+# zanken:hidden=true
+
+set -euo pipefail
+
+mapfile -t window_ids < <(niri msg --json windows | jq -r '.[].id')
+
+for window_id in "${window_ids[@]}"; do
+  niri msg action close-window --id "$window_id"
+done

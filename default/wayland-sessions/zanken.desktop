@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zanken (Niri)
+Comment=Zanken Niri Wayland session
+Exec=niri-session
+TryExec=niri
+Type=Application

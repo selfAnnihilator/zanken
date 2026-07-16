@@ -150,7 +150,7 @@ show_capture_menu() {
   *Screenshot*) zanken-capture-screenshot ;;
   *Screenrecord*) show_screenrecord_menu ;;
   *Text*) zanken-capture-text-extraction ;;
-  *Color*) pkill hyprpicker || hyprpicker -a ;;
+  *Color*) zanken-capture-colorpicker ;;
   *) back_to show_trigger_menu ;;
   esac
 }

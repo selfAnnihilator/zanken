@@ -10,11 +10,14 @@ for arg in "$@"; do
 done
 export ZANKEN_CLEAN
 
-# Define Omarchy locations
-export OMARCHY_PATH="$HOME/.local/share/omarchy"
-export OMARCHY_INSTALL="$OMARCHY_PATH/install"
+# The installer is executed from the Zanken checkout. Keep the inherited
+# OMARCHY_* names as compatibility aliases until the remaining installer
+# stages are renamed, but never point them at a separate, nonexistent clone.
+export ZANKEN_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+export OMARCHY_PATH="$ZANKEN_PATH"
+export OMARCHY_INSTALL="$ZANKEN_PATH/install"
 export OMARCHY_INSTALL_LOG_FILE="/var/log/omarchy-install.log"
-export PATH="$OMARCHY_PATH/bin:$PATH"
+export PATH="$ZANKEN_PATH/bin:$PATH"
 
 # Install
 source "$OMARCHY_INSTALL/helpers/all.sh"

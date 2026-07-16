@@ -4,4 +4,4 @@
 # zanken:examples=omarchy logout | omarchy system logout
 # zanken:aliases=zanken logout
 
-nohup bash -c "sleep 2 && uwsm stop" >/dev/null 2>&1 &
+exec niri msg action quit --skip-confirmation

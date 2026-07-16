@@ -51,12 +51,6 @@ gvfs-mtp
 gvfs-nfs
 gvfs-smb
 hypridle
-hyprland
-hyprland-guiutils
-hyprland-preview-share-picker
-hyprlock
-hyprpicker
-hyprsunset
 imagemagick
 impala
 imv
@@ -77,7 +71,6 @@ libreoffice-fresh
 llvm
 localsend
 luarocks
-mako
 man-db
 mariadb-libs
 mise
@@ -90,6 +83,7 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 nss-mdns
+niri
 nvim
 obs-studio
 obsidian
@@ -138,7 +132,6 @@ ufw-docker
 unzip
 usage
 uwsm
-waybar
 whois
 wireless-regdb
 wiremix
@@ -146,8 +139,9 @@ win2xcur
 wireplumber
 wl-clipboard
 woff2-font-awesome
+wlsunset
+xdg-desktop-portal-gnome
 xdg-desktop-portal-gtk
-xdg-desktop-portal-hyprland
 xdg-terminal-exec
 xmlstarlet
 xournalpp

@@ -18,6 +18,7 @@ fi
 bg_hex="${1#\#}"
 text_hex="${2#\#}"
 logo_path="$3"
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 
 if ! [[ $bg_hex =~ ^[0-9a-fA-F]{6}$ ]]; then
   echo "Invalid background color: $1 (expected #RRGGBB)" >&2
@@ -42,7 +43,7 @@ theme_dir="/usr/share/plymouth/themes/zanken"
 staging_dir=$(mktemp -d)
 trap 'rm -rf "$staging_dir"' EXIT
 
-find ~/.local/share/zanken/default/plymouth -maxdepth 1 -type f -exec cp -t "$staging_dir/" {} +
+find "$ZANKEN_PATH/default/plymouth" -maxdepth 1 -type f -exec cp -t "$staging_dir/" {} +
 cp "$logo_path" "$staging_dir/logo.png"
 
 sed -i \
@@ -65,7 +66,7 @@ fi
 
 # Sync the SDDM login screen with the same colors and logo.
 sddm_dir="/usr/share/sddm/themes/zanken"
-sddm_template="$HOME/.local/share/zanken/default/sddm/zanken/Main.qml"
+sddm_template="$ZANKEN_PATH/default/sddm/zanken/Main.qml"
 
 sed \
   -e "s/#1a1b26/#$bg_hex/g" \

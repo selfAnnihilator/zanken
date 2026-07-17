@@ -1,4 +1,4 @@
-include=~/.local/share/omarchy/default/mako/core.ini
+include=~/zanken/default/mako/core.ini
 include=~/.local/state/omarchy/toggles/mako.ini
 
 text-color={{ foreground }}

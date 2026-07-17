@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# zanken:summary=Update qylock from its upstream repository
+# zanken:group=update
+# zanken:name=qylock
+# zanken:requires-sudo=true
+
+set -euo pipefail
+
+QYLOCK_DIR="${QYLOCK_DIR:-$HOME/.local/share/qylock}"
+QYLOCK_THEME_FILE="$HOME/.config/qylock/theme"
+
+if [[ ! -d $QYLOCK_DIR/.git ]]; then
+  echo "qylock is not installed at $QYLOCK_DIR" >&2
+  exit 1
+fi
+
+git -C "$QYLOCK_DIR" pull --ff-only
+ln -sfn "$QYLOCK_DIR/themes" "$QYLOCK_DIR/quickshell-lockscreen/themes_link"
+
+if [[ -f $QYLOCK_THEME_FILE ]]; then
+  qylock_theme=$(<"$QYLOCK_THEME_FILE")
+  qylock_theme_dir="$QYLOCK_DIR/themes/$qylock_theme"
+
+  if [[ -f $qylock_theme_dir/Main.qml ]]; then
+    sudo mkdir -p /usr/share/sddm/themes
+    sudo cp -r "$qylock_theme_dir" /usr/share/sddm/themes/
+  else
+    echo "Current qylock theme is unavailable after update: $qylock_theme" >&2
+  fi
+fi
+
+echo "qylock is up to date"

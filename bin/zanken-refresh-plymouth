@@ -3,7 +3,9 @@
 # zanken:summary=Overwrite the user config for the Plymouth drive decryption and boot sequence with the Omarchy default and rebuild it.
 # zanken:requires-sudo=true
 
-sudo cp -r ~/.local/share/zanken/default/plymouth/* /usr/share/plymouth/themes/zanken/
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+
+sudo cp -r "$ZANKEN_PATH/default/plymouth/"* /usr/share/plymouth/themes/zanken/
 sudo plymouth-set-default-theme zanken
 
 if command -v limine-mkinitcpio &>/dev/null; then

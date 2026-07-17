@@ -2,17 +2,19 @@
 
 # zanken:summary=Ensure all default .desktop, web apps, TUIs, and npm wrappers are installed.
 
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+
 mkdir -p ~/.local/share/icons/hicolor/48x48/apps/
-cp ~/.local/share/zanken/applications/icons/*.png ~/.local/share/icons/hicolor/48x48/apps/
+cp "$ZANKEN_PATH/applications/icons/"*.png ~/.local/share/icons/hicolor/48x48/apps/
 gtk-update-icon-cache ~/.local/share/icons/hicolor &>/dev/null
 
 # Copy .desktop declarations
 mkdir -p ~/.local/share/applications
-cp ~/.local/share/zanken/applications/*.desktop ~/.local/share/applications/
-cp ~/.local/share/zanken/applications/hidden/*.desktop ~/.local/share/applications/
+cp "$ZANKEN_PATH/applications/"*.desktop ~/.local/share/applications/
+cp "$ZANKEN_PATH/applications/hidden/"*.desktop ~/.local/share/applications/
 
 if zanken-cmd-present alacritty; then
-  cp ~/.local/share/zanken/default/alacritty/alacritty.desktop ~/.local/share/applications/
+  cp "$ZANKEN_PATH/default/alacritty/alacritty.desktop" ~/.local/share/applications/
 fi
 
 # Refresh the webapps, TUIs, and npm wrappers

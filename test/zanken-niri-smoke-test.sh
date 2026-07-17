@@ -60,6 +60,15 @@ assert_file_contains "installer checks out Quickshell config from dotfiles" "$wo
 rg -q '^run_logged \$OMARCHY_INSTALL/config/dotfiles\.sh$' "$ROOT/install/config/all.sh" || fail "dotfiles stage is wired into installer"
 pass "dotfiles stage is wired into installer"
 
+ln -s "$ROOT" "$work_tree/zanken"
+HOME="$work_tree" ZANKEN_PATH="$work_tree/zanken" "$ROOT/bin/zanken-refresh-config" uwsm/env
+cmp -s "$ROOT/config/uwsm/env" "$work_tree/.config/uwsm/env" || fail "refresh config uses the Zanken checkout"
+pass "refresh config uses the Zanken checkout"
+
+HOME="$work_tree" ZANKEN_PATH="$work_tree/zanken" \
+  bash --noprofile --rcfile "$ROOT/default/bashrc" -ic '[[ $OMARCHY_PATH == "$HOME/zanken" ]]' >/dev/null 2>&1 || fail "interactive Bash uses the Zanken checkout"
+pass "interactive Bash uses the Zanken checkout"
+
 [[ -f $NIRI_CONFIG ]] || fail "Niri config exists: $NIRI_CONFIG"
 command -v niri >/dev/null || fail "niri is installed"
 niri validate --config "$NIRI_CONFIG" >/dev/null
@@ -108,5 +117,27 @@ rg -q '^STATE_FILE=' "$ROOT/bin/zanken-capture-screenrecording" || fail "recordi
 rg -q 'write_recording_state "\$pid"' "$ROOT/bin/zanken-capture-screenrecording" || fail "recording publishes active state"
 rg -q 'clear_recording_state' "$ROOT/bin/zanken-capture-screenrecording" || fail "recording clears active state"
 pass "recording state is exposed to Quickshell"
+
+rg -Fq 'pid=$(recording_pid)' "$ROOT/bin/zanken-capture-screenrecording" || fail "recording stop reads its own process state"
+if rg -q '(p|k)grep.*gpu-screen-recorder' "$ROOT/bin/zanken-capture-screenrecording"; then
+  fail "recording stop does not target unrelated recorders"
+fi
+pass "recording stop is scoped to the Zanken recorder"
+
+rg -q 'pacman -Syu --noconfirm' "$ROOT/bin/zanken-update-system-pkgs" || fail "updates use a single package database refresh"
+if rg -q 'pacman -Syyu' "$ROOT/bin/zanken-update-system-pkgs"; then
+  fail "updates do not force a second package database refresh"
+fi
+pass "updates avoid redundant package database refreshes"
+
+rg -q '^zanken-update-qylock || true$' "$ROOT/bin/zanken-update-perform" || fail "full updates include the qylock updater"
+rg -Fq 'git -C "$QYLOCK_DIR" pull --ff-only' "$ROOT/bin/zanken-update-qylock" || fail "qylock updater pulls from its upstream checkout"
+pass "full updates include the upstream qylock updater"
+
+rg -Fq 'battery_info=$(upower -i' "$ROOT/bin/zanken-battery-monitor" || fail "battery monitor reads battery details once"
+if rg -q 'zanken-battery-remaining' "$ROOT/bin/zanken-battery-monitor"; then
+  fail "battery monitor does not repeat the battery query"
+fi
+pass "battery monitor avoids duplicate power queries"
 
 printf 'all Zanken/Niri smoke tests passed\n'

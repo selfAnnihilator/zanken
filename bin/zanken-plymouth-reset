@@ -4,8 +4,9 @@
 # zanken:requires-sudo=true
 
 theme_dir="/usr/share/plymouth/themes/zanken"
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 
-sudo find ~/.local/share/zanken/default/plymouth -maxdepth 1 -type f -exec cp -t "$theme_dir/" {} +
+sudo find "$ZANKEN_PATH/default/plymouth" -maxdepth 1 -type f -exec cp -t "$theme_dir/" {} +
 sudo plymouth-set-default-theme zanken
 
 if zanken-cmd-present limine-mkinitcpio; then

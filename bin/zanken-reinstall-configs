@@ -4,6 +4,7 @@
 # zanken:requires-sudo=true
 
 set -e
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 
 # Overwrite all user configs with the Omarchy defaults.
 
@@ -13,8 +14,8 @@ if (( EUID == 0 )); then
 fi
 
 echo "Resetting all Omarchy configs"
-cp -R ~/.local/share/zanken/config/* ~/.config/
-cp ~/.local/share/zanken/default/bashrc ~/.bashrc
+cp -R "$ZANKEN_PATH/config/"* ~/.config/
+cp "$ZANKEN_PATH/default/bashrc" ~/.bashrc
 echo '[[ -f ~/.bashrc ]] && . ~/.bashrc' | tee ~/.bash_profile >/dev/null
 
 $(bash $ZANKEN_PATH/install/config/theme.sh)

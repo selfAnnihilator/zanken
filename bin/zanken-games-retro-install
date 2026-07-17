@@ -55,7 +55,8 @@ icon_dir="$desktop_dir/icons"
 icon_path="$icon_dir/Retro Gaming.png"
 
 mkdir -p "$desktop_dir" "$icon_dir"
-[[ -f $icon_path ]] || cp "$HOME/.local/share/zanken/applications/icons/Retro Gaming.png" "$icon_path"
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+[[ -f $icon_path ]] || cp "$ZANKEN_PATH/applications/icons/Retro Gaming.png" "$icon_path"
 
 cat >"$desktop_file" <<EOF
 [Desktop Entry]

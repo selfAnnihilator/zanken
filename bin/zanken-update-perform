@@ -11,6 +11,7 @@ zanken-update-available-reset
 zanken-update-system-pkgs
 zanken-migrate
 zanken-update-aur-pkgs
+zanken-update-qylock || true
 zanken-update-orphan-pkgs
 zanken-hook post-update
 

@@ -260,6 +260,7 @@
 | `zanken-update-keyring` | Ensure the Omarchy and Arch keyring packages are installed and populated |
 | `zanken-update-orphan-pkgs` | Remove orphaned system packages after updates |
 | `zanken-update-perform` | Run the full Omarchy update pipeline |
+| `zanken-update-qylock` | Update qylock from its upstream repository |
 | `zanken-update-restart` | Prompt for required reboot or service restarts after updates |
 | `zanken-update-system-pkgs` | Update system packages with pacman |
 | `zanken-update-time` | Restart system time synchronization |

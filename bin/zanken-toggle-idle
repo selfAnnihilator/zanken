@@ -4,9 +4,14 @@
 
 if pgrep -x hypridle >/dev/null; then
   pkill -x hypridle
-  notify-send -u low "󱫖    Stop locking computer when idle"
+  zanken-notification-send -g "󱫖" -u low "Stop locking computer when idle"
 else
   uwsm-app -- hypridle >/dev/null 2>&1 &
-  notify-send -u low "󱫖    Now locking computer when idle"
+  sleep 0.2
+  if pgrep -x hypridle >/dev/null; then
+    zanken-notification-send -g "󱫖" -u low "Now locking computer when idle"
+  else
+    zanken-notification-send -g "󱫖" -u critical "Idle locking failed to start" -t 5000
+    exit 1
+  fi
 fi
-

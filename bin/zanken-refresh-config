@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# zanken:summary=Copies the named config from ~/.local/share/zanken/config/X/Y/Z -> ~/.config/X/Y/Z.
+# zanken:summary=Copies the named config from ~/zanken/config/X/Y/Z -> ~/.config/X/Y/Z.
 # zanken:args=<config-path>
 
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 config_file=$1
 
 if [[ -z $config_file ]]; then
@@ -10,16 +11,16 @@ if [[ -z $config_file ]]; then
   Usage: $0 [config_file]
 
   Must provide a file path from the .config directory to be refreshed.
-  To copy ~/.local/share/zanken/config/hypr/hyprlock.conf to ~/.config/hypr/hyprlock.conf
+  To copy ~/zanken/config/niri/config.kdl to ~/.config/niri/config.kdl
 
-    $0 hypr/hyprlock.conf
+    $0 niri/config.kdl
 USAGE
   exit 1
 fi
 
 # Backup the destination file (with timestamp) to avoid clobbering (Ex: hyprlock.conf.bak.1753817951)
 user_config_file="${HOME}/.config/$config_file"
-default_config_file="${HOME}/.local/share/zanken/config/$config_file"
+default_config_file="$ZANKEN_PATH/config/$config_file"
 backup_config_file="$user_config_file.bak.$(date +%s)"
 
 mkdir -p "$(dirname "$user_config_file")"

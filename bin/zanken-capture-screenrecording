@@ -27,8 +27,8 @@ WEBCAM="false"
 WEBCAM_DEVICE=""
 RESOLUTION=""
 STOP_RECORDING="false"
-RECORDING_FILE="/tmp/zanken-screenrecord-filename"
 STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/zanken-screenrecording.state"
+RECORDING_FILE="${XDG_RUNTIME_DIR:-/tmp}/zanken-screenrecord-filename"
 LOG_FILE=$([[ ${OMARCHY_SCREENRECORD_DEBUG:-false} == "true" ]] && echo "/tmp/zanken-screenrecord.log" || echo "/dev/null")
 
 for arg in "$@"; do
@@ -53,6 +53,15 @@ write_recording_state() {
 
 clear_recording_state() {
   rm -f "$STATE_FILE"
+}
+
+recording_pid() {
+  local pid
+
+  [[ -r $STATE_FILE ]] || return 1
+  read -r pid _ <"$STATE_FILE"
+  [[ $pid =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null || return 1
+  printf '%s\n' "$pid"
 }
 
 start_webcam_overlay() {
@@ -117,6 +126,8 @@ start_screenrecording() {
 
   [[ -n $audio_devices ]] && audio_args+=(-a "$audio_devices" -ac aac)
 
+  recording_pid >/dev/null || clear_recording_state
+
   echo "===== $(date '+%F %T') args: $* target: $target =====" >>"$LOG_FILE"
   gpu-screen-recorder "${capture_args[@]}" -k auto -f 60 -fm cfr -fallback-cpu-encoding yes -o "$filename" "${audio_args[@]}" 2>>"$LOG_FILE" &
   local pid=$!
@@ -138,11 +149,18 @@ start_screenrecording() {
 }
 
 stop_screenrecording() {
-  pkill -SIGINT -f "^gpu-screen-recorder" # SIGINT required to save video properly
+  local pid
+  pid=$(recording_pid) || {
+    clear_recording_state
+    zanken-notification-send -g "󰑋" -u critical "No Zanken recording is active" -t 3000
+    return 1
+  }
+
+  kill -INT "$pid" # SIGINT required to save video properly
 
   # Wait a maximum of 5 seconds to finish before hard killing
   local count=0
-  while pgrep -f "^gpu-screen-recorder" >/dev/null && ((count < 50)); do
+  while kill -0 "$pid" 2>/dev/null && ((count < 50)); do
     sleep 0.1
     count=$((count + 1))
   done
@@ -150,8 +168,8 @@ stop_screenrecording() {
   toggle_screenrecording_indicator
   cleanup_webcam
 
-  if pgrep -f "^gpu-screen-recorder" >/dev/null; then
-    pkill -9 -f "^gpu-screen-recorder"
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -KILL "$pid" 2>/dev/null || true
     zanken-notification-send -g "󰑋" -u critical "Screen recording error" "Recording process had to be force-killed. Video may be corrupted." -t 5000
   else
     zanken-notification-send -g "󰑋" "Screen recording stopped" "Saving video…" -t 3000
@@ -176,7 +194,7 @@ toggle_screenrecording_indicator() {
 }
 
 screenrecording_active() {
-  pgrep -f "^gpu-screen-recorder" >/dev/null
+  recording_pid >/dev/null
 }
 
 finalize_recording() {

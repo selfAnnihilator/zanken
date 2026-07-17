@@ -4,6 +4,7 @@
 
 clear
 echo -e "\033[32m"
-cat <~/.local/share/zanken/logo.txt
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+cat "$ZANKEN_PATH/logo.txt"
 echo -e "\033[0m"
 echo

@@ -4,4 +4,4 @@
 
 git -C "$HOME/zanken" pull --rebase 2>&1 || echo "zanken pull failed — check network/ssh"
 echo ""
-echo "To update system packages: sudo pacman -Syyu"
+echo "To update system packages: sudo pacman -Syu"

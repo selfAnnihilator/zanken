@@ -2,8 +2,9 @@
 
 # zanken:summary=Creates a new Omarchy migration named after the unix timestamp of the last commit.
 
-cd ~/.local/share/zanken
-migration_file="$HOME/.local/share/zanken/migrations/$(git log -1 --format=%cd --date=unix).sh"
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+cd "$ZANKEN_PATH"
+migration_file="$ZANKEN_PATH/migrations/$(git log -1 --format=%cd --date=unix).sh"
 touch $migration_file
 
 if [[ $1 != "--no-edit" ]]; then

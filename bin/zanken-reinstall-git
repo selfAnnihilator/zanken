@@ -3,9 +3,10 @@
 # zanken:summary=Reinstall the stable Omarchy source directory from git
 
 set -e
+ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 
 # Reinstall the Omarchy configuration directory from the git source.
 
 git clone --depth=1 --branch master "https://github.com/selfAnnihilator/zanken.git" ~/zanken-new >/dev/null
-mv $ZANKEN_PATH ~/.local/share/zanken-old
-mv ~/zanken-new $ZANKEN_PATH
+mv "$ZANKEN_PATH" "$HOME/zanken-old"
+mv "$HOME/zanken-new" "$ZANKEN_PATH"

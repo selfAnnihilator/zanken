@@ -24,7 +24,7 @@ while (($#)); do
 done
 
 if [[ ! -f $config_file ]]; then
-  default_config="${ZANKEN_PATH:-$HOME/.local/share/zanken}/config/tmux/tmux.conf"
+  default_config="${ZANKEN_PATH:-$HOME/zanken}/config/tmux/tmux.conf"
 
   if [[ -f $default_config ]]; then
     config_file="$default_config"

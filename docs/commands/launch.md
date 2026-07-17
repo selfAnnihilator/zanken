@@ -10,8 +10,6 @@ Application launcher helpers.
 | `zanken-launch-browser` | Launch the default browser as determined by xdg-settings. |
 | `zanken-launch-editor` | Launch the default editor as determined by $EDITOR (set via ~/.config/uwsm/default) (or nvim if missing). |
 | `zanken-launch-floating-terminal-with-presentation` | Launch a floating terminal with the Zanken presentation wrapper |
-| `zanken-launch-nautilus` | Launch Files |
-| `zanken-launch-nautilus-cwd` | Launch Files in the active terminal's current directory |
 | `zanken-launch-or-focus` | Launch an app or focus an existing window matching a pattern |
 | `zanken-launch-or-focus-tui` | Launch a TUI or focus an existing terminal window for it |
 | `zanken-launch-or-focus-webapp` | Launch or focus on a given web app identified by the window-pattern. |

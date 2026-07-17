@@ -25,6 +25,18 @@ declare -A ROUTE_TO_KEY
 declare -A ROUTE_IS_ALIAS
 declare -A BINARY_TO_KEY
 declare -A GROUP_DESCRIPTIONS
+declare -A DIRECT_ALIAS_BINARY
+
+# Keep common aliases on the fast path. Routes derived directly from a filename
+# do not need an entry here; commands --check verifies this index against the
+# alias metadata so it cannot silently drift.
+DIRECT_ALIAS_BINARY[screenrecord]="zanken-capture-screenrecording"
+DIRECT_ALIAS_BINARY[screenshot]="zanken-capture-screenshot"
+DIRECT_ALIAS_BINARY[logout]="zanken-system-logout"
+DIRECT_ALIAS_BINARY[reboot]="zanken-system-reboot"
+DIRECT_ALIAS_BINARY[shutdown]="zanken-system-shutdown"
+DIRECT_ALIAS_BINARY[background]="zanken-theme-bg-switcher"
+DIRECT_ALIAS_BINARY[video-wallpaper]="zanken-theme-videobg-switcher"
 
 GROUP_DESCRIPTIONS[ac]="AC power detection"
 GROUP_DESCRIPTIONS[battery]="Battery status helpers"
@@ -44,11 +56,9 @@ GROUP_DESCRIPTIONS[games]="Game launchers and helpers"
 GROUP_DESCRIPTIONS[hibernation]="Hibernation setup and removal"
 GROUP_DESCRIPTIONS[hook]="User hook runner"
 GROUP_DESCRIPTIONS[hw]="Hardware detection and controls"
-GROUP_DESCRIPTIONS[hyprland]="Hyprland window, monitor, and toggle controls"
 GROUP_DESCRIPTIONS[niri]="Niri compositor integrations"
 GROUP_DESCRIPTIONS[install]="Optional software installers"
 GROUP_DESCRIPTIONS[launch]="Application launchers"
-GROUP_DESCRIPTIONS[mako]="Mako notification controls"
 GROUP_DESCRIPTIONS[menu]="Zanken menu commands"
 GROUP_DESCRIPTIONS[migrate]="Migration runner"
 GROUP_DESCRIPTIONS[notification]="Notification helpers"
@@ -79,7 +89,6 @@ GROUP_DESCRIPTIONS[voxtype]="Voxtype dictation"
 GROUP_DESCRIPTIONS[weather]="Weather status"
 GROUP_DESCRIPTIONS[webapp]="Web app launchers"
 GROUP_DESCRIPTIONS[wifi]="Wi-Fi helpers"
-GROUP_DESCRIPTIONS[windows]="Windows VM management"
 
 join_words() {
   local separator="$1"
@@ -372,6 +381,21 @@ resolve_direct_route() {
     fi
   done
 
+  for (( prefix_count = argc; prefix_count >= 1; prefix_count-- )); do
+    route="$(join_words " " "${args[@]:0:prefix_count}")"
+    binary="${DIRECT_ALIAS_BINARY[$route]}"
+
+    [[ -n $binary ]] || continue
+
+    candidate="$ZANKEN_BIN_DIR/$binary"
+    if [[ -f $candidate && -x $candidate ]]; then
+      DIRECT_RESOLVED_BINARY="$binary"
+      DIRECT_RESOLVED_COUNT="$prefix_count"
+      DIRECT_RESOLVED_ROUTE="zanken $route"
+      return 0
+    fi
+  done
+
   return 1
 }
 
@@ -657,6 +681,10 @@ show_commands_check() {
   local collision=""
   local key=""
   local error=""
+  local alias_route=""
+  local alias_name=""
+  local direct_binary=""
+  local indexed_binary=""
 
   for collision in "${ROUTE_COLLISIONS[@]}"; do
     echo "Route collision: $collision" >&2
@@ -679,6 +707,31 @@ show_commands_check() {
 
     if [[ ! -x $ZANKEN_BIN_DIR/${COMMAND_BINARY[$key]} ]]; then
       echo "Missing binary: ${COMMAND_BINARY[$key]}" >&2
+      failures=$((failures + 1))
+    fi
+  done
+
+  for alias_route in "${!ROUTE_IS_ALIAS[@]}"; do
+    alias_name="${alias_route#zanken }"
+    direct_binary="zanken-${alias_name// /-}"
+    indexed_binary="${DIRECT_ALIAS_BINARY[$alias_name]}"
+
+    if [[ -x $ZANKEN_BIN_DIR/$direct_binary ]]; then
+      continue
+    fi
+
+    if [[ $indexed_binary != "${COMMAND_BINARY[${ROUTE_TO_KEY[$alias_route]}]}" ]]; then
+      echo "Alias is missing from the fast-path index: $alias_route" >&2
+      failures=$((failures + 1))
+    fi
+  done
+
+  for alias_name in "${!DIRECT_ALIAS_BINARY[@]}"; do
+    alias_route="zanken $alias_name"
+    indexed_binary="${DIRECT_ALIAS_BINARY[$alias_name]}"
+
+    if [[ ${COMMAND_BINARY[${ROUTE_TO_KEY[$alias_route]}]} != "$indexed_binary" ]]; then
+      echo "Stale fast-path alias index entry: $alias_route" >&2
       failures=$((failures + 1))
     fi
   done

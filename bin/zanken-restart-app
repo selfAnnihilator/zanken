@@ -1,4 +1,8 @@
 #!/bin/bash
+# zanken:summary=Restart an application
+# zanken:group=restart
+# zanken:args=<command> [args...]
+
 # niri override: restart app without uwsm-app
 pkill -x "$1" 2>/dev/null || true
 sleep 0.3

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Launch the Omarchy Menu or takes a parameter to jump straight to a submenu.
+# zanken:summary=Launch the Zanken menu or jump straight to a submenu
 
 # Set to true when going directly to a submenu, so we can exit directly
 BACK_TO_EXIT=false
@@ -56,11 +56,6 @@ open_in_editor() {
   zanken-launch-editor "$1"
 }
 
-hypr_config_file() {
-  local name="$1"
-  printf '%s/.config/hypr/%s.lua' "$HOME" "$name"
-}
-
 install() {
   present_terminal "echo 'Installing $1...'; zanken-pkg-add $2"
 }
@@ -86,11 +81,11 @@ aur_install_and_launch() {
 }
 
 show_learn_menu() {
-  case $(menu "Learn" "  Keybindings\n  Tmux keybindings\n  Omarchy\n  Hyprland\n󰣇  Arch\n  Neovim\n󱆃  Bash") in
+  case $(menu "Learn" "  Keybindings\n  Tmux keybindings\n  Zanken\n󱤇  Niri\n󰣇  Arch\n  Neovim\n󱆃  Bash") in
   *Tmux*) zanken-menu-tmux-keybindings ;;
   *Keybindings*) zanken-menu-keybindings ;;
-  *Omarchy*) zanken-launch-webapp "https://learn.omacom.io/2/the-zanken-manual" ;;
-  *Hyprland*) zanken-launch-webapp "https://wiki.hypr.land/" ;;
+  *Zanken*) zanken-launch-webapp "https://learn.omacom.io/2/the-zanken-manual" ;;
+  *Niri*) zanken-launch-webapp "https://github.com/YaLTeR/niri/wiki" ;;
   *Arch*) zanken-launch-webapp "https://wiki.archlinux.org/title/Main_page" ;;
   *Bash*) zanken-launch-webapp "https://devhints.io/bash" ;;
   *Neovim*) zanken-launch-webapp "https://www.lazyvim.org/keymaps" ;;
@@ -211,18 +206,13 @@ show_share_menu() {
 }
 
 show_toggle_menu() {
-  local options="󱄄  Screensaver\n󰔎  Nightlight\n󱫖  Idle Lock\n󰂛  Notifications\n󰍜  Top Bar\n󱂬  Workspace Layout\n  Window Gaps\n  1-Window Ratio\n󰍹  Monitor Scaling\n  Direct Boot\n󰟵  Passwordless Sudo"
+  local options="󱄄  Screensaver\n󰔎  Nightlight\n󱫖  Idle Lock\n󰂛  Notifications\n  Direct Boot\n󰟵  Passwordless Sudo"
 
   case $(menu "Toggle" "$options") in
   *Screensaver*) zanken-toggle-screensaver ;;
   *Nightlight*) zanken-toggle-nightlight ;;
   *Idle*) zanken-toggle-idle ;;
   *Notifications*) zanken-toggle-notification-silencing ;;
-  *Bar*) zanken-toggle-waybar ;;
-  *Layout*) zanken-hyprland-workspace-layout-toggle ;;
-  *Ratio*) zanken-hyprland-window-single-square-aspect-toggle ;;
-  *Gaps*) zanken-hyprland-window-gaps-toggle ;;
-  *Scaling*) zanken-hyprland-monitor-scaling-cycle ;;
   *"Direct Boot"*) present_terminal zanken-config-direct-boot ;;
   *"Passwordless Sudo"*) present_terminal zanken-sudo-passwordless ;;
   *) back_to show_trigger_menu ;;
@@ -230,7 +220,7 @@ show_toggle_menu() {
 }
 
 show_hardware_menu() {
-  local options="󰛧  Laptop Display\n 󰍹  Mirror Display"
+  local options="󰍹  Display Configuration"
 
   if zanken-hw-hybrid-gpu; then
     options="$options\n  Hybrid GPU"
@@ -249,8 +239,7 @@ show_hardware_menu() {
   fi
 
   case $(menu "Toggle" "$options") in
-  *Laptop*) zanken-hyprland-monitor-internal toggle ;;
-  *Mirror*) zanken-hyprland-monitor-internal-mirror toggle ;;
+  *Display*) open_in_editor ~/.config/niri/config.kdl ;;
   *Haptics*) show_hardware_touchpad_haptics_menu ;;
   *Touchpad*) zanken-toggle-touchpad ;;
   *Touchscreen*) zanken-toggle-touchscreen ;;
@@ -271,15 +260,14 @@ show_hardware_touchpad_haptics_menu() {
 }
 
 show_style_menu() {
-  case $(menu "Style" "󰸌  Theme\n󰟵  Unlock\n  Font\n  Background\n󰍜  Waybar\n󰘇  Corners\n  Hyprland\n󱄄  Screensaver\n  About") in
+  case $(menu "Style" "󰸌  Theme\n󰟵  Unlock\n  Font\n  Background\n󰘇  Corners\n󱤇  Niri\n󱄄  Screensaver\n  About") in
 
   *Theme*) show_theme_menu ;;
   *Unlock*) zanken-launch-walker -m menus:zankenunlocks --width 800 --minheight 400 ;;
   *Font*) show_font_menu ;;
   *Background*) show_background_menu ;;
   *Corners*) show_style_corners_menu ;;
-  *Hyprland*) open_in_editor "$(hypr_config_file looknfeel)" ;;
-  *Waybar*) show_waybar_position_menu ;;
+  *Niri*) open_in_editor ~/.config/niri/config.kdl ;;
   *Screensaver*) show_screensaver_menu ;;
   *About*) show_about_menu ;;
   *) show_main_menu ;;
@@ -290,16 +278,6 @@ show_style_corners_menu() {
   case $(zanken-menu-select "Corners" "󰝣  Sharp" "󰘇  Round") in
   *Sharp*) zanken-style-corners sharp ;;
   *Round*) zanken-style-corners round ;;
-  *) show_style_menu ;;
-  esac
-}
-
-show_waybar_position_menu() {
-  case $(menu "Waybar Position" "󰁝  Top\n󰁅  Bottom\n󰁍  Left\n󰁔  Right") in
-  *Top*) zanken-style-waybar-position top ;;
-  *Bottom*) zanken-style-waybar-position bottom ;;
-  *Left*) zanken-style-waybar-position left ;;
-  *Right*) zanken-style-waybar-position right ;;
   *) show_style_menu ;;
   esac
 }
@@ -343,8 +321,6 @@ show_font_menu() {
 
 show_setup_menu() {
   local options="  Audio\n  Wifi\n󰂯  Bluetooth\n󱐋  Power Profile\n  System Sleep\n󰍹  Monitors"
-  [[ -f ~/.config/hypr/bindings.lua ]] && options="$options\n  Keybindings"
-  [[ -f ~/.config/hypr/input.lua ]] && options="$options\n  Input"
   options="$options\n  Defaults\n󰱔  DNS\n  Security\n  Config"
 
   case $(menu "Setup" "$options") in
@@ -353,9 +329,7 @@ show_setup_menu() {
   *Bluetooth*) zanken-launch-bluetooth ;;
   *Power*) show_setup_power_menu ;;
   *System*) show_setup_system_menu ;;
-  *Monitors*) open_in_editor "$(hypr_config_file monitors)" ;;
-  *Keybindings*) open_in_editor "$(hypr_config_file bindings)" ;;
-  *Input*) open_in_editor "$(hypr_config_file input)" ;;
+  *Monitors*) open_in_editor ~/.config/niri/config.kdl ;;
   *Defaults*) show_setup_default_menu ;;
   *DNS*) present_terminal zanken-setup-dns ;;
   *Security*) show_setup_security_menu ;;
@@ -489,14 +463,11 @@ show_setup_default_editor_menu() {
 }
 
 show_setup_config_menu() {
-  case $(menu "Setup" "  Hyprland\n  Hypridle\n  Hyprlock\n  Hyprsunset\n  Swayosd\n󰌧  Walker\n󰍜  Waybar\n󰞅  XCompose") in
-  *Hyprland*) open_in_editor "$(hypr_config_file hyprland)" ;;
-  *Hypridle*) open_in_editor ~/.config/hypr/hypridle.conf && zanken-restart-hypridle ;;
-  *Hyprlock*) open_in_editor ~/.config/hypr/hyprlock.conf ;;
-  *Hyprsunset*) open_in_editor ~/.config/hypr/hyprsunset.conf && zanken-restart-hyprsunset ;;
+  case $(menu "Setup" "󱤇  Niri\n󰋜  Quickshell\n  Swayosd\n󰌧  Walker\n󰞅  XCompose") in
+  *Niri*) open_in_editor ~/.config/niri/config.kdl ;;
+  *Quickshell*) open_in_editor ~/.config/quickshell/desktop/Bar.qml && zanken-restart-quickshell ;;
   *Swayosd*) open_in_editor ~/.config/swayosd/config.toml && zanken-restart-swayosd ;;
   *Walker*) open_in_editor ~/.config/walker/config.toml && zanken-restart-walker ;;
-  *Waybar*) open_in_editor ~/.config/waybar/config.jsonc && zanken-restart-waybar ;;
   *XCompose*) open_in_editor ~/.XCompose && zanken-restart-xcompose ;;
   *) show_setup_menu ;;
   esac
@@ -526,7 +497,7 @@ show_setup_system_menu() {
 }
 
 show_install_menu() {
-  case $(menu "Install" "󰣇  Package\n󰣇  AUR\n  Web App\n  TUI\n  Service\n  Style\n󰵮  Development\n  Editor\n  Terminal\n  Browser\n󱚤  AI\n  Gaming\n󰍲  Windows") in
+  case $(menu "Install" "󰣇  Package\n󰣇  AUR\n  Web App\n  TUI\n  Service\n  Style\n󰵮  Development\n  Editor\n  Terminal\n  Browser\n󱚤  AI\n  Gaming") in
   *Package*) terminal zanken-pkg-install ;;
   *AUR*) terminal zanken-pkg-aur-install ;;
   *Web*) present_terminal zanken-webapp-install ;;
@@ -539,7 +510,6 @@ show_install_menu() {
   *Browser*) show_install_browser_menu ;;
   *Gaming*) show_install_gaming_menu ;;
   *AI*) show_install_ai_menu ;;
-  *Windows*) present_terminal "zanken-windows-vm install" ;;
   *) show_main_menu ;;
   esac
 }
@@ -692,7 +662,7 @@ show_install_elixir_menu() {
 }
 
 show_remove_menu() {
-  case $(menu "Remove" "󰣇  Package\n  Web App\n  TUI\n󰵮  Development\n󰸌  Theme\n  Browser\n  Dictation\n  Gaming\n󰍲  Windows\n󰏓  Preinstalls\n  Security") in
+  case $(menu "Remove" "󰣇  Package\n  Web App\n  TUI\n󰵮  Development\n󰸌  Theme\n  Browser\n  Dictation\n  Gaming\n󰏓  Preinstalls\n  Security") in
   *Package*) terminal zanken-pkg-remove ;;
   *Web*) present_terminal zanken-webapp-remove ;;
   *TUI*) present_terminal zanken-tui-remove ;;
@@ -701,7 +671,6 @@ show_remove_menu() {
   *Browser*) show_remove_browser_menu ;;
   *Dictation*) present_terminal zanken-voxtype-remove ;;
   *Gaming*) show_remove_gaming_menu ;;
-  *Windows*) present_terminal "zanken-windows-vm remove" ;;
   *Preinstalls*) present_terminal zanken-remove-preinstalls ;;
   *Security*) show_remove_security_menu ;;
   *) show_main_menu ;;
@@ -813,28 +782,21 @@ show_update_channel_menu() {
   esac
 }
 show_update_process_menu() {
-  case $(menu "Restart" "  Hypridle\n  Hyprsunset\n󰎟  Mako\n  Swayosd\n󰌧  Walker\n󰍜  Waybar") in
-  *Hypridle*) zanken-restart-hypridle ;;
-  *Hyprsunset*) zanken-restart-hyprsunset ;;
-  *Mako*) zanken-restart-mako ;;
+  case $(menu "Restart" "󰋜  Quickshell\n  Swayosd\n󰌧  Walker") in
+  *Quickshell*) zanken-restart-quickshell ;;
   *Swayosd*) zanken-restart-swayosd ;;
   *Walker*) zanken-restart-walker ;;
-  *Waybar*) zanken-restart-waybar ;;
   *) show_update_menu ;;
   esac
 }
 
 show_update_config_menu() {
-  case $(menu "Use default config" "  Hyprland\n  Hypridle\n  Hyprlock\n  Hyprsunset\n󱣴  Plymouth\n  Swayosd\n  Tmux\n󰌧  Walker\n󰍜  Waybar") in
-  *Hyprland*) present_terminal zanken-refresh-hyprland ;;
-  *Hypridle*) present_terminal zanken-refresh-hypridle ;;
-  *Hyprlock*) present_terminal zanken-refresh-hyprlock ;;
-  *Hyprsunset*) present_terminal zanken-refresh-hyprsunset ;;
+  case $(menu "Use default config" "󱤇  Niri\n󰋜  Quickshell\n󱣴  Plymouth\n  Swayosd\n  Tmux\n󰌧  Walker") in
+  *Niri* | *Quickshell*) present_terminal "git --git-dir=$HOME/dotfiles --work-tree=$HOME checkout --force main -- .config/niri .config/quickshell" ;;
   *Plymouth*) present_terminal zanken-refresh-plymouth ;;
   *Swayosd*) present_terminal zanken-refresh-swayosd ;;
   *Tmux*) present_terminal zanken-refresh-tmux ;;
   *Walker*) present_terminal zanken-refresh-walker ;;
-  *Waybar*) present_terminal zanken-refresh-waybar ;;
   *) show_update_menu ;;
   esac
 }

@@ -31,11 +31,6 @@ for candidate in amdgpu_bl* intel_backlight acpi_video*; do
 done
 
 
-if zanken-hyprland-monitor-focused-apple; then
-  zanken-brightness-display-apple "$step"
-  exit
-fi
-
 # Current brightness percentage
 current=$(brightnessctl -d "$device" -m | cut -d',' -f4 | tr -d '%')
 

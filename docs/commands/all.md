@@ -1,6 +1,6 @@
 # All Commands
 
-308 commands organized alphabetically. Each command is a standalone script in `~/zanken/bin/`.
+282 commands organized alphabetically. Each command is a standalone executable in `~/zanken/bin/`.
 
 | Command | Description |
 |---------|-------------|
@@ -13,35 +13,37 @@
 | `zanken-battery-remaining` | Returns the battery percentage remaining as an integer. |
 | `zanken-battery-remaining-time` | Returns the battery time remaining (to empty or full) in a compact format. |
 | `zanken-battery-status` | Returns a formatted battery status string with percentage and power draw/charge. |
-| `zanken-branch-set` | Set the branch for Zanken's git repository. |
+| `zanken-branch-set` | Set the branch for Omarchy's git repository. |
 | `zanken-branding-about` | Edit, set, or reset About branding |
 | `zanken-branding-screensaver` | Edit, set, or reset screensaver branding |
 | `zanken-brightness-display` | Adjust brightness on the most likely display device. |
 | `zanken-brightness-display-apple` | Adjust the brightness on Apple Studio Displays and Apple XDR Displays using asdcontrol. |
 | `zanken-brightness-keyboard` | Adjust keyboard backlight brightness using available steps. |
 | `zanken-brightness-keyboard-mute` | Set the mic-mute indicator LED on laptops that expose a platform::micmute LED node. |
+| `zanken-capture-colorpicker` | Pick a screen color and copy its hex value |
 | `zanken-capture-screenrecording` | Start or stop screen recording |
 | `zanken-capture-screenshot` | Take a screenshot |
-| `zanken-capture-text-extraction` | Extract text from a screenshot region with OCR |
-| `zanken-channel-set` | Set the Zanken channel, which dictates what git branch and package repository is used. |
+| `zanken-capture-text-extraction` | Extract text from a selected screen region |
+| `zanken-channel-set` | Set the Omarchy channel, which dictates what git branch and package repository is used. |
 | `zanken-cmd-missing` | Check whether any required commands are missing |
 | `zanken-cmd-present` | Check whether all required commands are available |
 | `zanken-cmd-terminal-cwd` | Print the current working directory of the active terminal window |
-| `zanken-config-direct-boot` | Add or remove an EFI boot entry for the Zanken UKI, allowing the system to boot directly |
+| `zanken-config-direct-boot` | Add or remove an EFI boot entry for the Omarchy UKI, allowing the system to boot directly |
 | `zanken-debug` | Print debugging information |
-| `zanken-default-browser` | Set the default browser for Zanken and XDG handlers |
+| `zanken-default-browser` | Set the default browser for Omarchy and XDG handlers |
 | `zanken-default-editor` | Set the default editor for $EDITOR |
 | `zanken-default-terminal` | Set the default terminal used by xdg-terminal-exec |
-| `zanken-dev-add-migration` | Creates a new Zanken migration named after the unix timestamp of the last commit. |
+| `zanken-dev-add-migration` | Creates a new Omarchy migration named after the unix timestamp of the last commit. |
 | `zanken-dev-benchmark` | Measure Zanken CLI response times |
 | `zanken-dev-benchmark-theme-switcher` | Measure theme switcher cache and selector prep times |
-| `zanken-dev-bin-metadata` | Show Zanken bin metadata fields and defaults |
+| `zanken-dev-bin-metadata` | Show Omarchy bin metadata fields and defaults |
 | `zanken-drive-info` | Print drive information such as size, model, and mount details |
 | `zanken-drive-password` | Set a new encryption password for a drive selected. |
 | `zanken-drive-select` | Select a drive from a list with info that includes space and brand. Used by zanken-drive-password. |
-| `zanken-first-run` | Finish the installation of Zanken with items that can only be done after logging in. |
+| `zanken-first-run` | Finish the installation of Omarchy with items that can only be done after logging in. |
 | `zanken-font-current` | Show current monospace font |
 | `zanken-font-list` | List available monospace fonts |
+| `zanken-font-pick` | Pick and apply a monospace font via fzf |
 | `zanken-font-set` | Set the system monospace font |
 | `zanken-games-retro-cores` | List installed RetroArch core names |
 | `zanken-games-retro-install` | Create a desktop launcher for a RetroArch game |
@@ -65,25 +67,7 @@
 | `zanken-hw-nvidia-without-gsp` | Detect whether the computer has an NVIDIA GPU without GSP firmware (Maxwell/Pascal/Volta). |
 | `zanken-hw-recover-internal-monitor` | Clear the internal-monitor-disable toggle if no external display is connected. |
 | `zanken-hw-surface` | Detect whether the computer is a Microsoft Surface device. |
-| `zanken-hw-touchpad` | Print the detected Hyprland touchpad or trackpad device name |
-| `zanken-hw-touchscreen` | Print the detected Hyprland touchscreen or tablet device name |
 | `zanken-hw-vulkan` | Detect whether Vulkan is available. |
-| `zanken-hyprland-monitor-focused` | Print the name of the currently focused Hyprland monitor. |
-| `zanken-hyprland-monitor-focused-apple` | Return success if the focused Hyprland monitor is an Apple display. |
-| `zanken-hyprland-monitor-internal` | Enable, disable, toggle, or recover the internal laptop display |
-| `zanken-hyprland-monitor-internal-mirror` | Enable, disable, toggle, or recover mirroring the internal display to an external monitor |
-| `zanken-hyprland-monitor-scale` | Print the monitor scale of the internal monitor or first other monitor |
-| `zanken-hyprland-monitor-scaling-cycle` | Cycle focused Hyprland monitor scaling through 1x, 1.25x, 1.6x, 2x, 3x, and 4x |
-| `zanken-hyprland-monitor-watch` | Watch Hyprland monitor events and recover monitor toggles when a monitor is removed |
-| `zanken-hyprland-toggle` | Toggle permanent Hyprland flags by copying them into a directory that's sourced entirely. |
-| `zanken-hyprland-toggle-disabled` | Check if a Hyprland toggle is currently disabled (missing). |
-| `zanken-hyprland-toggle-enabled` | Check if a Hyprland toggle is currently enabled. |
-| `zanken-hyprland-window-close-all` | Close all open windows |
-| `zanken-hyprland-window-gaps-toggle` | Toggles the window gaps globally between no gaps and the default. |
-| `zanken-hyprland-window-pop` | Toggle to pop-out a tile to stay fixed on a display basis. |
-| `zanken-hyprland-window-single-square-aspect-toggle` | Toggle single-window square aspect ratio. |
-| `zanken-hyprland-window-transparency-toggle` | Toggles transparency for the currently focused window. |
-| `zanken-hyprland-workspace-layout-toggle` | Toggle the layout on the current active workspace between dwindle and scrolling |
 | `zanken-install-browser` | Install a supported browser |
 | `zanken-install-chromium-google-account` | Allow Chromium to sign in to Google accounts by adding the required OAuth credentials |
 | `zanken-install-dev-env` | Install a supported development environment |
@@ -98,47 +82,48 @@
 | `zanken-install-gaming-steam` | Install Steam and graphics drivers selected for this system |
 | `zanken-install-gaming-xbox-cloud` | Install Xbox Cloud Gaming as a web app and launch it. |
 | `zanken-install-gaming-xbox-controllers` | Install support for using Xbox controllers with Steam/RetroArch/etc. |
-| `zanken-install-helix` | Install Helix and configure it to use the current Zanken theme |
+| `zanken-install-helix` | Install Helix and configure it to use the current Omarchy theme |
 | `zanken-install-nordvpn` | Install the NordVPN service with optional GUI. |
 | `zanken-install-once` | Install the ONCE service, enable its background service, and launch the TUI. |
 | `zanken-install-service-sunshine` | Install Sunshine and open Moonlight streaming ports for LAN and Tailscale. |
 | `zanken-install-tailscale` | Install the Tailscale mesh VPN service and a web app for the Tailscale Admin Console. |
-| `zanken-install-terminal` | Install one of the approved terminals and set it as the default for Zanken (Super + Return etc). |
-| `zanken-install-vscode` | Install VS Code and configure Zanken defaults for secrets, updates, and theme |
-| `zanken-install-zed` | Install Zed Editor and configure it with the current Zanken theme |
+| `zanken-install-terminal` | Install one of the approved terminals and set it as the default for Omarchy (Super + Return etc). |
+| `zanken-install-vscode` | Install VS Code and configure Omarchy defaults for secrets, updates, and theme |
+| `zanken-install-zed` | Install Zed Editor and configure it with the current Omarchy theme |
 | `zanken-launch-about` | Launch the fastfetch TUI that gives information about the current system. |
-| `zanken-launch-audio` | Launch the Zanken audio controls TUI (provided by wiremix). |
-| `zanken-launch-bluetooth` | Launch the Zanken bluetooth controls TUI (provided by bluetui). |
+| `zanken-launch-audio` | Launch the Omarchy audio controls TUI (provided by wiremix). |
+| `zanken-launch-bluetooth` | Launch the Omarchy bluetooth controls TUI (provided by bluetui). |
 | `zanken-launch-browser` | Launch the default browser as determined by xdg-settings. |
 | `zanken-launch-editor` | Launch the default editor as determined by $EDITOR (set via ~/.config/uwsm/default) (or nvim if missing). |
-| `zanken-launch-floating-terminal-with-presentation` | Launch a floating terminal with the Zanken presentation wrapper |
-| `zanken-launch-nautilus` | Launch Files |
-| `zanken-launch-nautilus-cwd` | Launch Files in the active terminal's current directory |
+| `zanken-launch-floating-terminal-with-presentation` | Launch a floating terminal with the Omarchy presentation wrapper |
 | `zanken-launch-or-focus` | Launch an app or focus an existing window matching a pattern |
 | `zanken-launch-or-focus-tui` | Launch a TUI or focus an existing terminal window for it |
 | `zanken-launch-or-focus-webapp` | Launch or focus on a given web app identified by the window-pattern. |
-| `zanken-launch-screensaver` | Launch the Zanken screensaver in the default terminal on the system with the correct font configuration. |
+| `zanken-launch-screensaver` | Lock the session from the screensaver action |
 | `zanken-launch-terminal` | Launch a terminal in the active terminal's current directory |
 | `zanken-launch-terminal-tmux` | Launch or attach to the Work tmux session in a terminal |
-| `zanken-launch-tui` | Launch a TUI command in the default terminal with Zanken styling |
+| `zanken-launch-tui` | Launch a TUI command in the default terminal with Omarchy styling |
 | `zanken-launch-walker` | Launch Walker and ensure its Elephant data provider is running |
 | `zanken-launch-webapp` | Launch a URL as a web app in the default supported browser |
-| `zanken-launch-wifi` | Launch the Zanken wifi controls (provided by the Impala TUI). |
-| `zanken-menu` | Launch the Zanken Menu or takes a parameter to jump straight to a submenu. |
+| `zanken-launch-wifi` | Launch the Omarchy wifi controls (provided by the Impala TUI). |
+| `zanken-menu` | Launch the Zanken menu or jump straight to a submenu |
 | `zanken-menu-file` | Pick a file with Walker |
 | `zanken-menu-images` | Open a generic image selector menu |
 | `zanken-menu-input` | Prompt for text input with Walker |
-| `zanken-menu-keybindings` | Display Hyprland keybindings defined in your configuration using walker for an interactive search menu. |
 | `zanken-menu-select` | Pick one option with Walker |
 | `zanken-menu-share` | Share clipboard, files, or folders with LocalSend |
 | `zanken-menu-tmux-keybindings` | Display Tmux keybindings defined in your configuration using walker for an interactive search menu. |
 | `zanken-migrate` | Run all pending migrations to bring the system in line with the installed version. |
+| `zanken-niri-keybindings` | Display niri keybindings from config.kdl using fzf or stdout |
+| `zanken-niri-launch-or-focus` | Launch an app or focus an existing Niri window matching a pattern |
+| `zanken-niri-window-close-all` | Close all Niri windows gracefully |
 | `zanken-notification-battery` | Show the current battery status notification |
 | `zanken-notification-dismiss` | Dismiss a mako notification on the basis of its summary. Used by the first-run notifications to dismiss them after clicking for action. |
-| `zanken-notification-send` | Send a desktop notification with Zanken glyph and body spacing |
+| `zanken-notification-send` | Send a desktop notification with Omarchy glyph and body spacing |
 | `zanken-notification-time` | Show the current time and date notification |
 | `zanken-notification-weather` | Show the current weather notification |
 | `zanken-npm-install` | Install a pnpm dlx wrapper for a given npm package. |
+| `zanken-paste` | Paste with terminal-aware keyboard shortcuts |
 | `zanken-pkg-add` | Install Arch packages if they are missing |
 | `zanken-pkg-aur-accessible` | Returns true if the AUR is up and available. |
 | `zanken-pkg-aur-add` | Add the named packages to the system from the AUR if they're missing. Returns false if it couldn't be done. |
@@ -149,34 +134,32 @@
 | `zanken-pkg-present` | Returns true if all of the named packages are installed on the system (or false if any of them are missing). |
 | `zanken-pkg-remove` | Show a fuzzy-finder TUI for picking packages installed on the system to be removed. |
 | `zanken-plymouth-preview` | Preview a Plymouth boot screen with custom colors and logo |
-| `zanken-plymouth-reset` | Restore the default Zanken Plymouth boot theme and SDDM login screen |
+| `zanken-plymouth-reset` | Restore the default Omarchy Plymouth boot theme and SDDM login screen |
 | `zanken-plymouth-set` | Set the Plymouth boot theme colors and logo |
-| `zanken-plymouth-set-by-theme` | Set the Plymouth boot theme from an Zanken theme |
+| `zanken-plymouth-set-by-theme` | Set the Plymouth boot theme from an Omarchy theme |
 | `zanken-powerprofiles-init` | Set the correct power profile on boot based on current AC/battery state. |
 | `zanken-powerprofiles-list` | Returns a list of all the available power profiles on the system. |
 | `zanken-powerprofiles-set` | Set the power profile to the requested level, falling back to balanced |
+| `zanken-qylock-theme-set` | Set the qylock lockscreen and SDDM theme |
 | `zanken-refresh-applications` | Ensure all default .desktop, web apps, TUIs, and npm wrappers are installed. |
-| `zanken-refresh-chromium` | Refresh the ~/.config/chromium-flags.conf file from the Zanken defaults. |
+| `zanken-refresh-chromium` | Refresh the ~/.config/chromium-flags.conf file from the Omarchy defaults. |
 | `zanken-refresh-config` | Copies the named config from ~/.local/share/zanken/config/X/Y/Z -> ~/.config/X/Y/Z. |
-| `zanken-refresh-fastfetch` | Overwrite the user config for fastfetch with the Zanken default. |
-| `zanken-refresh-hypridle` | Overwrite the user config for hypridle with the Zanken default and restart the service. |
-| `zanken-refresh-hyprland` | Overwrite all the user Hyprland Lua configs in ~/.config/hypr with the Zanken defaults. |
-| `zanken-refresh-hyprlock` | Overwrite the user config for hyprlock with the Zanken default. |
-| `zanken-refresh-hyprsunset` | Overwrite the user config for hyprsunset with the Zanken default and restart the service. |
+| `zanken-refresh-fastfetch` | Overwrite the user config for fastfetch with the Omarchy default. |
 | `zanken-refresh-limine` | Overwrite the user config for the Limine bootloader and rebuild it. |
-| `zanken-refresh-pacman` | Overwrite the package configuration for /etc/pacman with the Zanken default of using its dedicated mirrors and repositories, then update all packages. |
-| `zanken-refresh-plymouth` | Overwrite the user config for the Plymouth drive decryption and boot sequence with the Zanken default and rebuild it. |
+| `zanken-refresh-pacman` | Overwrite the package configuration for /etc/pacman with the Omarchy default of using its dedicated mirrors and repositories, then update all packages. |
+| `zanken-refresh-plymouth` | Overwrite the user config for the Plymouth drive decryption and boot sequence with the Omarchy default and rebuild it. |
 | `zanken-refresh-sddm` | Refresh the SDDM theme from default |
-| `zanken-refresh-swayosd` | Overwrite the user configs for swayosd (controls on-screen feedback for changing volume/songs etc) with the Zanken defaults and restart the service. |
-| `zanken-refresh-tmux` | Overwrite the user tmux config with the Zanken default and reload tmux. |
-| `zanken-refresh-walker` | Overwrite the user configs for the Walker application launcher (which also powers the Zanken Menu) and restart the services. |
-| `zanken-refresh-waybar` | Reset Waybar config to Zanken defaults |
-| `zanken-reinstall` | Reinstall Zanken packages and reset default configs |
-| `zanken-reinstall-configs` | Reset all Zanken user configs to the defaults |
-| `zanken-reinstall-git` | Reinstall the stable Zanken source directory from git |
-| `zanken-reinstall-pkgs` | Reinstall all default Zanken packages from the stable channel |
+| `zanken-refresh-swayosd` | Overwrite the user configs for swayosd (controls on-screen feedback for changing volume/songs etc) with the Omarchy defaults and restart the service. |
+| `zanken-refresh-tmux` | Overwrite the user tmux config with the Omarchy default and reload tmux. |
+| `zanken-refresh-walker` | Overwrite the user configs for the Walker application launcher (which also powers the Omarchy Menu) and restart the services. |
+| `zanken-refresh-waybar` | Reset Waybar config to Omarchy defaults |
+| `zanken-reinstall` | Reinstall Omarchy packages and reset default configs |
+| `zanken-reinstall-configs` | Reset all Omarchy user configs to the defaults |
+| `zanken-reinstall-git` | Reinstall the stable Omarchy source directory from git |
+| `zanken-reinstall-pkgs` | Reinstall all default Omarchy packages from the stable channel |
 | `zanken-reminder` | Set and show lightweight desktop notification reminders |
-| `zanken-remove-browser` | Remove a supported browser and clean up Zanken browser defaults |
+| `zanken-reminder-set` | Set a reminder via fzf (no walker required) |
+| `zanken-remove-browser` | Remove a supported browser and clean up Omarchy browser defaults |
 | `zanken-remove-dev-env` | Remove a development environment that was previously installed via zanken-install-dev-env. |
 | `zanken-remove-gaming-geforce-now` | Remove the GeForce NOW Flatpak app and its data. |
 | `zanken-remove-gaming-heroic` | Remove Heroic Games Launcher and its game libraries, configs, and caches. |
@@ -187,40 +170,32 @@
 | `zanken-remove-gaming-steam` | Remove Steam and all of its game libraries, configs, and caches. |
 | `zanken-remove-gaming-xbox-cloud` | Remove the Xbox Cloud Gaming web app. |
 | `zanken-remove-gaming-xbox-controllers` | Remove the xpadneo Xbox controller driver and undo its module/blacklist config. |
-| `zanken-remove-preinstalls` | Remove preinstalled Zanken applications (web apps, TUIs, and selected packages). |
+| `zanken-remove-preinstalls` | Remove preinstalled Omarchy applications (web apps, TUIs, and selected packages). |
 | `zanken-remove-security-fido2` | Remove FIDO2 authentication from sudo and polkit |
-| `zanken-remove-security-fingerprint` | Remove fingerprint authentication from sudo, polkit, and lock screen |
-| `zanken-remove-service-sunshine` | Remove Sunshine and close Zanken-managed Moonlight streaming ports. |
-| `zanken-restart-app` | Restart an application by killing it and relaunching via uwsm. |
+| `zanken-remove-security-fingerprint` | Remove fingerprint authentication from sudo and polkit |
+| `zanken-remove-service-sunshine` | Remove Sunshine and close Omarchy-managed Moonlight streaming ports. |
+| `zanken-restart-app` | Restart an application |
 | `zanken-restart-bluetooth` | Unblock and restart the bluetooth service. |
-| `zanken-restart-btop` | Reload btop configuration (used by the Zanken theme switching). |
+| `zanken-restart-btop` | Reload btop configuration (used by the Omarchy theme switching). |
 | `zanken-restart-helix` | Reload Helix configuration |
-| `zanken-restart-hyprctl` | Reload hyprland configuration (used by the Zanken theme switching). |
-| `zanken-restart-hypridle` | Restart the hypridle service (used for idle detection and auto-lock). |
-| `zanken-restart-hyprsunset` | Restart the hyprsunset service (used for blue light filtering/night light). |
-| `zanken-restart-mako` | Reload mako configuration (used by the Zanken theme switching). |
-| `zanken-restart-opencode` | Reload opencode configuration (used by the Zanken theme switching). |
+| `zanken-restart-opencode` | Reload opencode configuration (used by the Omarchy theme switching). |
 | `zanken-restart-pipewire` | Restart the PipeWire audio service to fix audio issues or apply new configuration. |
+| `zanken-restart-quickshell` | Restart the Quickshell desktop |
 | `zanken-restart-swayosd` | Restart the SwayOSD server |
 | `zanken-restart-terminal` | Reload supported terminal emulators after config changes |
 | `zanken-restart-tmux` | Restart tmux if running with the latest configuration |
 | `zanken-restart-trackpad` | Reset the trackpad by unbinding and rebinding its driver. |
 | `zanken-restart-walker` | Restart Walker and related user services |
-| `zanken-restart-waybar` | Restart Waybar |
 | `zanken-restart-wifi` | Unblock and restart the Wi-Fi service. |
 | `zanken-restart-xcompose` | Restart the XCompose input method service (fcitx5) to apply new compose key settings. |
-| `zanken-screensaver` | Run the Zanken screensaver using random effects from TTE. |
 | `zanken-setup-dns` | Configure the system DNS provider |
 | `zanken-setup-security-fido2` | Set up FIDO2 authentication for sudo and polkit |
-| `zanken-setup-security-fingerprint` | Set up fingerprint authentication for sudo, polkit, and lock screen |
+| `zanken-setup-security-fingerprint` | Set up fingerprint authentication for sudo and polkit |
 | `zanken-show-done` | Display a "Done!" message with a spinner and wait for user to press any key. |
-| `zanken-show-logo` | Display the Zanken logo in the terminal using green color. |
+| `zanken-show-logo` | Display the Omarchy logo in the terminal using green color. |
 | `zanken-snapshot` | Create or restore system snapshots with snapper |
-| `zanken-state` | Manage persistent state files for Zanken toggles and settings. |
-| `zanken-style-corners` | Set Hyprland, Hyprlock, Mako, and Walker corners to sharp or round |
-| `zanken-style-corners-hyprland` | Set or toggle shape of Hyprland window corners |
-| `zanken-style-corners-hyprlock` | Set or toggle rounded Hyprlock input field corners |
-| `zanken-style-corners-mako` | Set or toggle rounded Mako notification corners |
+| `zanken-state` | Manage persistent state files for Omarchy toggles and settings. |
+| `zanken-style-corners` | Set corners to sharp or round |
 | `zanken-style-corners-walker` | Set or toggle rounded Walker corners |
 | `zanken-style-waybar-position` | Set Waybar position |
 | `zanken-sudo-keepalive` | Prompt for sudo once and keep the credential alive in the background. |
@@ -239,69 +214,69 @@
 | `zanken-theme-bg-install` | Open the current theme's user background folder |
 | `zanken-theme-bg-next` | Cycle to the next background for the current theme |
 | `zanken-theme-bg-set` | Set the current background image |
-| `zanken-theme-bg-switcher` | Open the Zanken background switcher |
+| `zanken-theme-bg-switcher` | Open the Omarchy background switcher |
 | `zanken-theme-colors-from-alacritty` | Generate a theme's colors.toml from its alacritty.toml palette |
 | `zanken-theme-current` | Show current theme |
 | `zanken-theme-install` | Install a theme from a git repository |
 | `zanken-theme-list` | List available themes |
 | `zanken-theme-refresh` | Refresh the current theme from its templates. |
 | `zanken-theme-remove` | Remove a user-installed theme |
-| `zanken-theme-set` | Apply an Zanken theme |
+| `zanken-theme-set` | Apply an Omarchy theme |
 | `zanken-theme-set-browser` | Apply the current theme color to Chromium, Chrome, Edge, and Brave |
-| `zanken-theme-set-foot` | Apply current Zanken theme colors to running Foot terminals |
-| `zanken-theme-set-gnome` | Apply the current theme to GNOME color mode and icon settings |
+| `zanken-theme-set-foot` | Apply current Omarchy theme colors to running Foot terminals |
+| `zanken-theme-set-gnome` | Apply GTK/GNOME color-scheme for current theme |
 | `zanken-theme-set-keyboard` | Apply the current theme keyboard color to supported keyboards |
 | `zanken-theme-set-keyboard-asus-rog` | Apply the current theme keyboard color to ASUS ROG keyboards |
 | `zanken-theme-set-keyboard-f16` | Apply the current theme keyboard color to Framework Laptop 16 keyboards |
-| `zanken-theme-set-obsidian` | Sync Zanken theme to all Obsidian vaults |
-| `zanken-theme-set-templates` | Generate themed config files from Zanken templates |
-| `zanken-theme-set-vscode` | Sync Zanken theme to VS Code, VSCodium, and Cursor |
-| `zanken-theme-switcher` | Open the Zanken theme switcher |
+| `zanken-theme-set-obsidian` | Sync Omarchy theme to all Obsidian vaults |
+| `zanken-theme-set-templates` | Generate themed config files from Omarchy templates |
+| `zanken-theme-set-vscode` | Sync Omarchy theme to VS Code, VSCodium, and Cursor |
+| `zanken-theme-switcher` | Open the Omarchy theme switcher |
 | `zanken-theme-update` | Update user-installed git themes |
-| `zanken-toggle` | Toggle Zanken features between enabled and disabled |
+| `zanken-theme-videobg-switcher` | Open video wallpaper picker |
+| `zanken-theme-we-set` | Apply a Wallpaper Engine wallpaper |
+| `zanken-theme-we-switcher` | Open the Wallpaper Engine wallpaper picker |
+| `zanken-toggle` | Toggle Omarchy features between enabled and disabled |
 | `zanken-toggle-enabled` | Check if a toggle is enabled (flag file exists) |
 | `zanken-toggle-hybrid-gpu` | Toggle dedicated vs integrated GPU mode via supergfxd (for hybrid gpu laptops, like Asus G14). |
 | `zanken-toggle-idle` | Toggle hypridle idle locking |
-| `zanken-toggle-nightlight` | Toggle nightlight screen temperature |
-| `zanken-toggle-notification-silencing` | Toggle notification do-not-disturb mode |
+| `zanken-toggle-nightlight` | Toggle nightlight screen temperature on Niri |
 | `zanken-toggle-screensaver` | Toggle screensaver availability |
 | `zanken-toggle-suspend` | Toggle suspend availability in the system menu |
-| `zanken-toggle-touchpad` | Enable, disable, or toggle the touchpad |
-| `zanken-toggle-touchscreen` | Enable, disable, or toggle the touch functionality of the screen |
-| `zanken-toggle-waybar` | Toggle Waybar visibility |
+| `zanken-toggle-touchpad` | Enable, disable, or toggle the Niri touchpad |
 | `zanken-transcode` | Transcode pictures and videos for sharing |
 | `zanken-transcode-ascii` | Transcode an image into ASCII/Unicode art text |
 | `zanken-tui-install` | Create a desktop launcher for a terminal UI app |
 | `zanken-tui-remove` | Remove terminal UI desktop launchers |
 | `zanken-tui-remove-all` | Remove all TUIs installed via zanken-tui-install. |
 | `zanken-tz-select` | Select and set the system timezone |
-| `zanken-update` | Update Zanken and system packages |
+| `zanken-update` | Update the Zanken repository |
 | `zanken-update-analyze-logs` | Check the update log for known failure conditions |
 | `zanken-update-aur-pkgs` | Update AUR packages if any are installed |
-| `zanken-update-available` | Get remote tag |
-| `zanken-update-available-reset` | Ensure Waybar icon offering the available update is removed |
-| `zanken-update-branch` | Switch Zanken branches and update from the selected branch |
+| `zanken-update-available` | Check whether a Zanken update is available |
+| `zanken-update-available-reset` | Clear the available-update indicator state |
 | `zanken-update-confirm` | Prompt for confirmation before starting an update |
 | `zanken-update-firmware` | Update system firmware using fwupd. Ensures the fwupd EFI binary is installed |
-| `zanken-update-git` | Pull the latest Zanken git changes |
-| `zanken-update-keyring` | Ensure the Zanken and Arch keyring packages are installed and populated |
+| `zanken-update-keyring` | Ensure the Omarchy and Arch keyring packages are installed and populated |
 | `zanken-update-orphan-pkgs` | Remove orphaned system packages after updates |
-| `zanken-update-perform` | Run the full Zanken update pipeline |
+| `zanken-update-perform` | Run the full Omarchy update pipeline |
 | `zanken-update-restart` | Prompt for required reboot or service restarts after updates |
 | `zanken-update-system-pkgs` | Update system packages with pacman |
 | `zanken-update-time` | Restart system time synchronization |
 | `zanken-update-without-idle` | No-op now that zanken-update-perform is responsible for idle management. |
 | `zanken-upload-log` | Upload logs to 0x0.st |
-| `zanken-version` | Print the installed Zanken version |
-| `zanken-version-branch` | Print the current Zanken git branch |
-| `zanken-version-channel` | Print the active Zanken mirror and package channel |
+| `zanken-version` | Print the installed Omarchy version |
+| `zanken-version-branch` | Print the current Omarchy git branch |
+| `zanken-version-channel` | Print the active Omarchy mirror and package channel |
 | `zanken-version-pkgs` | Print when system packages were last upgraded |
 | `zanken-voxtype-config` | Open the Voxtype configuration file |
 | `zanken-voxtype-install` | Install and configure Voxtype dictation |
 | `zanken-voxtype-model` | Open Voxtype AI model setup |
 | `zanken-voxtype-remove` | Remove Voxtype dictation and its configuration |
-| `zanken-voxtype-status` | Clean up the voxtype --follow child when Waybar reloads |
+| `zanken-voxtype-status` | Clean up the Voxtype status child process |
 | `zanken-wallpaper-colors` | Extract the most vibrant accent color from a wallpaper image |
+| `zanken-wallpaper-engine-picker` | Scan WE library and open grid picker |
+| `zanken-wallpaper-start` | Start the correct wallpaper renderer based on current background type |
 | `zanken-weather-icon` | Returns a weather condition icon, adjusted for live sunrise and sunset. |
 | `zanken-weather-status` | Returns a formatted weather status string with temperature and wind speed. |
 | `zanken-webapp-handler-hey` | Open HEY webmail and translate mailto links |
@@ -310,4 +285,4 @@
 | `zanken-webapp-remove` | Remove web app desktop launchers |
 | `zanken-webapp-remove-all` | Remove all web apps installed via zanken-webapp-install. |
 | `zanken-wifi-powersave` | Set Wi-Fi power save mode on wireless interfaces |
-| `zanken-windows-vm` | Install, launch, stop, inspect, or remove the Windows VM |
+| `zanken-zanken-sync` | Sync zanken shell with remote |

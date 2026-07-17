@@ -13,6 +13,10 @@
 | User scripts | `~/.config/zanken/bin/` |
 | Current theme | `~/.config/zanken/current/` |
 
+Niri and Quickshell are deliberately not copied from the Zanken repository.
+Their explicit source is the `dotfiles` bare repository at `~/dotfiles`; edit
+them in place and commit with the `dotfiles` alias.
+
 ## PATH architecture
 
 Scripts are resolved in this order:

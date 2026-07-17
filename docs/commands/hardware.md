@@ -19,6 +19,4 @@ Hardware detection scripts (return exit codes for use in conditionals).
 | `zanken-hw-nvidia-without-gsp` | Detect whether the computer has an NVIDIA GPU without GSP firmware (Maxwell/Pascal/Volta). |
 | `zanken-hw-recover-internal-monitor` | Clear the internal-monitor-disable toggle if no external display is connected. |
 | `zanken-hw-surface` | Detect whether the computer is a Microsoft Surface device. |
-| `zanken-hw-touchpad` | Print the detected Hyprland touchpad or trackpad device name |
-| `zanken-hw-touchscreen` | Print the detected Hyprland touchscreen or tablet device name |
 | `zanken-hw-vulkan` | Detect whether Vulkan is available. |

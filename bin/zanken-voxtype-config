@@ -4,6 +4,6 @@
 
 set -e
 
-# Used by Voxtype waybar module to open config on right click
+# Used by desktop integrations to open the Voxtype configuration
 
 exec zanken-launch-editor ~/.config/voxtype/config.toml

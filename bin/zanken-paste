@@ -1,4 +1,7 @@
 #!/bin/bash
+# zanken:summary=Paste with terminal-aware keyboard shortcuts
+# zanken:group=cmd
+
 # Smart paste: Shift+Insert for terminals, Ctrl+V for everything else
 APP_ID=$(niri msg --json focused-window 2>/dev/null | jq -r '.app_id // ""')
 

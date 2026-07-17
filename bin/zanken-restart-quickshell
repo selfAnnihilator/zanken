@@ -1,4 +1,7 @@
 #!/bin/bash
+# zanken:summary=Restart the Quickshell desktop
+# zanken:group=restart
+
 pkill -f 'qs.*-c.*desktop' 2>/dev/null || true
 pkill -f 'systemd-inhibit.*zanken' 2>/dev/null || true
 sleep 0.3

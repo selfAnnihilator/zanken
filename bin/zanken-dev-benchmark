@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# zanken:summary=Measure Omarchy CLI response times
+# zanken:summary=Measure Zanken CLI response times
 # zanken:args=[--repeat=<count>]
-# zanken:examples=omarchy dev benchmark | omarchy dev benchmark --repeat=10
+# zanken:examples=zanken dev benchmark | zanken dev benchmark --repeat=10
 
 set -euo pipefail
 
-OMARCHY_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+ZANKEN_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 CLI="$ZANKEN_BIN_DIR/zanken"
 REPEAT=5
 
@@ -15,7 +15,7 @@ show_help() {
 Usage:
   zanken dev benchmark [--repeat=<count>]
 
-Measure response times for common Omarchy CLI surfaces.
+Measure response times for common Zanken CLI surfaces.
 
 Options:
   --repeat=<count>  Number of times to run each case (default: 5)
@@ -99,7 +99,7 @@ if [[ ! $REPEAT =~ ^[0-9]+$ ]] || (( REPEAT < 1 )); then
   exit 2
 fi
 
-printf 'Omarchy CLI benchmark (%d runs each)\n\n' "$REPEAT"
+printf 'Zanken CLI benchmark (%d runs each)\n\n' "$REPEAT"
 run_case "zanken" "$CLI"
 run_case "zanken --help" "$CLI" --help
 run_case "zanken commands" "$CLI" commands

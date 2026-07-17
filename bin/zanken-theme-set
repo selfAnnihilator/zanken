@@ -52,10 +52,10 @@ fi
 # Restart components to apply new theme
 zanken-restart-swayosd
 zanken-restart-terminal
-zanken-restart-hyprctl
+niri msg action load-config-file 2>/dev/null || true
+zanken-restart-quickshell
 zanken-restart-btop
 zanken-restart-opencode
-zanken-restart-mako
 zanken-restart-helix
 
 # Change app-specific themes

@@ -18,7 +18,7 @@ if zanken-cmd-present voxtype; then
   zanken-pkg-drop voxtype-bin
   rm -rf ~/.config/voxtype
   rm -rf ~/.local/share/voxtype
-  zanken-hyprland-toggle voxtype off
+  zanken-restart-quickshell
 else
   echo "Voxtype was not installed."
 fi

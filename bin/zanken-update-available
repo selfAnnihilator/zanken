@@ -1,4 +1,8 @@
 #!/bin/bash
+# zanken:summary=Check whether a Zanken update is available
+# zanken:group=update
+# zanken:hidden=true
+
 # Checks if zanken has unpulled commits on the remote.
 # Exit 0 = up to date; non-zero = updates available (bar shows badge).
 git -C "$HOME/zanken" fetch --quiet 2>/dev/null || exit 0

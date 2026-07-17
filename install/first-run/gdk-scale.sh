@@ -1,3 +1,3 @@
-# Set the default GDK_SCALE from what the monitor is currently reporting
-
-sed -i -E "s|^([[:space:]]*env[[:space:]]*=[[:space:]]*GDK_SCALE,).*|\\1$(omarchy-hyprland-monitor-scale)|" ~/.config/hypr/monitors.conf
+# Niri owns output scaling in ~/.config/niri/config.kdl. Do not write a
+# compositor-specific GDK_SCALE override; GTK handles per-output scale itself.
+true

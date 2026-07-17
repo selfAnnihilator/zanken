@@ -1,3 +1,4 @@
+run_logged $OMARCHY_INSTALL/config/dotfiles.sh
 run_logged $OMARCHY_INSTALL/config/config.sh
 run_logged $OMARCHY_INSTALL/config/theme.sh
 run_logged $OMARCHY_INSTALL/config/cursor-hornet.sh

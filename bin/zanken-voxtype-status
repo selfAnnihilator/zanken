@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Clean up the voxtype --follow child when Waybar reloads
+# zanken:summary=Clean up the Voxtype status child process
 
 trap 'kill 0' EXIT
 

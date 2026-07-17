@@ -22,7 +22,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/mai
 | 2 | Build and install `yay` AUR helper |
 | 3 | Install all required packages (see below) |
 | 4 | Clone `zanken` repo to `~/zanken` |
-| 5 | Clone dotfiles bare repo to `~/dotfiles`, checkout configs |
+| 5 | Clone dotfiles bare repo to `~/dotfiles`, checkout Niri and Quickshell configs |
 | 6 | Set fish as default shell |
 | 7 | Enable pipewire, wireplumber, NetworkManager, bluetooth services |
 
@@ -52,13 +52,22 @@ Or configure your display manager to launch `niri`.
 
 ## Updating configs
 
-Configs live in the dotfiles bare repo:
+Niri and Quickshell are owned by the dotfiles bare repo. The Zanken installer
+checks out only those two directories, so it never replaces unrelated files in
+your home directory:
 
 ```bash
 # After editing any config file
 dotfiles add ~/.config/niri/config.kdl
 dotfiles commit -m "update niri config"
 dotfiles push
+```
+
+To re-apply the tracked desktop configuration after an update:
+
+```bash
+git --git-dir="$HOME/dotfiles" --work-tree="$HOME" \
+  checkout --force main -- .config/niri .config/quickshell
 ```
 
 The `dotfiles` alias is set automatically by fish config:

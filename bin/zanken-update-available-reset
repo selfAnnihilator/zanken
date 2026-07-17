@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# zanken:summary=Ensure Waybar icon offering the available update is removed
+# zanken:summary=Clear the available-update indicator state
 
 exit 0

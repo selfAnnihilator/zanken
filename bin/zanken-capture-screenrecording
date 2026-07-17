@@ -6,13 +6,8 @@
 # zanken:examples=omarchy screenrecord | omarchy capture screenrecord --with-desktop-audio
 # zanken:aliases=zanken screenrecord
 #
-# Env: OMARCHY_SCREENRECORD_USE_PORTAL=true skips the built-in slurp picker and
-# uses gpu-screen-recorder's xdg-desktop-portal capture backend instead. The
-# portal backend was originally added (PR #3401) for HDR-aware capture, support
-# for monitors driven by external GPUs, and window capture — enable it if any
-# of those matter to you. Off by default because the portal path can fail EGL
-# DMA-BUF modifier import on some configurations, leaving recording unable to
-# start.
+# Niri recordings use gpu-screen-recorder's xdg-desktop-portal backend. The
+# portal picker provides the output, region, and window selection UI.
 #
 # Env: OMARCHY_SCREENRECORD_DEBUG=true appends gpu-screen-recorder's stderr (and
 # the picker target it was launched with) to /tmp/zanken-screenrecord.log so
@@ -22,7 +17,7 @@
 OUTPUT_DIR="${OMARCHY_SCREENRECORD_DIR:-${XDG_VIDEOS_DIR:-$HOME/Videos}}"
 
 if [[ ! -d $OUTPUT_DIR ]]; then
-  notify-send "Screen recording directory does not exist: $OUTPUT_DIR" -u critical -t 3000
+  zanken-notification-send -g "󰑋" -u critical "Screen recording unavailable" "Directory does not exist: $OUTPUT_DIR" -t 3000
   exit 1
 fi
 
@@ -33,6 +28,7 @@ WEBCAM_DEVICE=""
 RESOLUTION=""
 STOP_RECORDING="false"
 RECORDING_FILE="/tmp/zanken-screenrecord-filename"
+STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/zanken-screenrecording.state"
 LOG_FILE=$([[ ${OMARCHY_SCREENRECORD_DEBUG:-false} == "true" ]] && echo "/tmp/zanken-screenrecord.log" || echo "/dev/null")
 
 for arg in "$@"; do
@@ -46,6 +42,19 @@ for arg in "$@"; do
   esac
 done
 
+write_recording_state() {
+  local pid="$1"
+  local temporary_state
+
+  temporary_state=$(mktemp "${STATE_FILE}.XXXXXX")
+  printf '%s %s\n' "$pid" "$(date +%s)" >"$temporary_state"
+  mv "$temporary_state" "$STATE_FILE"
+}
+
+clear_recording_state() {
+  rm -f "$STATE_FILE"
+}
+
 start_webcam_overlay() {
   cleanup_webcam
 
@@ -53,16 +62,12 @@ start_webcam_overlay() {
   if [[ -z $WEBCAM_DEVICE ]]; then
     WEBCAM_DEVICE=$(v4l2-ctl --list-devices 2>/dev/null | grep -m1 "^[[:space:]]*/dev/video" | tr -d '\t')
     if [[ -z $WEBCAM_DEVICE ]]; then
-      notify-send "No webcam devices found" -u critical -t 3000
+      zanken-notification-send -g "󰄀" -u critical "No webcam devices found" -t 3000
       return 1
     fi
   fi
 
-  # Get monitor scale
-  local scale=$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .scale')
-
-  # Target width (base 360px, scaled to monitor)
-  local target_width=$(awk "BEGIN {printf \"%.0f\", 360 * $scale}")
+  local target_width=360
 
   # Try preferred 16:9 resolutions in order, use first available
   local preferred_resolutions=("640x360" "1280x720" "1920x1080")
@@ -90,100 +95,11 @@ cleanup_webcam() {
   pkill -f "WebcamOverlay" 2>/dev/null
 }
 
-default_resolution() {
-  local width height
-  read -r width height < <(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | "\(.width) \(.height)"')
-  if ((width > 3840 || height > 2160)); then
-    echo "3840x2160"
-  else
-    echo "0x0"
-  fi
-}
-
-# Monitor + window rectangles on the focused workspace, in slurp's "X,Y WxH" format.
-# Mirrors zanken-capture-screenshot so the picker UX is identical.
-get_rectangles() {
-  local active_workspace=$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .activeWorkspace.id')
-  hyprctl monitors -j | jq -r --arg ws "$active_workspace" '
-    .[] | select(.activeWorkspace.id == ($ws | tonumber)) |
-    "\(.x),\(.y) \(.width / .scale | floor)x\(.height / .scale | floor)"'
-  hyprctl clients -j | jq -r --arg ws "$active_workspace" '
-    .[] | select(.workspace.id == ($ws | tonumber)) |
-    "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"'
-}
-
-# Echoes "monitor:NAME" when the selection matches an entire monitor, otherwise
-# "region:WxH+X+Y" with physical-pixel coordinates ready for gpu-screen-recorder.
-# Returns non-zero if the user cancelled the picker.
-select_capture_target() {
-  local rects=$(get_rectangles)
-  hyprpicker -r -z >/dev/null 2>&1 &
-  local picker_pid=$!
-  sleep .1
-  local selection=$(echo "$rects" | slurp 2>/dev/null)
-  kill $picker_pid 2>/dev/null
-
-  # X and Y can be negative (Hyprland monitor positions in multi-display layouts);
-  # widths and heights are always positive.
-  [[ $selection =~ ^(-?[0-9]+),(-?[0-9]+)[[:space:]]([0-9]+)x([0-9]+)$ ]] || return 1
-  local sx=${BASH_REMATCH[1]} sy=${BASH_REMATCH[2]}
-  local sw=${BASH_REMATCH[3]} sh=${BASH_REMATCH[4]}
-
-  # A bare click (area < 20px²) snaps to whichever rectangle the click landed
-  # inside, so users don't end up with accidental 2px recordings.
-  if ((sw * sh < 20)); then
-    while IFS= read -r rect; do
-      [[ $rect =~ ^(-?[0-9]+),(-?[0-9]+)[[:space:]]([0-9]+)x([0-9]+)$ ]] || continue
-      local rx=${BASH_REMATCH[1]} ry=${BASH_REMATCH[2]}
-      local rw=${BASH_REMATCH[3]} rh=${BASH_REMATCH[4]}
-      if ((sx >= rx && sx < rx + rw && sy >= ry && sy < ry + rh)); then
-        sx=$rx sy=$ry sw=$rw sh=$rh
-        break
-      fi
-    done <<<"$rects"
-  fi
-
-  # When the selection exactly matches a monitor, prefer -w <monitor> over a
-  # region capture — same kms backend, but no scaling math and full native res.
-  local monitor=$(hyprctl monitors -j | jq -r --argjson x "$sx" --argjson y "$sy" --argjson w "$sw" --argjson h "$sh" '
-    .[] | select(.x == $x and .y == $y and (.width / .scale | floor) == $w and (.height / .scale | floor) == $h) | .name' | head -1)
-
-  if [[ -n $monitor ]]; then
-    echo "monitor:$monitor"
-    return
-  fi
-
-  # gpu-screen-recorder wants region geometry in the compositor's logical
-  # coordinate space — same space slurp returns — so pass the values through
-  # untouched. (gsr scales to physical pixels itself based on the monitor.)
-  echo "region:${sw}x${sh}+${sx}+${sy}"
-}
-
 start_screenrecording() {
   local capture_args=()
-  local target
-
-  # Opt-in path for HDR, external-GPU monitors, and window capture (all things
-  # the portal backend supports and the kms backend doesn't). Default flow uses
-  # slurp + the kms backend, which avoids the EGL DMA-BUF modifier import
-  # failures the portal path can hit on some configurations.
-  if [[ -n ${NIRI_SOCKET:-} ]] || [[ ${OMARCHY_SCREENRECORD_USE_PORTAL:-false} == "true" ]]; then
-    target="portal"
-    capture_args=(-w portal)
-    [[ -n $RESOLUTION ]] && capture_args+=(-s "$RESOLUTION")
-  else
-    target=$(select_capture_target) || return 1
-
-    case $target in
-    monitor:*)
-      capture_args=(-w "${target#monitor:}" -s "${RESOLUTION:-$(default_resolution)}")
-      ;;
-    region:*)
-      capture_args=(-w "${target#region:}")
-      [[ -n $RESOLUTION ]] && capture_args+=(-s "$RESOLUTION")
-      ;;
-    esac
-  fi
+  local target="portal"
+  capture_args=(-w portal)
+  [[ -n $RESOLUTION ]] && capture_args+=(-s "$RESOLUTION")
 
   [[ $WEBCAM == "true" ]] && start_webcam_overlay
 
@@ -211,7 +127,13 @@ start_screenrecording() {
 
   if kill -0 $pid 2>/dev/null; then
     echo "$filename" >"$RECORDING_FILE"
+    write_recording_state "$pid"
     toggle_screenrecording_indicator
+    zanken-notification-send -g "󰑋" "Screen recording started" "Use the REC card in the bar to stop it." -t 5000
+  else
+    cleanup_webcam
+    zanken-notification-send -g "󰑋" -u critical "Screen recording failed to start" "The portal or recorder exited before capture began." -t 5000
+    return 1
   fi
 }
 
@@ -230,8 +152,9 @@ stop_screenrecording() {
 
   if pgrep -f "^gpu-screen-recorder" >/dev/null; then
     pkill -9 -f "^gpu-screen-recorder"
-    notify-send "Screen recording error" "Recording process had to be force-killed. Video may be corrupted." -u critical -t 5000
+    zanken-notification-send -g "󰑋" -u critical "Screen recording error" "Recording process had to be force-killed. Video may be corrupted." -t 5000
   else
+    zanken-notification-send -g "󰑋" "Screen recording stopped" "Saving video…" -t 3000
     finalize_recording
     local filename=$(cat "$RECORDING_FILE" 2>/dev/null)
     echo "$filename"
@@ -240,18 +163,16 @@ stop_screenrecording() {
     # Generate a preview thumbnail from the first frame
     ffmpeg -y -i "$filename" -ss 00:00:00.1 -vframes 1 -q:v 2 "$preview" -loglevel quiet 2>/dev/null
 
-    (
-      ACTION=$(notify-send "Screen recording saved" "Open with Super + Alt + , (or click this)" -t 10000 -i "${preview:-$filename}" -A "default=open")
-      [[ $ACTION == "default" ]] && mpv "$filename"
-      rm -f "$preview"
-    ) &
+    zanken-notification-send -g "󰑋" "Screen recording saved" "$(basename -- "$filename")" -t 8000
+    rm -f "$preview"
   fi
 
   rm -f "$RECORDING_FILE"
+  clear_recording_state
 }
 
 toggle_screenrecording_indicator() {
-  : # waybar indicator removed
+  : # Quickshell does not need a recorder indicator process
 }
 
 screenrecording_active() {

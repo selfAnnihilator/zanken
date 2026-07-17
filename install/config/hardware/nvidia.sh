@@ -1,3 +1,51 @@
+NIRI_CONFIG="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
+NVIDIA_CONFIG_BEGIN="// Zanken NVIDIA environment"
+NVIDIA_CONFIG_END="// End Zanken NVIDIA environment"
+
+configure_niri_environment() {
+  local temporary_config=""
+
+  if [[ ! -f $NIRI_CONFIG ]]; then
+    echo "Niri configuration is missing: $NIRI_CONFIG" >&2
+    return 1
+  fi
+
+  temporary_config=$(mktemp "${NIRI_CONFIG}.XXXXXX")
+  cp "$NIRI_CONFIG" "$temporary_config"
+  sed -i "/^$NVIDIA_CONFIG_BEGIN$/,/^$NVIDIA_CONFIG_END$/d" "$temporary_config"
+
+  if [[ $GPU_ARCH == "turing_plus" ]]; then
+    cat >>"$temporary_config" <<EOF
+
+$NVIDIA_CONFIG_BEGIN
+environment {
+  NVD_BACKEND "direct"
+  LIBVA_DRIVER_NAME "nvidia"
+  __GLX_VENDOR_LIBRARY_NAME "nvidia"
+}
+$NVIDIA_CONFIG_END
+EOF
+  else
+    cat >>"$temporary_config" <<EOF
+
+$NVIDIA_CONFIG_BEGIN
+environment {
+  NVD_BACKEND "egl"
+  __GLX_VENDOR_LIBRARY_NAME "nvidia"
+}
+$NVIDIA_CONFIG_END
+EOF
+  fi
+
+  if ! niri validate --config "$temporary_config" >/dev/null; then
+    rm -f "$temporary_config"
+    echo "Generated NVIDIA settings are not valid Niri configuration" >&2
+    return 1
+  fi
+
+  mv "$temporary_config" "$NIRI_CONFIG"
+}
+
 if lspci | grep -qi 'nvidia'; then
   # Check which kernel is installed and set appropriate headers package
   KERNEL_HEADERS="$(pacman -Qqs '^linux(-zen|-lts|-hardened)?$' | head -1)-headers"
@@ -27,23 +75,5 @@ EOF
 MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
 EOF
 
-  # Add NVIDIA environment variables based on GPU architecture
-  if [[ $GPU_ARCH = "turing_plus" ]]; then
-    # Turing+ (RTX 20xx, GTX 16xx, and newer) with GSP firmware support
-    cat >>"$HOME/.config/hypr/envs.lua" <<'EOF'
-
--- NVIDIA (Turing+ with GSP firmware)
-hl.env("NVD_BACKEND", "direct")
-hl.env("LIBVA_DRIVER_NAME", "nvidia")
-hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
-EOF
-  elif [[ $GPU_ARCH = "maxwell_pascal_volta" ]]; then
-    # Maxwell/Pascal/Volta (GTX 9xx/10xx, GT 10xx, Quadro P/M/GV, MX series, Titan X/Xp/V) lack GSP firmware
-    cat >>"$HOME/.config/hypr/envs.lua" <<'EOF'
-
--- NVIDIA (Maxwell/Pascal/Volta without GSP firmware)
-hl.env("NVD_BACKEND", "egl")
-hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
-EOF
-  fi
+  configure_niri_environment
 fi

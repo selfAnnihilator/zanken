@@ -1,5 +1,0 @@
-#!/bin/bash
-# niri override: restart waybar without uwsm-app
-pkill -x waybar 2>/dev/null || true
-sleep 0.3
-setsid waybar >/dev/null 2>&1 &

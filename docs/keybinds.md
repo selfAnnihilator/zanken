@@ -73,6 +73,7 @@
 |---------|--------|
 | `Print` | Screenshot (region select) |
 | `Mod+Print` | Color picker |
+| `Mod+Alt+Shift+R` | Start or stop screen recording |
 | `Ctrl+Print` | Screenshot (full screen) |
 | `Shift+Print` | Screenshot to clipboard |
 

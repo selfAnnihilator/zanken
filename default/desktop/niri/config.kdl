@@ -143,7 +143,7 @@ binds {
     // Browser / file manager / editor
     Mod+Shift+Return { spawn "zanken-launch-browser"; }
     Mod+B { spawn "qutebrowser"; }
-    Mod+Shift+B { spawn "firefox"; }
+    Mod+Shift+B { spawn "zanken-launch-browser"; }
     Mod+E { spawn "nautilus"; }
     Mod+Shift+N { spawn "zanken-launch-editor"; }
 

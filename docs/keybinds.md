@@ -11,7 +11,7 @@
 | `Mod+Alt+Return` | Open terminal in tmux session |
 | `Mod+Shift+Return` | Open default browser |
 | `Mod+B` | Open qutebrowser |
-| `Mod+Shift+B` | Toggle Zen Browser |
+| `Mod+Shift+B` | Open the preferred browser |
 | `Mod+E` | Open Nautilus file manager |
 | `Mod+Shift+N` | Open default editor |
 

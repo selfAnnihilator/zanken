@@ -127,6 +127,9 @@ pass "managed desktop defaults are portable"
 rg -Fq 'Mod+Shift+Space { spawn "zanken-restart-quickshell"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "Quickshell restart hotkey uses Mod+Shift+Space"
 pass "Quickshell restart hotkey uses Mod+Shift+Space"
 
+rg -Fq 'Mod+Shift+B { spawn "zanken-launch-browser"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "preferred-browser hotkey uses the Zanken browser launcher"
+pass "preferred-browser hotkey uses the Zanken browser launcher"
+
 nvidia_config="$TMPDIR/nvidia-config.kdl"
 printf '%s\n' \
   'environment {' \

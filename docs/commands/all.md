@@ -1,6 +1,6 @@
 # All Commands
 
-263 public commands generated from CLI metadata.
+264 public commands generated from CLI metadata.
 
 | Command | Description |
 |---------|-------------|
@@ -32,6 +32,7 @@
 | `zanken-debug` | Print debugging information |
 | `zanken-default-browser` | Set the default browser for Zanken and XDG handlers |
 | `zanken-default-editor` | Set the default editor for $EDITOR |
+| `zanken-default-quick-browser` | Set the browser launched by the Mod+B quick-browser hotkey |
 | `zanken-default-terminal` | Set the default terminal used by xdg-terminal-exec |
 | `zanken-dev-add-migration` | Creates a new Zanken migration named after the unix timestamp of the last commit. |
 | `zanken-dev-benchmark` | Measure Zanken CLI response times |
@@ -94,7 +95,7 @@
 | `zanken-launch-about` | Launch the fastfetch TUI that gives information about the current system. |
 | `zanken-launch-audio` | Launch the Zanken audio controls TUI (provided by wiremix). |
 | `zanken-launch-bluetooth` | Launch the Zanken bluetooth controls TUI (provided by bluetui). |
-| `zanken-launch-browser` | Launch the default browser as determined by xdg-settings. |
+| `zanken-launch-browser` | Launch the default browser or the configurable Mod+B quick browser. |
 | `zanken-launch-editor` | Launch the default editor as determined by $EDITOR (set via ~/.config/uwsm/default) (or nvim if missing). |
 | `zanken-launch-floating-terminal-with-presentation` | Launch a floating terminal with the Zanken presentation wrapper |
 | `zanken-launch-or-focus` | Launch an app or focus an existing window matching a pattern |

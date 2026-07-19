@@ -25,6 +25,12 @@ assert_output_contains() {
 
 export PATH="$ROOT/bin:$PATH"
 
+quick_browser_home=$(mktemp -d)
+trap 'rm -rf "$quick_browser_home"' EXIT
+HOME="$quick_browser_home" "$CLI" default quick browser qutebrowser
+[[ $(HOME="$quick_browser_home" "$CLI" default quick browser) == "qutebrowser" ]] || fail "quick browser preference persists independently"
+pass "quick browser preference persists independently"
+
 "$CLI" commands --check >/dev/null
 pass "command metadata and fast-path aliases are valid"
 

@@ -127,8 +127,9 @@ pass "managed desktop defaults are portable"
 rg -Fq 'Mod+Shift+Space { spawn "zanken-restart-quickshell"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "Quickshell restart hotkey uses Mod+Shift+Space"
 pass "Quickshell restart hotkey uses Mod+Shift+Space"
 
+rg -Fq 'Mod+B { spawn "zanken-launch-browser" "--quick"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "quick-browser hotkey uses the configurable Zanken launcher"
 rg -Fq 'Mod+Shift+B { spawn "zanken-launch-browser"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "preferred-browser hotkey uses the Zanken browser launcher"
-pass "preferred-browser hotkey uses the Zanken browser launcher"
+pass "browser hotkeys use their configurable Zanken launchers"
 
 nvidia_config="$TMPDIR/nvidia-config.kdl"
 printf '%s\n' \
@@ -155,6 +156,7 @@ for command in \
   zanken-niri-window-close-all \
   zanken-restart-quickshell \
   zanken-config-desktop \
+  zanken-default-quick-browser \
   zanken-welcome; do
   assert_command "$command"
 done

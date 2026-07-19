@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# zanken:summary=Set the browser launched by the Mod+B quick-browser hotkey
+# zanken:group=default
+# zanken:name=quick browser
+# zanken:args=[browser-command]
+# zanken:examples=zanken default quick browser qutebrowser
+
+CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+PREFERENCE_FILE="$CONFIG_HOME/zanken/quick-browser"
+
+if (( $# == 0 )); then
+  if [[ -f $PREFERENCE_FILE ]]; then
+    cat "$PREFERENCE_FILE"
+  else
+    echo "qutebrowser"
+  fi
+  exit 0
+fi
+
+if (( $# != 1 )) || [[ ! $1 =~ ^[[:alnum:]_.-]+$ ]]; then
+  echo "Usage: zanken-default-quick-browser [browser-command]" >&2
+  exit 2
+fi
+
+mkdir -p "$(dirname "$PREFERENCE_FILE")"
+printf '%s\n' "$1" >"$PREFERENCE_FILE"

@@ -31,6 +31,9 @@ Build with warnings treated as errors:
 mkdocs build --strict --clean
 ```
 
+GitHub Actions runs this validation on both `dev` and `main`. GitHub Pages
+deployment is restricted to `main`, after validation succeeds.
+
 The command reference is generated from the metadata in `bin/zanken-*`. Keep
 it synchronized whenever command metadata changes:
 

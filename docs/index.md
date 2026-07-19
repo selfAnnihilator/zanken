@@ -1,15 +1,15 @@
 # Zanken
 
-**Zanken** is a Niri-based Linux workspace built around the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and [Quickshell](https://quickshell.outfoxxed.me/).
+**Zanken** is a standalone Arch Linux desktop environment built around the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and [Quickshell](https://quickshell.outfoxxed.me/).
 
 ## What it is
 
 - **Compositor**: [Niri](https://github.com/YaLTeR/niri) — a scrolling tiling Wayland compositor
 - **Bar**: [Quickshell](https://quickshell.outfoxxed.me/) — QML-based desktop shell with popups for audio, wifi, bluetooth, music, weather
-- **Notifications**: [Elephant](https://github.com/nickel-org/elephant)
+- **Notifications**: [Mako](https://github.com/emersion/mako)
 - **Terminal**: [Foot](https://codeberg.org/dnkl/foot)
 - **Launcher**: OmniMenu — built-in Quickshell search (`Mod+Space`)
-- **Scripts**: 308 `zanken-*` shell scripts covering everything from theming to hardware detection
+- **Scripts**: 280+ `zanken-*` shell scripts covering everything from theming to hardware detection
 - **Themes**: 21 built-in color themes, dynamic wallpaper-based palette generation via zanken-wallpaper-colors
 
 ## What it is not
@@ -28,7 +28,7 @@ See [Installation](installation.md) for full details.
 
 ```
 zanken/
-├── bin/          # 308 zanken-* scripts
+├── bin/          # 280+ zanken-* scripts
 ├── config/       # Base app configs
 ├── default/      # Default app and managed desktop configs
 ├── themes/       # 21 built-in color themes

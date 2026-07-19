@@ -31,7 +31,7 @@ jobs:
 
       - run: pip install mkdocs-material
 
-      - run: mkdocs build
+      - run: mkdocs build --strict --clean
 
       - uses: actions/upload-pages-artifact@v3
         with:

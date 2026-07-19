@@ -35,6 +35,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/
 
 **[selfAnnihilator.github.io/zanken](https://selfAnnihilator.github.io/zanken)**
 
+Build or preview the documentation locally with `mkdocs build --strict --clean`
+or `mkdocs serve`. See [Documentation Development](docs/development.md) for
+the required Arch packages and command-reference workflow.
+
 - [Installation](https://selfAnnihilator.github.io/zanken/installation)
 - [Keybinds](https://selfAnnihilator.github.io/zanken/keybinds)
 - [Themes](https://selfAnnihilator.github.io/zanken/themes)

@@ -1,9 +1,9 @@
 site_name: Zanken
-site_description: A Niri-based Linux workspace derived from Omarchy
+site_description: A standalone Niri and Quickshell desktop environment for Arch Linux
 site_url: https://selfAnnihilator.github.io/zanken
 repo_url: https://github.com/selfAnnihilator/zanken
 repo_name: selfAnnihilator/zanken
-edit_uri: edit/dev/docs/
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -61,6 +61,7 @@ nav:
   - Configuration: configuration.md
   - Keybinds: keybinds.md
   - Themes: themes/index.md
+  - Development: development.md
   - Commands:
     - Overview: commands/index.md
     - Audio & Media: commands/audio.md

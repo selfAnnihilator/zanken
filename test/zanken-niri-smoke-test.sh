@@ -54,6 +54,15 @@ rg -q '^run_logged \$ZANKEN_INSTALL/config/desktop\.sh$' "$ROOT/install/config/a
 [[ ! -e $ROOT/install/config/dotfiles.sh ]] || fail "installer does not depend on a separate dotfiles repository"
 pass "installer adopts self-contained managed desktop defaults"
 
+legacy_hook="$work_tree/.config/zanken/hooks/post-boot.d/quickshell-desktop"
+mkdir -p "$(dirname "$legacy_hook")"
+printf '%s\n' '#!/bin/bash' 'qs -n -d -c desktop' >"$legacy_hook"
+HOME="$work_tree" ZANKEN_PATH="$work_tree/zanken" \
+  bash "$ROOT/migrations/1784442589_remove_legacy_quickshell_hook.sh"
+[[ ! -e $legacy_hook ]] || fail "legacy Quickshell post-boot hook is disabled"
+[[ -f $work_tree/.config/zanken/hooks/post-boot.d/disabled/quickshell-desktop ]] || fail "legacy Quickshell hook is preserved outside the hook runner"
+pass "managed desktop migration prevents duplicate Quickshell bars"
+
 mkdir -p "$work_tree/.config/zanken/current/theme"
 printf '%s\n' 'color1 = "#123456"' >"$work_tree/.config/zanken/current/theme/colors.toml"
 HOME="$work_tree" ZANKEN_PATH="$work_tree/zanken" "$ROOT/bin/zanken-config-desktop" sync

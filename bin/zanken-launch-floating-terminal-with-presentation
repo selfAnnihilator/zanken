@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Launch a floating terminal with the Omarchy presentation wrapper
+# zanken:summary=Launch a floating terminal with the Zanken presentation wrapper
 # zanken:args=<command>
 
 cmd="$*"

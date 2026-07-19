@@ -2,7 +2,7 @@
 
 # zanken:summary=Adjust brightness on the most likely display device.
 # zanken:args=<+N%|N%-|N%|off|on>
-# zanken:examples=omarchy brightness display +5% | omarchy brightness display 5%- | omarchy brightness display 50% | omarchy brightness display off | omarchy brightness display on
+# zanken:examples=zanken brightness display +5% | zanken brightness display 5%- | zanken brightness display 50% | zanken brightness display off | zanken brightness display on
 
 step="${1:-+5%}"
 

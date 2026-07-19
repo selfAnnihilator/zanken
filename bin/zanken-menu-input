@@ -4,7 +4,7 @@
 # zanken:group=menu
 # zanken:name=input
 # zanken:args=prompt [walker args...]
-# zanken:examples=omarchy menu input Reminder|zanken-menu-input "Reminder in minutes" --width 400
+# zanken:examples=zanken menu input Reminder|zanken-menu-input "Reminder in minutes" --width 400
 
 set -euo pipefail
 

@@ -4,7 +4,7 @@
 # zanken:group=branding
 # zanken:name=about
 # zanken:args=<image|text|reset>
-# zanken:examples=omarchy branding about image | omarchy branding about text | omarchy branding about reset
+# zanken:examples=zanken branding about image | zanken branding about text | zanken branding about reset
 
 set -euo pipefail
 

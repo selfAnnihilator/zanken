@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Open the Omarchy theme switcher
+# zanken:summary=Open the Zanken theme switcher
 
 ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
 USER_THEMES_PATH="$HOME/.config/zanken/themes"

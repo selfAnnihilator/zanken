@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# zanken:summary=Overwrite the user config for fastfetch with the Omarchy default.
+# zanken:summary=Overwrite the user config for fastfetch with the Zanken default.
 
 zanken-refresh-config fastfetch/config.jsonc

@@ -1,18 +1,11 @@
 #!/bin/bash
 
-# zanken:summary=Reinstall all default Omarchy packages from the stable channel
+# zanken:summary=Install all default Zanken packages
 # zanken:requires-sudo=true
 
 set -e
 
-# Reinstall all default Omarchy packages from the stable channel and downgrade any packages that are too new.
-
-# Set the package repository to the stable mirrors
-zanken-refresh-pacman
-
-# Downgrade any packages to the stable setup
-sudo pacman -Suu --noconfirm
-
-# Ensure all packages are installed
+# Ensure all packages are installed from the configured official repositories
+# or the AUR. Do not overwrite pacman configuration or force downgrades.
 mapfile -t packages < <(grep -v '^#' "$ZANKEN_PATH/install/zanken-base.packages" | grep -v '^$')
-sudo pacman -Syu --noconfirm --needed "${packages[@]}"
+zanken-pkg-add "${packages[@]}"

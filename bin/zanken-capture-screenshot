@@ -3,7 +3,7 @@
 # zanken:summary=Take a screenshot
 # zanken:group=capture
 # zanken:args=[smart|region|windows|fullscreen] [slurp|copy|save] [--editor=<name>]
-# zanken:examples=omarchy screenshot | omarchy capture screenshot region
+# zanken:examples=zanken screenshot | zanken capture screenshot region
 # zanken:aliases=zanken screenshot
 
 [[ -f ~/.config/user-dirs.dirs ]] && source ~/.config/user-dirs.dirs

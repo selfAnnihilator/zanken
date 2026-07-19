@@ -1,5 +1,4 @@
-source "$OMARCHY_INSTALL/helpers/compatibility.sh"
-source $OMARCHY_INSTALL/helpers/chroot.sh
-source $OMARCHY_INSTALL/helpers/presentation.sh
-source $OMARCHY_INSTALL/helpers/errors.sh
-source $OMARCHY_INSTALL/helpers/logging.sh
+source $ZANKEN_INSTALL/helpers/chroot.sh
+source $ZANKEN_INSTALL/helpers/presentation.sh
+source $ZANKEN_INSTALL/helpers/errors.sh
+source $ZANKEN_INSTALL/helpers/logging.sh

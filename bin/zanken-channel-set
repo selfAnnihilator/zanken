@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Set the Omarchy channel, which dictates what git branch and package repository is used.
+# zanken:summary=Set the Zanken git release channel
 # zanken:args=<stable|rc|edge|dev>
 # zanken:requires-sudo=true
 
@@ -12,10 +12,9 @@ else
 fi
 
 case "$channel" in
-"stable") zanken-branch-set "master" && zanken-refresh-pacman "stable" ;;
-"rc") zanken-branch-set "rc" && zanken-refresh-pacman "rc" ;;
-"edge") zanken-branch-set "master" && zanken-refresh-pacman "edge" ;;
-"dev") zanken-branch-set "dev" && zanken-refresh-pacman "edge" ;;
+"stable") zanken-branch-set "main" ;;
+"rc") zanken-branch-set "rc" ;;
+"edge" | "dev") zanken-branch-set "dev" ;;
 *) echo "Unknown channel: $channel"; exit 1; ;;
 esac
 

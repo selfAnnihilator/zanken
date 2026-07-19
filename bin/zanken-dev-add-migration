@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Creates a new Omarchy migration named after the unix timestamp of the last commit.
+# zanken:summary=Creates a new Zanken migration named after the unix timestamp of the last commit.
 
 ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 cd "$ZANKEN_PATH"

@@ -2,7 +2,7 @@
 
 # zanken:summary=Set corners to sharp or round
 # zanken:args=<sharp|round>
-# zanken:examples=omarchy style corners round | omarchy style corners sharp
+# zanken:examples=zanken style corners round | zanken style corners sharp
 
 if [[ $1 != "sharp" && $1 != "round" ]]; then
   echo "Usage: zanken-style-corners <sharp|round>"

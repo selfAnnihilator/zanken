@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# zanken:summary=Send a desktop notification with Omarchy glyph and body spacing
+# zanken:summary=Send a desktop notification with Zanken glyph and body spacing
 # zanken:args=<headline> [description] [-g <glyph>] [-u <low|normal|critical>] [notify-send options]
-# zanken:examples=omarchy notification send "Reminder" "5 minutes are up" -g 󰔛 -u critical
+# zanken:examples=zanken notification send "Reminder" "5 minutes are up" -g 󰔛 -u critical
 
 set -euo pipefail
 

@@ -2,7 +2,7 @@
 
 # zanken:summary=Create a desktop launcher for a RetroArch game
 # zanken:args=[core path-to-game]
-# zanken:examples=omarchy games retro install snes9x ~/Games/roms/snes/game.sfc | zanken-games-retro-install /usr/lib/libretro/mgba_libretro.so ~/Games/roms/gba/game.gba
+# zanken:examples=zanken games retro install snes9x ~/Games/roms/snes/game.sfc | zanken-games-retro-install /usr/lib/libretro/mgba_libretro.so ~/Games/roms/gba/game.gba
 
 set -e
 

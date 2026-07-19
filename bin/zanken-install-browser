@@ -2,7 +2,7 @@
 
 # zanken:summary=Install a supported browser
 # zanken:args=<chrome|brave|brave-origin|edge|firefox|zen>
-# zanken:examples=omarchy install browser firefox | omarchy install browser brave
+# zanken:examples=zanken install browser firefox | zanken install browser brave
 
 ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 

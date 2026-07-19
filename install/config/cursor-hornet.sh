@@ -3,7 +3,7 @@
 
 THEME_DIR="$HOME/.local/share/icons/Hornet"
 CURSORS_DIR="$THEME_DIR/cursors"
-ZIP_SRC="$OMARCHY_PATH/default/cursors/hornet.zip"
+ZIP_SRC="$ZANKEN_PATH/default/cursors/hornet.zip"
 
 mkdir -p "$CURSORS_DIR"
 

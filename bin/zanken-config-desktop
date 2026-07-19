@@ -1,0 +1,194 @@
+#!/bin/bash
+
+# zanken:summary=Sync or adopt the managed Zanken desktop configuration
+# zanken:group=config
+# zanken:name=desktop
+# zanken:args=[sync|adopt|rollback]
+# zanken:examples=zanken config desktop sync | zanken config desktop adopt | zanken config desktop rollback
+
+set -euo pipefail
+
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
+SOURCE_DIR="$ZANKEN_PATH/default/desktop"
+DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+DESKTOP_DIR="$DATA_HOME/zanken/desktop"
+NIRI_CONFIG="$CONFIG_HOME/niri/config.kdl"
+QUICKSHELL_CONFIG="$CONFIG_HOME/quickshell/zanken"
+SETTINGS_FILE="$CONFIG_HOME/zanken/settings.json"
+
+usage() {
+  cat <<'USAGE'
+Usage: zanken config desktop [sync|adopt|rollback]
+
+  sync   Update Zanken-managed desktop files only (default).
+  adopt  Also install Zanken's Niri and Quickshell entry points. Existing
+         entry points are shown and require confirmation before backup.
+  rollback  Restore the most recently replaced managed desktop tree.
+USAGE
+}
+
+sync_desktop() {
+  local accent colors_file data_parent staging_dir previous_dir timestamp
+
+  [[ -d $SOURCE_DIR/niri && -f $SOURCE_DIR/niri/config.kdl ]] || {
+    echo "Missing Zanken Niri desktop source: $SOURCE_DIR/niri/config.kdl" >&2
+    return 1
+  }
+  [[ -f $SOURCE_DIR/quickshell/shell.qml ]] || {
+    echo "Missing Zanken Quickshell desktop source: $SOURCE_DIR/quickshell/shell.qml" >&2
+    return 1
+  }
+
+  data_parent=$(dirname "$DESKTOP_DIR")
+  mkdir -p "$data_parent"
+  staging_dir=$(mktemp -d "$data_parent/desktop.staging.XXXXXX")
+  cp -a "$SOURCE_DIR/." "$staging_dir/"
+
+  if ! niri validate --config "$staging_dir/niri/config.kdl" >/dev/null; then
+    rm -rf "$staging_dir"
+    echo "Refusing to activate invalid Zanken Niri configuration" >&2
+    return 1
+  fi
+
+  timestamp=$(date +%s%N)
+  if [[ -e $DESKTOP_DIR ]]; then
+    previous_dir="$data_parent/desktop.previous.$timestamp"
+    mv "$DESKTOP_DIR" "$previous_dir"
+  fi
+  mv "$staging_dir" "$DESKTOP_DIR"
+
+  # Keep the wallpaper-derived accent when an update replaces the managed
+  # Niri file. The user entry point is intentionally left untouched.
+  colors_file="$CONFIG_HOME/zanken/current/theme/colors.toml"
+  accent=""
+  if [[ -f $colors_file ]]; then
+    accent=$(sed -nE 's/^color1 = "(#[0-9A-Fa-f]{6})"/\1/p' "$colors_file" | head -n 1)
+  fi
+  if [[ $accent =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+    sed -i "/inactive-color/!s/active-color \"#[0-9A-Fa-f]*\"/active-color \"$accent\"/g" "$DESKTOP_DIR/niri/config.kdl"
+    sed -i '/active-gradient /d' "$DESKTOP_DIR/niri/config.kdl"
+  fi
+
+  if [[ -f $NIRI_CONFIG ]]; then
+    touch "$NIRI_CONFIG"
+  fi
+}
+
+rollback_desktop() {
+  local data_parent candidate latest latest_timestamp previous_timestamp timestamp
+
+  data_parent=$(dirname "$DESKTOP_DIR")
+  latest=""
+  for candidate in "$data_parent"/desktop.previous.*; do
+    [[ -d $candidate ]] || continue
+    previous_timestamp=${candidate##*.}
+    latest_timestamp=${latest##*.}
+    if [[ -z $latest ]] || (( previous_timestamp > latest_timestamp )); then
+      latest="$candidate"
+    fi
+  done
+
+  [[ -n $latest ]] || {
+    echo "No previous Zanken desktop tree is available to restore" >&2
+    return 1
+  }
+
+  timestamp=$(date +%s%N)
+  [[ -e $DESKTOP_DIR ]] && mv "$DESKTOP_DIR" "$data_parent/desktop.failed.$timestamp"
+  mv "$latest" "$DESKTOP_DIR"
+
+  if [[ -f $NIRI_CONFIG ]]; then
+    touch "$NIRI_CONFIG"
+  fi
+}
+
+entry_point_matches() {
+  local path="$1"
+  local expected="$2"
+
+  [[ -f $path ]] && cmp -s "$path" "$expected"
+}
+
+confirm_adoption() {
+  local -a conflicts=("$@")
+
+  (( ${#conflicts[@]} == 0 )) && return 0
+
+  echo "Zanken needs to replace these existing desktop entry points:" >&2
+  printf '  - %s\n' "${conflicts[@]}" >&2
+  echo "Timestamped backups will be created beside each path." >&2
+
+  if [[ ! -r /dev/tty || ! -w /dev/tty ]]; then
+    echo "Run zanken config desktop adopt from an interactive terminal to approve this change." >&2
+    return 1
+  fi
+
+  gum confirm "Adopt these desktop configuration entry points?" </dev/tty >/dev/tty
+}
+
+adopt_desktop() {
+  local niri_entry quickshell_target timestamp
+  local -a conflicts=()
+
+  niri_entry=$(mktemp)
+  quickshell_target="$DESKTOP_DIR/quickshell"
+  cat >"$niri_entry" <<EOF
+// Managed by Zanken. Put local Niri changes in ~/.config/zanken/niri.kdl.
+include "$DESKTOP_DIR/niri/config.kdl"
+include optional=true "$CONFIG_HOME/zanken/niri.kdl"
+EOF
+
+  if [[ -e $NIRI_CONFIG ]] && ! entry_point_matches "$NIRI_CONFIG" "$niri_entry"; then
+    conflicts+=("$NIRI_CONFIG")
+  fi
+  if [[ -e $QUICKSHELL_CONFIG ]] && [[ ! -L $QUICKSHELL_CONFIG || $(readlink "$QUICKSHELL_CONFIG") != "$quickshell_target" ]]; then
+    conflicts+=("$QUICKSHELL_CONFIG")
+  fi
+
+  if ! confirm_adoption "${conflicts[@]}"; then
+    rm -f "$niri_entry"
+    return 1
+  fi
+
+  timestamp=$(date +%s%N)
+  mkdir -p "$(dirname "$NIRI_CONFIG")" "$(dirname "$QUICKSHELL_CONFIG")" "$(dirname "$SETTINGS_FILE")"
+
+  if [[ -e $NIRI_CONFIG ]] && ! entry_point_matches "$NIRI_CONFIG" "$niri_entry"; then
+    mv "$NIRI_CONFIG" "$NIRI_CONFIG.zanken-backup.$timestamp"
+  fi
+  mv "$niri_entry" "$NIRI_CONFIG"
+
+  if [[ -e $QUICKSHELL_CONFIG ]] && [[ ! -L $QUICKSHELL_CONFIG || $(readlink "$QUICKSHELL_CONFIG") != "$quickshell_target" ]]; then
+    mv "$QUICKSHELL_CONFIG" "$QUICKSHELL_CONFIG.zanken-backup.$timestamp"
+  fi
+  ln -sfn "$quickshell_target" "$QUICKSHELL_CONFIG"
+
+  if [[ ! -e $CONFIG_HOME/zanken/niri.kdl ]]; then
+    : >"$CONFIG_HOME/zanken/niri.kdl"
+  fi
+
+  if [[ ! -e $SETTINGS_FILE ]]; then
+    printf '{\n  "version": 1\n}\n' >"$SETTINGS_FILE"
+  fi
+}
+
+case "${1:-sync}" in
+sync)
+  sync_desktop
+  ;;
+adopt)
+  sync_desktop
+  adopt_desktop
+  ;;
+rollback)
+  rollback_desktop
+  ;;
+--help | -h)
+  usage
+  ;;
+*)
+  usage >&2
+  exit 2
+  ;;
+esac

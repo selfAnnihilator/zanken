@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Install VS Code and configure Omarchy defaults for secrets, updates, and theme
+# zanken:summary=Install VS Code and configure Zanken defaults for secrets, updates, and theme
 
 echo "Installing VSCode..."
 zanken-pkg-add visual-studio-code-bin

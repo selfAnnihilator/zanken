@@ -2,9 +2,10 @@ name: Deploy docs
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     paths:
       - 'docs/**'
+      - 'bin/zanken*'
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
 
@@ -25,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
+      - run: bin/zanken-dev-generate-command-docs --check
 
       - run: pip install mkdocs-material
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Remove Sunshine and close Omarchy-managed Moonlight streaming ports.
+# zanken:summary=Remove Sunshine and close Zanken-managed Moonlight streaming ports.
 # zanken:requires-sudo=true
 
 set -e

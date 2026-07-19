@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Overwrite the user config for the Plymouth drive decryption and boot sequence with the Omarchy default and rebuild it.
+# zanken:summary=Overwrite the user config for the Plymouth drive decryption and boot sequence with the Zanken default and rebuild it.
 # zanken:requires-sudo=true
 
 ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"

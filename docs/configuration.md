@@ -4,8 +4,11 @@
 
 | Config | Path |
 |--------|------|
-| Niri compositor | `~/.config/niri/config.kdl` |
-| Quickshell bar | `~/.config/quickshell/desktop/` |
+| Niri entry point | `~/.config/niri/config.kdl` |
+| Niri local override | `~/.config/zanken/niri.kdl` |
+| Quickshell bar | `~/.config/quickshell/zanken/` |
+| Managed desktop defaults | `~/.local/share/zanken/desktop/` |
+| Local settings | `~/.config/zanken/settings.json` |
 | Foot terminal | `~/.config/foot/foot.ini` |
 | Fish shell | `~/.config/fish/config.fish` |
 | Qutebrowser | `~/.config/qutebrowser/config.py` |
@@ -13,9 +16,10 @@
 | User scripts | `~/.config/zanken/bin/` |
 | Current theme | `~/.config/zanken/current/` |
 
-Niri and Quickshell are deliberately not copied from the Zanken repository.
-Their explicit source is the `dotfiles` bare repository at `~/dotfiles`; edit
-them in place and commit with the `dotfiles` alias.
+Zanken owns the portable Niri and Quickshell defaults. They are synced from the
+Zanken checkout into the managed desktop directory during installation and
+updates. Your local settings and Niri override stay outside that directory and
+are never replaced.
 
 ## PATH architecture
 
@@ -72,7 +76,12 @@ chmod +x ~/.config/zanken/hooks/theme-set.d/my-hook
 
 ## Niri config
 
-The Niri config is at `~/.config/niri/config.kdl`. Key sections:
+`~/.config/niri/config.kdl` is a small Zanken-managed entry point. It includes
+the base configuration and then the optional `~/.config/zanken/niri.kdl` local
+override. Put monitor rules, extra bindings, and other machine-specific Niri
+changes in that override file.
+
+Key base sections include:
 
 ```kdl
 // Gaps between windows
@@ -92,7 +101,10 @@ Full reference: [Niri configuration docs](https://github.com/YaLTeR/niri/wiki/Co
 
 ## Quickshell bar
 
-The bar source is at `~/.config/quickshell/desktop/`. Key files:
+The managed bar is named `zanken`, so it can coexist with other Quickshell
+configs. Its source is at `~/.local/share/zanken/desktop/quickshell/`, exposed
+through `~/.config/quickshell/zanken/`. Use `settings.json` for supported local
+preferences rather than editing managed QML files.
 
 | File | Purpose |
 |------|---------|

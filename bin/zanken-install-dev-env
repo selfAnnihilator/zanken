@@ -3,7 +3,7 @@
 # zanken:summary=Install a supported development environment
 # zanken:name=dev-env
 # zanken:args=<ruby|node|bun|deno|go|laravel|symfony|php|python|elixir|phoenix|rust|java|zig|ocaml|dotnet|clojure|scala>
-# zanken:examples=omarchy install dev-env ruby | omarchy install dev-env node
+# zanken:examples=zanken install dev-env ruby | zanken install dev-env node
 # zanken:requires-sudo=true
 
 if [[ -z $1 ]]; then

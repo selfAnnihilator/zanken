@@ -1,3 +1,3 @@
-if omarchy-hw-framework16; then
-  omarchy-pkg-add qmk-hid
+if zanken-hw-framework16; then
+  zanken-pkg-add qmk-hid
 fi

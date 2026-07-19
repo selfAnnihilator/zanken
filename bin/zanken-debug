@@ -2,7 +2,7 @@
 
 # zanken:summary=Print debugging information
 # zanken:args=[--no-sudo] [--print]
-# zanken:examples=omarchy debug --print --no-sudo
+# zanken:examples=zanken debug --print --no-sudo
 # zanken:requires-sudo=true
 
 NO_SUDO=false

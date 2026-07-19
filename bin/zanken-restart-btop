@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# zanken:summary=Reload btop configuration (used by the Omarchy theme switching).
+# zanken:summary=Reload btop configuration (used by the Zanken theme switching).
 
 pkill -SIGUSR2 btop

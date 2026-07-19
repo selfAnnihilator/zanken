@@ -2,7 +2,7 @@
 
 # zanken:summary=Set the default editor for $EDITOR
 # zanken:args=[code|cursor|zed|sublime_text|helix|vim|emacs|nvim]
-# zanken:examples=omarchy default editor | omarchy default editor code | omarchy default editor helix
+# zanken:examples=zanken default editor | zanken default editor code | zanken default editor helix
 
 if (($# == 0)); then
   sed -n 's/^export EDITOR=//p' ~/.config/uwsm/default | head -n 1

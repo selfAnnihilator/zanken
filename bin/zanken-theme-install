@@ -2,8 +2,8 @@
 
 # zanken:summary=Install a theme from a git repository
 # zanken:args=[git-repo-url]
-# zanken:examples=omarchy theme install https://github.com/example/zanken-example-theme.git
-# zanken:examples=omarchy theme install git@github.com:example/zanken-example-theme.git
+# zanken:examples=zanken theme install https://github.com/example/zanken-example-theme.git
+# zanken:examples=zanken theme install git@github.com:example/zanken-example-theme.git
 
 if [[ -z $1 ]]; then
   echo -e "\e[32mSee https://manuals.omamix.org/2/the-zanken-manual/90/extra-themes\n\e[0m"

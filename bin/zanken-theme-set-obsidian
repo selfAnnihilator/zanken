@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Sync Omarchy theme to all Obsidian vaults
+# zanken:summary=Sync Zanken theme to all Obsidian vaults
 # zanken:hidden=true
 
 CURRENT_THEME_DIR="$HOME/.config/zanken/current/theme"

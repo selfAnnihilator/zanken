@@ -4,7 +4,7 @@
 # zanken:group=transcode
 # zanken:name=ascii
 # zanken:args=<input-image.svg|png> <output-path> [--width <columns>] [--height <rows>] [--mode <braille|block>] [--threshold <percent>] [--invert]
-# zanken:examples=omarchy transcode ascii ~/logo.svg /tmp/logo.txt | omarchy transcode ascii ~/logo.png ~/.config/zanken/branding/screensaver.txt --width 80
+# zanken:examples=zanken transcode ascii ~/logo.svg /tmp/logo.txt | zanken transcode ascii ~/logo.png ~/.config/zanken/branding/screensaver.txt --width 80
 
 set -o pipefail
 

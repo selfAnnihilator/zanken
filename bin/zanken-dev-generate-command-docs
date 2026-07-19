@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# zanken:summary=Generate the public command reference from CLI metadata
+# zanken:group=dev
+# zanken:name=generate-command-docs
+# zanken:args=[--check]
+# zanken:examples=zanken dev generate-command-docs | zanken dev generate-command-docs --check
+
+set -euo pipefail
+
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+OUTPUT="$ROOT/docs/commands/all.md"
+TEMP_FILE=$(mktemp)
+
+cleanup() {
+  rm -f "$TEMP_FILE"
+}
+trap cleanup EXIT
+
+PATH="$ROOT/bin:$PATH" "$ROOT/bin/zanken" commands --json | jq -r '
+  "# All Commands\n",
+  "\(.commands | length) public commands generated from CLI metadata.\n",
+  "| Command | Description |\n|---------|-------------|",
+  (.commands[] | "| `\(.binary)` | \(.summary | gsub("\\|"; "\\\\|")) |")
+' >"$TEMP_FILE"
+
+case "${1:-}" in
+"")
+  mv "$TEMP_FILE" "$OUTPUT"
+  trap - EXIT
+  ;;
+--check)
+  cmp -s "$TEMP_FILE" "$OUTPUT" || {
+    echo "Command reference is stale. Run: zanken dev generate-command-docs" >&2
+    exit 1
+  }
+  ;;
+*)
+  echo "Usage: $0 [--check]" >&2
+  exit 2
+  ;;
+esac

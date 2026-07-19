@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Toggle Omarchy features between enabled and disabled
+# zanken:summary=Toggle Zanken features between enabled and disabled
 # zanken:args=[--enabled-notification <text>] [--disabled-notification <text>] <flag-name>
 
 ENABLED_NOTIFICATION=""

@@ -2,7 +2,7 @@
 
 # zanken:summary=Set the system monospace font
 # zanken:args=<font-name>
-# zanken:examples=omarchy font list | omarchy font set "CaskaydiaMono Nerd Font"
+# zanken:examples=zanken font list | zanken font set "CaskaydiaMono Nerd Font"
 
 font_name="$1"
 
@@ -33,7 +33,11 @@ if [[ -n $font_name ]]; then
       ~/.config/fontconfig/fonts.conf
 
     printf '%s' "$font_name" > ~/.config/zanken/current/mono-font
-    qs -c desktop ipc call font set "$font_name" 2>/dev/null || true
+    quickshell_config=desktop
+    if [[ -f ~/.config/quickshell/zanken/shell.qml ]]; then
+      quickshell_config=zanken
+    fi
+    qs -c "$quickshell_config" ipc call font set "$font_name" 2>/dev/null || true
 
     zanken-restart-swayosd
 

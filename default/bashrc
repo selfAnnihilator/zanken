@@ -1,7 +1,7 @@
 # If not running interactively, don't do anything (leave this at the top of this file)
 [[ $- != *i* ]] && return
 
-# All the default Omarchy aliases and functions
+# All the default Zanken aliases and functions
 # (don't mess with these directly, just overwrite them here!)
 ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 source "$ZANKEN_PATH/default/bash/rc"

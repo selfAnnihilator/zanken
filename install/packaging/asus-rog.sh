@@ -1,3 +1,3 @@
-if omarchy-hw-asus-rog; then
-  omarchy-pkg-add asusctl
+if zanken-hw-asus-rog; then
+  zanken-pkg-add asusctl
 fi

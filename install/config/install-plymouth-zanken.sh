@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-THEME_SRC="${OMARCHY_PATH:-$HOME/zanken}/install/config/plymouth-zanken"
+THEME_SRC="${ZANKEN_PATH:-$HOME/zanken}/install/config/plymouth-zanken"
 THEME_DEST="/usr/share/plymouth/themes/zanken"
 
 sudo mkdir -p "$THEME_DEST"

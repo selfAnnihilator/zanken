@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Finish the installation of Omarchy with items that can only be done after logging in.
+# zanken:summary=Finish the installation of Zanken with items that can only be done after logging in.
 # zanken:requires-sudo=true
 
 set -e

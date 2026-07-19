@@ -10,7 +10,20 @@ fi
 
 COLORS_TOML="$HOME/.config/zanken/current/theme/colors.toml"
 NIRI_CONFIG="$HOME/.config/niri/config.kdl"
+DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+MANAGED_NIRI_CONFIG="$DATA_HOME/zanken/desktop/niri/config.kdl"
+QUICKSHELL_CONFIG=desktop
 GTK_CSS="$HOME/.config/gtk-4.0/noctalia.css"
+
+# Adopted desktops keep ~/.config/niri/config.kdl as a small entry point. The
+# wallpaper accent belongs in the managed file it includes, not the wrapper.
+if [[ -f $MANAGED_NIRI_CONFIG ]] && grep -Fqx "include \"$MANAGED_NIRI_CONFIG\"" "$NIRI_CONFIG" 2>/dev/null; then
+  NIRI_CONFIG="$MANAGED_NIRI_CONFIG"
+fi
+
+if [[ -f $HOME/.config/quickshell/zanken/shell.qml ]]; then
+  QUICKSHELL_CONFIG=zanken
+fi
 
 # Compute contrasting fg for GTK accent_fg_color
 R=$((16#${ACCENT:1:2}))
@@ -99,7 +112,7 @@ PYEOF
 fi
 
 # Reload Quickshell theme
-qs -c desktop ipc call theme reload 2>/dev/null || true
+qs -c "$QUICKSHELL_CONFIG" ipc call theme reload 2>/dev/null || true
 
 # Reload niri config
 niri msg action load-config-file 2>/dev/null || true

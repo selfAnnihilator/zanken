@@ -1,13 +1,13 @@
-_omarchy_complete() {
+_zanken_complete() {
   COMPREPLY=()
   local cur="${COMP_WORDS[COMP_CWORD]}"
 
-  local omarchy_path bin_dir
-  omarchy_path=$(command -v omarchy 2>/dev/null) || return 0
-  bin_dir=$(dirname -- "$(readlink -f -- "$omarchy_path" 2>/dev/null || printf '%s' "$omarchy_path")")
+  local zanken_path bin_dir
+  zanken_path=$(command -v zanken 2>/dev/null) || return 0
+  bin_dir=$(dirname -- "$(readlink -f -- "$zanken_path" 2>/dev/null || printf '%s' "$zanken_path")")
   [[ -d $bin_dir ]] || return 0
 
-  local prefix="omarchy"
+  local prefix="zanken"
   local i part
   for ((i = 1; i < COMP_CWORD; i++)); do
     part="${COMP_WORDS[i]}"
@@ -42,9 +42,12 @@ _omarchy_complete() {
 
   if (( ${#candidates[@]} == 0 )) && [[ -x $bin_dir/$prefix ]]; then
     local args enum
-    args=$(grep -m 1 '^# omarchy:args=<' "$bin_dir/$prefix" 2>/dev/null)
-    enum="${args#*<}"
+    args=$(grep -m 1 '^# zanken:args=' "$bin_dir/$prefix" 2>/dev/null)
+    enum="${args#*=}"
+    enum="${enum#<}"
     enum="${enum%%>*}"
+    enum="${enum#[}"
+    enum="${enum%%]*}"
 
     if [[ $enum == *"|"* && $enum != *" "* ]]; then
       read -r -a candidates <<<"${enum//|/ }"
@@ -57,8 +60,8 @@ _omarchy_complete() {
   fi
 }
 
-complete -o default -F _omarchy_complete omarchy
+complete -o default -F _zanken_complete zanken
 
-# Hide individual omarchy-* binaries from initial-word command completion;
-# the unified `omarchy` dispatcher is the user-facing entry point.
-complete -I -A command -X 'omarchy-*'
+# Hide individual zanken-* binaries from initial-word command completion;
+# the unified `zanken` dispatcher is the user-facing entry point.
+complete -I -A command -X 'zanken-*'

@@ -2,7 +2,7 @@
 
 # zanken:summary=Display brightness level using SwayOSD on the current monitor.
 # zanken:args=<0-100>
-# zanken:examples=omarchy swayosd brightness 0 | omarchy swayosd brightness 50 | omarchy swayosd brightness 100
+# zanken:examples=zanken swayosd brightness 0 | zanken swayosd brightness 50 | zanken swayosd brightness 100
 
 percent="$1"
 

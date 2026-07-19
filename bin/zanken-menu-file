@@ -4,7 +4,7 @@
 # zanken:group=menu
 # zanken:name=file
 # zanken:args=label paths formats [walker args...]
-# zanken:examples=omarchy menu file "Select image" "$HOME/Pictures" "jpg png webp"|zanken-menu-file "Select media" "$HOME/Pictures:$HOME/Videos" "jpg png mp4 mov" --width 800
+# zanken:examples=zanken menu file "Select image" "$HOME/Pictures" "jpg png webp"|zanken-menu-file "Select media" "$HOME/Pictures:$HOME/Videos" "jpg png mp4 mov" --width 800
 
 set -euo pipefail
 

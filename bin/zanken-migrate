@@ -3,6 +3,7 @@
 # zanken:summary=Run all pending migrations to bring the system in line with the installed version.
 
 STATE_DIR="$HOME/.local/state/zanken/migrations"
+ZANKEN_MIGRATION_BASELINE=1780164860
 mkdir -p "$STATE_DIR"
 
 # Skipped migrations are tracked separately
@@ -11,6 +12,15 @@ mkdir -p "$STATE_DIR/skipped"
 # Run any pending migrations
 for file in $ZANKEN_PATH/migrations/*.sh; do
   filename=$(basename "$file")
+  if [[ ! $filename =~ ^([0-9]+)(_.+)?\.sh$ ]]; then
+    echo "Skipping migration with an invalid filename: $filename" >&2
+    continue
+  fi
+  migration_id=${BASH_REMATCH[1]}
+
+  # Zanken is a fresh fork, not an Omarchy upgrade path. Keep the inherited
+  # migration history in the repository for reference, but never execute it.
+  (( migration_id < ZANKEN_MIGRATION_BASELINE )) && continue
 
   if [[ ! -f $STATE_DIR/$filename && ! -f $STATE_DIR/skipped/$filename ]]; then
     echo -e "\e[32m\nRunning migration (${filename%.sh})\e[0m"

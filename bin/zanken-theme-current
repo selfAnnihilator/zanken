@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # zanken:summary=Show current theme
-# zanken:examples=omarchy theme current
+# zanken:examples=zanken theme current
 
 THEME_NAME_PATH="$HOME/.config/zanken/current/theme.name"
 

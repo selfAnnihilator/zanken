@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Apply current Omarchy theme colors to running Foot terminals
+# zanken:summary=Apply current Zanken theme colors to running Foot terminals
 # zanken:hidden=true
 
 foot_theme=~/.config/zanken/current/theme/foot.ini

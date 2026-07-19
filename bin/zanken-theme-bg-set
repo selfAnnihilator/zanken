@@ -2,7 +2,7 @@
 
 # zanken:summary=Set the current background image
 # zanken:args=<path-to-image>
-# zanken:examples=omarchy theme bg set ~/Pictures/background.png
+# zanken:examples=zanken theme bg set ~/Pictures/background.png
 
 if [[ -z $1 ]]; then
   echo "Usage: zanken-theme-bg-set <path-to-image>" >&2

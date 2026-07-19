@@ -2,7 +2,7 @@
 
 # zanken:summary=Display keyboard brightness level using SwayOSD on the current monitor.
 # zanken:args=<0-100>
-# zanken:examples=omarchy swayosd kbd brightness 0 | omarchy swayosd kbd brightness 50 | omarchy swayosd kbd brightness 100
+# zanken:examples=zanken swayosd kbd brightness 0 | zanken swayosd kbd brightness 50 | zanken swayosd kbd brightness 100
 
 percent="$1"
 

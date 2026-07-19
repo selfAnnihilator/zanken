@@ -11,16 +11,16 @@ Zanken uses Niri as its compositor and Quickshell as its bar and desktop shell.
 ## Source of truth
 
 - Niri configuration: `~/.config/niri/config.kdl`
-- Quickshell desktop shell: `~/.config/quickshell/desktop/`
+- Quickshell desktop shell: `~/.config/quickshell/zanken/`
 - Zanken theme state: `~/.config/zanken/current/theme/`
-- Zanken defaults: `~/.local/share/zanken/config/`
+- Managed desktop defaults: `~/.local/share/zanken/desktop/`
 
-The Niri and Quickshell configuration is managed in the user's dotfiles
-repository. Do not overwrite either directory with a generic refresh command.
-Use the dotfiles workflow when reverting or updating it:
+The Niri entry point and Quickshell symlink are installed by Zanken. Local
+Niri changes belong in `~/.config/zanken/niri.kdl`; do not edit the managed
+desktop tree directly. Update it with:
 
 ```bash
-git --git-dir=$HOME/dotfiles --work-tree=$HOME checkout --force main -- .config/niri .config/quickshell
+zanken config desktop sync
 ```
 
 ## Safe workflow

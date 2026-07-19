@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Install Helix and configure it to use the current Omarchy theme
+# zanken:summary=Install Helix and configure it to use the current Zanken theme
 
 echo "Installing Helix..."
 zanken-pkg-add helix

@@ -21,7 +21,7 @@ User=$USER
 Session=zanken
 
 [Theme]
-Current=omarchy
+Current=zanken
 EOF
 else
   sudo sed -i 's/^Session=hyprland-uwsm$/Session=zanken/' /etc/sddm.conf.d/autologin.conf

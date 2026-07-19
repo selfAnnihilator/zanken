@@ -4,7 +4,7 @@
 # zanken:group=share
 # zanken:name=
 # zanken:args=<clipboard|file|folder> [path...]
-# zanken:examples=omarchy share clipboard | omarchy share file ~/Downloads/example.txt
+# zanken:examples=zanken share clipboard | zanken share file ~/Downloads/example.txt
 
 if (($# == 0)); then
   echo "Usage: zanken-menu-share [clipboard|file|folder]"

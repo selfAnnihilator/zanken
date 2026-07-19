@@ -11,7 +11,7 @@ Zanken runs on Arch Linux. The install script sets up everything from scratch.
 ## One-line install
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh)
 ```
 
 ## What the script does
@@ -22,7 +22,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/mai
 | 2 | Build and install `yay` AUR helper |
 | 3 | Install all required packages (see below) |
 | 4 | Clone `zanken` repo to `~/zanken` |
-| 5 | Clone dotfiles bare repo to `~/dotfiles`, checkout Niri and Quickshell configs |
+| 5 | Install managed Niri and Quickshell defaults from Zanken itself |
 | 6 | Set fish as default shell |
 | 7 | Enable pipewire, wireplumber, NetworkManager, bluetooth services |
 
@@ -50,30 +50,26 @@ niri --session niri
 
 Or configure your display manager to launch `niri`.
 
-## Updating configs
+## Updating desktop defaults
 
-Niri and Quickshell are owned by the dotfiles bare repo. The Zanken installer
-checks out only those two directories, so it never replaces unrelated files in
-your home directory:
-
-```bash
-# After editing any config file
-dotfiles add ~/.config/niri/config.kdl
-dotfiles commit -m "update niri config"
-dotfiles push
-```
-
-To re-apply the tracked desktop configuration after an update:
+Zanken stores its updateable Niri and Quickshell defaults in
+`~/.local/share/zanken/desktop/`. Local settings remain under
+`~/.config/zanken/` and are never changed by a sync.
 
 ```bash
-git --git-dir="$HOME/dotfiles" --work-tree="$HOME" \
-  checkout --force main -- .config/niri .config/quickshell
+zanken update                 # pull the release branch and sync desktop defaults
+zanken config desktop sync    # sync defaults without pulling source changes
+zanken config desktop rollback # restore the previous managed desktop tree
 ```
 
-The `dotfiles` alias is set automatically by fish config:
-```fish
-alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
+To take ownership of existing Niri or Quickshell configuration, run:
+
+```bash
+zanken config desktop adopt
 ```
+
+Zanken lists any conflicting entry points and creates timestamped backups only
+after you confirm the change.
 
 ## Testing in a VM
 

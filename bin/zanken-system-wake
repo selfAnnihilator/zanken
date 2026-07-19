@@ -3,7 +3,7 @@
 # zanken:summary=Wake displays and restore brightness after idle
 # zanken:group=system
 # zanken:name=wake
-# zanken:examples=omarchy system wake
+# zanken:examples=zanken system wake
 
 zanken-brightness-display on
 zanken-brightness-keyboard restore

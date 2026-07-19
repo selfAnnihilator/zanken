@@ -2,7 +2,7 @@
 
 # zanken:summary=Set the Plymouth boot theme colors and logo
 # zanken:args=<background-hex> <text-hex> <path-to-logo.png>
-# zanken:examples=omarchy plymouth set '#1d2021' '#ebdbb2' ~/.config/zanken/current/theme/plymouth/logo.png
+# zanken:examples=zanken plymouth set '#1d2021' '#ebdbb2' ~/.config/zanken/current/theme/plymouth/logo.png
 # zanken:requires-sudo=true
 
 # Configure the Plymouth boot theme with a custom background color, text color, and logo.

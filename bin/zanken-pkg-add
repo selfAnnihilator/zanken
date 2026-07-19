@@ -2,11 +2,26 @@
 
 # zanken:summary=Install Arch packages if they are missing
 # zanken:args=<packages...>
-# zanken:examples=omarchy pkg add jq ripgrep
+# zanken:examples=zanken pkg add jq ripgrep
 # zanken:requires-sudo=true
 
-if zanken-pkg-missing "$@"; then
-  sudo pacman -S --noconfirm --needed "$@" || exit 1
+pacman_packages=()
+aur_packages=()
+
+for pkg in "$@"; do
+  if pacman -Si "$pkg" &>/dev/null; then
+    pacman_packages+=("$pkg")
+  else
+    aur_packages+=("$pkg")
+  fi
+done
+
+if (( ${#pacman_packages[@]} > 0 )); then
+  sudo pacman -S --noconfirm --needed "${pacman_packages[@]}" || exit 1
+fi
+
+if (( ${#aur_packages[@]} > 0 )); then
+  zanken-pkg-aur-add "${aur_packages[@]}" || exit 1
 fi
 
 for pkg in "$@"; do

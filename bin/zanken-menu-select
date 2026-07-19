@@ -4,7 +4,7 @@
 # zanken:group=menu
 # zanken:name=select
 # zanken:args=prompt option... [-- walker args...]
-# zanken:examples=omarchy menu select Format jpg png|zanken-menu-select Resolution 4k 1080p 720p -- --width 400
+# zanken:examples=zanken menu select Format jpg png|zanken-menu-select Resolution 4k 1080p 720p -- --width 400
 
 set -euo pipefail
 

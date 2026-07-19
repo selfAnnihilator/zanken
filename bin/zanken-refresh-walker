@@ -1,5 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Overwrite the user configs for the Walker application launcher (which also powers the Omarchy Menu) and restart the services.
+# zanken:summary=Deprecated no-op; Quickshell replaces Walker
+# zanken:hidden=true
 # no-op on niri (bar is Quickshell)
 exit 0

@@ -2,7 +2,7 @@
 
 # zanken:summary=Measure theme switcher cache and selector prep times
 # zanken:args=[--repeat=<count>] [--keep-cache]
-# zanken:examples=omarchy dev benchmark theme switcher | omarchy dev benchmark theme-switcher --repeat=10
+# zanken:examples=zanken dev benchmark theme switcher | zanken dev benchmark theme-switcher --repeat=10
 # zanken:aliases=zanken dev benchmark theme-switcher
 
 set -euo pipefail

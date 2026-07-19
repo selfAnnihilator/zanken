@@ -2,7 +2,7 @@
 
 # zanken:summary=Adjust the brightness on Apple Studio Displays and Apple XDR Displays using asdcontrol.
 # zanken:args=<+N%|N%-|N%>
-# zanken:examples=omarchy brightness display apple +5% | omarchy brightness display apple 5%- | omarchy brightness display apple 50%
+# zanken:examples=zanken brightness display apple +5% | zanken brightness display apple 5%- | zanken brightness display apple 50%
 
 if (( $# == 0 )); then
   echo "Adjust Apple Display brightness by passing +5%, 5%-, or 100%"

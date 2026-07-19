@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Manage persistent state files for Omarchy toggles and settings.
+# zanken:summary=Manage persistent state files for Zanken toggles and settings.
 # zanken:args=<set|clear> <state-name-or-pattern>
 # zanken:hidden=true
 

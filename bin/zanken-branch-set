@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# zanken:summary=Set the branch for Omarchy's git repository.
-# zanken:args=<master|rc|dev>
+# zanken:summary=Set the branch for Zanken's git repository.
+# zanken:args=<main|rc|dev>
 
 if (($# == 0)); then
-  echo "Usage: zanken-branch-set [master|rc|dev]"
+  echo "Usage: zanken-branch-set [main|rc|dev]"
   exit 1
 else
   branch="$1"
 fi
 
-if [[ $branch != "master" && $branch != "rc" && $branch != "dev" ]]; then
-  echo "Error: Invalid branch '$branch'. Must be one of: master, rc, dev"
+if [[ $branch != "main" && $branch != "rc" && $branch != "dev" ]]; then
+  echo "Error: Invalid branch '$branch'. Must be one of: main, rc, dev"
   exit 1
 fi
 

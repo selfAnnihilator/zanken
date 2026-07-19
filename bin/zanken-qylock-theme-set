@@ -3,7 +3,7 @@
 # zanken:summary=Set the qylock lockscreen and SDDM theme
 # zanken:group=style
 # zanken:name=sddm theme
-# zanken:examples=omarchy sddm theme
+# zanken:examples=zanken sddm theme
 
 THEMES_DIR="$HOME/.local/share/qylock/themes"
 CONFIG="$HOME/.config/qylock/theme"

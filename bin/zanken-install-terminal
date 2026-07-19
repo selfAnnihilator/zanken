@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Install one of the approved terminals and set it as the default for Omarchy (Super + Return etc).
+# zanken:summary=Install one of the approved terminals and set it as the default for Zanken (Super + Return etc).
 # zanken:args=<alacritty|foot|ghostty|kitty>
 # zanken:requires-sudo=true
 

@@ -1,4 +1,4 @@
-if omarchy-battery-present; then
+if zanken-battery-present; then
   cat <<EOF | sudo tee "/etc/udev/rules.d/99-power-profile.rules"
 SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="/usr/bin/systemd-run --no-block --collect --unit=zanken-power-profile --property=After=power-profiles-daemon.service $HOME/zanken/bin/zanken-powerprofiles-set"
 SUBSYSTEM=="power_supply", ATTR{type}=="USB", RUN+="/usr/bin/systemd-run --no-block --collect --unit=zanken-power-profile --property=After=power-profiles-daemon.service $HOME/zanken/bin/zanken-powerprofiles-set"

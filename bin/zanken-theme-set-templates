@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Generate themed config files from Omarchy templates
+# zanken:summary=Generate themed config files from Zanken templates
 # zanken:hidden=true
 
 TEMPLATES_DIR="$ZANKEN_PATH/default/themed"

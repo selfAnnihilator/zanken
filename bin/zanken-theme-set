@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# zanken:summary=Apply an Omarchy theme
+# zanken:summary=Apply an Zanken theme
 # zanken:args=<theme-name>
-# zanken:examples=omarchy theme list | omarchy theme set "Tokyo Night"
+# zanken:examples=zanken theme list | zanken theme set "Tokyo Night"
 
 if [[ -z $1 ]]; then
   echo "Usage: zanken-theme-set <theme-name>"

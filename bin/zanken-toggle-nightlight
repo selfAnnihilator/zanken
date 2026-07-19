@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # zanken:summary=Toggle nightlight screen temperature on Niri
-# zanken:examples=omarchy toggle nightlight
+# zanken:examples=zanken toggle nightlight
 
 ON_TEMP=4000
 OFF_TEMP=6000

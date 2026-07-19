@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Reinstall the stable Omarchy source directory from git
+# zanken:summary=Reinstall the stable Zanken source directory from git
 
 set -e
 ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"

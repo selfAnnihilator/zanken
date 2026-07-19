@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# zanken:summary=Remove a supported browser and clean up Omarchy browser defaults
+# zanken:summary=Remove a supported browser and clean up Zanken browser defaults
 # zanken:args=<chrome|brave|brave-origin|edge|firefox|zen>
-# zanken:examples=omarchy remove browser firefox | omarchy remove browser brave
+# zanken:examples=zanken remove browser firefox | zanken remove browser brave
 # zanken:requires-sudo=true
 
 set_fallback_default_browser() {

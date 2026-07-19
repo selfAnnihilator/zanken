@@ -6,7 +6,7 @@ if [[ -f ~/.config/niri/config.kdl ]]; then
 fi
 
 # Update service file with ExecStartPre delay and on-failure restart policy
-cp "$OMARCHY_PATH/config/systemd/user/swayosd-server.service" \
+cp "$ZANKEN_PATH/config/systemd/user/swayosd-server.service" \
    ~/.config/systemd/user/swayosd-server.service
 
 systemctl --user daemon-reload

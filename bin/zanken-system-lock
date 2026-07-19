@@ -3,7 +3,7 @@
 # zanken:summary=Lock the computer and turn off the display
 # zanken:group=system
 # zanken:name=lock
-# zanken:examples=omarchy system lock
+# zanken:examples=zanken system lock
 
 LOCK_SCRIPT="$HOME/.local/share/qylock/quickshell-lockscreen/lock.sh"
 LOCK_QML="$HOME/.local/share/qylock/quickshell-lockscreen/lock_shell.qml"
@@ -18,7 +18,11 @@ current_session_locked() {
     [[ -n "$session_id" ]] && [[ "$(loginctl show-session "$session_id" -p LockedHint --value 2>/dev/null)" == "yes" ]]
 }
 
-qs -c desktop ipc call idle disable 2>/dev/null || true
+quickshell_config=desktop
+if [[ -f ~/.config/quickshell/zanken/shell.qml ]]; then
+    quickshell_config=zanken
+fi
+qs -c "$quickshell_config" ipc call idle disable 2>/dev/null || true
 
 if pgrep -u "$USER" -f "$LOCK_QML" >/dev/null; then
     if current_session_locked; then

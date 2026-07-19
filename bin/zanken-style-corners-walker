@@ -1,5 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Set or toggle rounded Walker corners
+# zanken:summary=Deprecated no-op; Quickshell replaces Walker corners
+# zanken:hidden=true
 # no-op on niri (bar is Quickshell)
 exit 0

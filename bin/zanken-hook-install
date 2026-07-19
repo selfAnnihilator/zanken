@@ -4,7 +4,7 @@
 # zanken:group=hook
 # zanken:name=install
 # zanken:args=<type> <file>
-# zanken:examples=omarchy hook install post-update ~/my-hook
+# zanken:examples=zanken hook install post-update ~/my-hook
 
 set -e
 

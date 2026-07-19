@@ -4,7 +4,7 @@
 # zanken:name=
 # zanken:summary=Transcode pictures and videos for sharing
 # zanken:args=[--path path] [input] [format] [resolution]
-# zanken:examples=omarchy transcode|omarchy transcode --path ~/Downloads|omarchy transcode ~/Videos/demo.mov mp4 1080p|omarchy transcode ~/Pictures/background.heic jpg medium
+# zanken:examples=zanken transcode|zanken transcode --path ~/Downloads|zanken transcode ~/Videos/demo.mov mp4 1080p|zanken transcode ~/Pictures/background.heic jpg medium
 
 set -euo pipefail
 

@@ -3,7 +3,7 @@
 # zanken:summary=Start or stop screen recording
 # zanken:group=capture
 # zanken:args=[--with-desktop-audio] [--with-microphone-audio] [--with-webcam] [--webcam-device=<device>] [--resolution=<size>] [--stop-recording]
-# zanken:examples=omarchy screenrecord | omarchy capture screenrecord --with-desktop-audio
+# zanken:examples=zanken screenrecord | zanken capture screenrecord --with-desktop-audio
 # zanken:aliases=zanken screenrecord
 #
 # Niri recordings use gpu-screen-recorder's xdg-desktop-portal backend. The

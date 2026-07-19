@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Set the Plymouth boot theme from an Omarchy theme
+# zanken:summary=Set the Plymouth boot theme from an Zanken theme
 # zanken:args=<theme-name>
 # zanken:requires-sudo=true
 

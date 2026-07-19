@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Show Omarchy bin metadata fields and defaults
+# zanken:summary=Show Zanken bin metadata fields and defaults
 # zanken:args=[--json]
 
 set -euo pipefail

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# zanken:summary=Show the Zanken welcome tour
+# zanken:group=welcome
+# zanken:name=
+# zanken:aliases=zanken welcome
+
+zanken-notification-send "Welcome to Zanken" "Super + K: keybindings\nSuper + Space: apps\nSuper + D: quick controls\nRun zanken commands for the full command reference." -g "" -u critical

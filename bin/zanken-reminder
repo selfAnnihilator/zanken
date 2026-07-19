@@ -2,7 +2,7 @@
 
 # zanken:summary=Set and show lightweight desktop notification reminders
 # zanken:args=<minutes> [message] | show | clear
-# zanken:examples=omarchy reminder 5 | omarchy reminder 30 "Check the oven" | omarchy reminder show | omarchy reminder clear
+# zanken:examples=zanken reminder 5 | zanken reminder 30 "Check the oven" | zanken reminder show | zanken reminder clear
 
 set -euo pipefail
 

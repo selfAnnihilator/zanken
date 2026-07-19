@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Restore the default Omarchy Plymouth boot theme and SDDM login screen
+# zanken:summary=Restore the default Zanken Plymouth boot theme and SDDM login screen
 # zanken:requires-sudo=true
 
 theme_dir="/usr/share/plymouth/themes/zanken"

@@ -1,0 +1,383 @@
+// Zanken-for-niri configuration
+// KDL format: https://kdl.dev
+
+input {
+    keyboard {
+        xkb {
+            options "compose:caps"
+        }
+        numlock
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+
+    mouse {}
+    trackpoint {}
+
+}
+
+// Spawn zanken daemons at startup
+spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
+spawn-sh-at-startup "wl-paste --watch cliphist store"
+spawn-at-startup "hypridle"
+spawn-at-startup "qs" "-n" "-d" "-c" "zanken"
+spawn-at-startup "elephant"
+spawn-at-startup "zanken-wallpaper-start"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-sh-at-startup "systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+spawn-sh-at-startup "dbus-update-activation-environment --systemd --all"
+spawn-sh-at-startup "sleep 2 && zanken-hook post-boot"
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+cursor {
+    xcursor-theme "Hornet"
+    xcursor-size 24
+}
+
+prefer-no-csd
+
+layout {
+    gaps 10
+
+    center-focused-column "never"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    default-column-width { proportion 0.5; }
+
+    focus-ring {
+        width 2
+        // Tokyo Night accent color
+        active-color "#48236d"
+        inactive-color "#595959"
+    }
+
+    border {
+        off
+        width 2
+        active-color "#48236d"
+        inactive-color "#595959"
+    }
+
+    shadow {
+        on
+        softness 20
+        spread 2
+        offset x=0 y=2
+        color "#0007"
+    }
+
+    struts {
+        left 8
+        right 8
+        top 8
+        bottom 8
+    }
+
+}
+
+animations {}
+
+gestures {
+    hot-corners {
+        off
+    }
+}
+
+// Window rules
+
+// Global: subtle translucency + background blur for all windows
+window-rule {
+    opacity 0.92
+    background-effect {
+        blur true
+    }
+}
+
+window-rule {
+    match app-id=r#"^org\.wezfurlong\.wezterm$"#
+    default-column-width {}
+}
+
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id="org.gnome.Calculator"
+    open-floating true
+}
+
+window-rule {
+    match app-id="pavucontrol"
+    open-floating true
+}
+
+window-rule {
+    match app-id="org.zanken.screensaver"
+    open-fullscreen true
+}
+
+binds {
+    // Hotkey overlay
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    // Terminal
+    Mod+Return { spawn "foot"; }
+    Mod+T { spawn "foot"; }
+    Mod+Alt+Return { spawn "foot" "-e" "tmux" "new-session" "-A" "-s" "main"; }
+
+    // Browser / file manager / editor
+    Mod+Shift+Return { spawn "zanken-launch-browser"; }
+    Mod+B { spawn "qutebrowser"; }
+    Mod+Shift+B { spawn "firefox"; }
+    Mod+E { spawn "nautilus"; }
+    Mod+Shift+N { spawn "zanken-launch-editor"; }
+
+    // App launcher
+    Mod+Space { spawn "qs" "-c" "zanken" "ipc" "call" "palette" "openCategory" "App"; }
+    Mod+D { spawn "qs" "-c" "zanken" "ipc" "call" "palette" "openCategory" "Quick"; }
+    Mod+Alt+Space { spawn "qs" "-c" "zanken" "ipc" "call" "palette" "toggle"; }
+
+    // OmniMenu category shortcuts
+    Mod+Alt+C  { spawn "qs" "-c" "zanken" "ipc" "call" "palette" "openCategory" "Capture"; }
+
+
+    // Lock screen
+    Mod+Ctrl+L { spawn "zanken-system-lock"; }
+    Mod+Alt+L { spawn "zanken-system-lock"; }
+
+    // Idle / nightlight toggles
+    Mod+Ctrl+I { spawn "zanken-toggle-idle"; }
+    Mod+Ctrl+N { spawn "zanken-toggle-nightlight"; }
+
+    // Audio / bluetooth / wifi TUIs
+    Mod+Ctrl+A { spawn "zanken-launch-audio"; }
+    Mod+Ctrl+B { spawn "zanken-launch-bluetooth"; }
+    Mod+Ctrl+W { spawn "zanken-launch-wifi"; }
+
+    // Key binding help (Mod+K conflicts with focus-up; use Alt)
+    Mod+Alt+K { spawn "qs" "-c" "zanken" "ipc" "call" "palette" "openCategory" "Keybinds"; }
+
+    // Power menu
+    Mod+Escape { spawn "qs" "-c" "zanken" "ipc" "call" "power" "toggle"; }
+
+    // Calculator
+    XF86Calculator { spawn "gnome-calculator"; }
+
+    // Reminders (Ctrl+R conflicts with reset-height; use Alt)
+    Mod+Alt+R { spawn "zanken-launch-tui" "zanken-reminder-set"; }
+    Mod+Ctrl+Alt+R { spawn "zanken-reminder" "show"; }
+
+    // Color picker
+    Mod+Print { spawn "zanken-capture-colorpicker"; }
+
+    // Close window
+    Mod+Q repeat=false { close-window; }
+    Mod+W repeat=false { close-window; }
+
+    // Overview
+    Mod+O repeat=false { toggle-overview; }
+
+    // Focus navigation
+    Mod+Left  { focus-column-left; }
+    Mod+Down  { focus-window-down; }
+    Mod+Up    { focus-window-up; }
+    Mod+Right { focus-column-right; }
+    Mod+H     { focus-column-left; }
+    Mod+J     { focus-workspace-down; }
+    Mod+K     { focus-workspace-up; }
+    Mod+L     { focus-column-right; }
+
+    // Move windows
+    Mod+Shift+Ctrl+Left  { move-column-left; }
+    Mod+Shift+Ctrl+Down  { move-window-down; }
+    Mod+Shift+Ctrl+Up    { move-window-up; }
+    Mod+Shift+Ctrl+Right { move-column-right; }
+
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
+
+    // Monitor focus
+    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Down  { focus-monitor-down; }
+    Mod+Shift+Up    { focus-monitor-up; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+H     { focus-monitor-left; }
+    Mod+Shift+J     { move-column-to-workspace-down; }
+    Mod+Shift+K     { move-column-to-workspace-up; }
+    Mod+Shift+L     { focus-monitor-right; }
+
+    // Move column to monitor
+    Mod+Shift+Alt+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Alt+Down  { move-column-to-monitor-down; }
+    Mod+Shift+Alt+Up    { move-column-to-monitor-up; }
+    Mod+Shift+Alt+Right { move-column-to-monitor-right; }
+
+    // Workspace navigation
+    Mod+Page_Down      { focus-workspace-down; }
+    Mod+Page_Up        { focus-workspace-up; }
+    Mod+Tab            { focus-workspace-down; }
+    Mod+Shift+Tab      { focus-workspace-up; }
+    Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
+    Mod+Ctrl+Page_Up   { move-column-to-workspace-up; }
+
+    Mod+Shift+Page_Down { move-workspace-down; }
+    Mod+Shift+Page_Up   { move-workspace-up; }
+
+    // Workspace by number
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+0 { focus-workspace 10; }
+    Mod+Ctrl+1 { move-column-to-workspace 1; }
+    Mod+Ctrl+2 { move-column-to-workspace 2; }
+    Mod+Ctrl+3 { move-column-to-workspace 3; }
+    Mod+Ctrl+4 { move-column-to-workspace 4; }
+    Mod+Ctrl+5 { move-column-to-workspace 5; }
+    Mod+Ctrl+6 { move-column-to-workspace 6; }
+    Mod+Ctrl+7 { move-column-to-workspace 7; }
+    Mod+Ctrl+8 { move-column-to-workspace 8; }
+    Mod+Ctrl+9 { move-column-to-workspace 9; }
+    Mod+Ctrl+0 { move-column-to-workspace 10; }
+
+    // Scroll wheel workspace switching
+    Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }
+    Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }
+    Mod+WheelScrollRight      { focus-column-right; }
+    Mod+WheelScrollLeft       { focus-column-left; }
+    Mod+Ctrl+WheelScrollRight { move-column-right; }
+    Mod+Ctrl+WheelScrollLeft  { move-column-left; }
+
+    // Window layout
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+Alt+F { maximize-window-to-edges; }
+    Mod+Ctrl+F { expand-column-to-available-width; }
+
+    // Universal clipboard — Shift+Insert for terminals, Ctrl+V for browsers/GUI
+    Mod+C { spawn "wtype" "-M" "ctrl" "-k" "Insert" "-m" "ctrl"; }
+    Mod+V { spawn "zanken-paste"; }
+    Mod+X { spawn "wtype" "-M" "ctrl" "-k" "x" "-m" "ctrl"; }
+
+    Mod+Shift+C { center-column; }
+    Mod+Ctrl+C  { center-visible-columns; }
+
+    Mod+Alt+V   { toggle-window-floating; }
+    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
+    Mod+G { toggle-column-tabbed-display; }
+
+    // Column/window sizing
+    Mod+R { switch-preset-column-width; }
+    Mod+Shift+R { switch-preset-column-width-back; }
+    Mod+Ctrl+Shift+R { switch-preset-window-height; }
+    Mod+Ctrl+R { reset-window-height; }
+
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // Window grouping (consume/expel)
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+
+    // Screenshots (using zanken scripts: grim + slurp, works on niri)
+    Print { spawn "zanken-capture-screenshot"; }
+    Ctrl+Print { spawn "zanken-capture-screenshot" "fullscreen"; }
+    Shift+Print { spawn "zanken-capture-screenshot" "region"; }
+    Mod+Ctrl+Print { spawn "zanken-capture-text-extraction"; }
+
+    // Volume (via zanken-swayosd-client)
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "zanken-swayosd-client" "--output-volume" "raise"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "zanken-swayosd-client" "--output-volume" "lower"; }
+    XF86AudioMute        allow-when-locked=true { spawn "zanken-swayosd-client" "--output-volume" "mute-toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn "zanken-audio-input-mute"; }
+
+    // Brightness (via zanken scripts)
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "zanken-brightness-display" "+5%"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "zanken-brightness-display" "5%-"; }
+    Shift+XF86MonBrightnessUp   allow-when-locked=true { spawn "zanken-brightness-display" "100%"; }
+    Shift+XF86MonBrightnessDown allow-when-locked=true { spawn "zanken-brightness-display" "1%"; }
+
+    // Keyboard backlight
+    XF86KbdBrightnessUp   allow-when-locked=true { spawn "zanken-brightness-keyboard" "up"; }
+    XF86KbdBrightnessDown allow-when-locked=true { spawn "zanken-brightness-keyboard" "down"; }
+    XF86KbdLightOnOff     allow-when-locked=true { spawn "zanken-brightness-keyboard" "cycle"; }
+
+    // Touchpad toggle
+    XF86TouchpadToggle allow-when-locked=true { spawn "zanken-toggle-touchpad"; }
+    XF86TouchpadOn     allow-when-locked=true { spawn "zanken-toggle-touchpad" "on"; }
+    XF86TouchpadOff    allow-when-locked=true { spawn "zanken-toggle-touchpad" "off"; }
+
+    // Precise volume/brightness (+1 step)
+    Alt+XF86AudioRaiseVolume allow-when-locked=true { spawn "zanken-swayosd-client" "--output-volume" "+1"; }
+    Alt+XF86AudioLowerVolume allow-when-locked=true { spawn "zanken-swayosd-client" "--output-volume" "-1"; }
+    Alt+XF86MonBrightnessUp   allow-when-locked=true { spawn "zanken-brightness-display" "+1%"; }
+    Alt+XF86MonBrightnessDown allow-when-locked=true { spawn "zanken-brightness-display" "1%-"; }
+
+    // Media controls (via zanken-swayosd-client)
+    XF86AudioPlay allow-when-locked=true { spawn "zanken-swayosd-client" "--playerctl" "play-pause"; }
+    XF86AudioPause allow-when-locked=true { spawn "zanken-swayosd-client" "--playerctl" "play-pause"; }
+    XF86AudioNext allow-when-locked=true { spawn "zanken-swayosd-client" "--playerctl" "next"; }
+    XF86AudioPrev allow-when-locked=true { spawn "zanken-swayosd-client" "--playerctl" "previous"; }
+    Mod+XF86AudioMute allow-when-locked=true { spawn "zanken-audio-output-switch"; }
+
+    // Notifications
+    Mod+Comma      { spawn "qs" "-c" "zanken" "ipc" "call" "notifications" "dismiss"; }
+    Mod+Ctrl+Comma { spawn "qs" "-c" "zanken" "ipc" "call" "notifications" "dismissAll"; }
+
+    // Idle inhibitor / do-not-disturb
+    Mod+Shift+Comma  { spawn "qs" "-c" "zanken" "ipc" "call" "idle" "toggle"; }
+    Mod+Shift+Period { spawn "qs" "-c" "zanken" "ipc" "call" "notifications" "toggleDnd"; }
+
+    // Restart Quickshell. Paused media state is preserved by the restart
+    // command while Quickshell reconnects to MPRIS.
+    Mod+Shift+Space { spawn "zanken-restart-quickshell"; }
+
+    // Background picker
+    Mod+Ctrl+Space { spawn "zanken-theme-bg-switcher"; }
+    Mod+Ctrl+V { spawn "zanken-theme-videobg-switcher"; }
+    Mod+Shift+W { spawn "zanken-theme-we-switcher"; }
+
+    // Theme switcher → OmniMenu Themes drill-down
+    Mod+Shift+Ctrl+Space { spawn "qs" "-c" "zanken" "ipc" "call" "palette" "openCategory" "Themes"; }
+
+    // System info shortcuts
+    Mod+Ctrl+Alt+T { spawn "zanken-notification-time"; }
+    Mod+Ctrl+Alt+B { spawn "zanken-notification-battery"; }
+    Mod+Ctrl+Alt+W { spawn "zanken-notification-weather"; }
+
+    // Btop activity monitor
+    Mod+Ctrl+T { spawn "foot" "-e" "btop"; }
+
+    // Session
+
+    Mod+Shift+E { quit; }
+    Mod+Shift+P { power-off-monitors; }
+
+}

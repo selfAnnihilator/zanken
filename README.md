@@ -1,6 +1,6 @@
 # Zanken
 
-A Niri-based Linux workspace derived from [Omarchy](https://github.com/basecamp/omarchy).
+A Niri-based Linux workspace.
 
 ## Screenshots
 
@@ -15,12 +15,12 @@ A Niri-based Linux workspace derived from [Omarchy](https://github.com/basecamp/
 | ![Dashboard](docs/assets/screenshots/dashboard.png) | |
 | Quickshell dashboard | |
 
-Replaces Hyprland with the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and Waybar with [Quickshell](https://quickshell.outfoxxed.me/), while keeping Omarchy's 300+ script layer intact.
+Built around the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and [Quickshell](https://quickshell.outfoxxed.me/), with 300+ scripts for desktop and hardware tasks.
 
 ## Install
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/dotfiles/main/install.sh) --clean
+bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh) --clean
 ```
 
 ## What's included
@@ -57,7 +57,7 @@ zanken-default-terminal kitty   # change default terminal
 zanken/
 ├── bin/          # 308 zanken-* scripts (on $PATH)
 ├── config/       # Base configs
-├── default/      # Default app configs
+├── default/      # Default app and managed desktop configs
 ├── themes/       # 21 built-in color themes
 ├── install/      # Install phase scripts
 └── migrations/   # Version migration scripts
@@ -68,16 +68,6 @@ zanken/
 Quickshell bar and popups derived from [bjarneo/quickshell](https://github.com/bjarneo/quickshell).
 
 Lock screen and SDDM theme derived from [Darkkal44/qylock](https://github.com/Darkkal44/qylock).
-
-## Differences from Omarchy
-
-| Feature | Omarchy | Zanken |
-|---------|---------|--------|
-| Compositor | Hyprland | Niri |
-| Bar | Waybar | Quickshell |
-| Notifications | Mako | Elephant |
-| Focus model | Tiling (manual) | Scrolling columns |
-| Config format | Hyprland DSL | KDL |
 
 ## License
 

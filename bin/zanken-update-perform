@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# zanken:summary=Run the full Omarchy update pipeline
+# zanken:summary=Run the full Zanken update pipeline
 # zanken:requires-sudo=true
 
 set -e
 
 # Perform all update steps
+zanken-update
 zanken-update-keyring
 zanken-update-available-reset
 zanken-update-system-pkgs

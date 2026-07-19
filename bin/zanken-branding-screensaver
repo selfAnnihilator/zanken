@@ -4,7 +4,7 @@
 # zanken:group=branding
 # zanken:name=screensaver
 # zanken:args=<image|text|reset>
-# zanken:examples=omarchy branding screensaver image | omarchy branding screensaver text | omarchy branding screensaver reset
+# zanken:examples=zanken branding screensaver image | zanken branding screensaver text | zanken branding screensaver reset
 
 set -euo pipefail
 

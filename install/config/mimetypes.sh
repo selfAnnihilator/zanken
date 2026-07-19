@@ -1,4 +1,4 @@
-omarchy-refresh-applications
+zanken-refresh-applications
 update-desktop-database ~/.local/share/applications
 
 # Open directories in file manager

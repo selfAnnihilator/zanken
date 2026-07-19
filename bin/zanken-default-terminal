@@ -2,7 +2,7 @@
 
 # zanken:summary=Set the default terminal used by xdg-terminal-exec
 # zanken:args=[alacritty|foot|ghostty|kitty]
-# zanken:examples=omarchy default terminal ghostty | omarchy default terminal kitty
+# zanken:examples=zanken default terminal ghostty | zanken default terminal kitty
 
 if (($# == 0)); then
   desktop_id=$(grep -vE '^($|#)' ~/.config/xdg-terminals.list 2>/dev/null | head -n 1)

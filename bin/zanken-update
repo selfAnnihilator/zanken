@@ -2,6 +2,21 @@
 # zanken:summary=Update the Zanken repository
 # zanken:group=update
 
-git -C "$HOME/zanken" pull --rebase 2>&1 || echo "zanken pull failed — check network/ssh"
-echo ""
-echo "To update system packages: sudo pacman -Syu"
+set -euo pipefail
+
+ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
+
+git -C "$ZANKEN_PATH" pull --ff-only
+zanken-config-desktop sync
+
+if [[ -n ${WAYLAND_DISPLAY:-} ]]; then
+  zanken-restart-quickshell
+  sleep 1
+
+  if ! pgrep -f 'qs.*-c.*zanken' >/dev/null; then
+    zanken-config-desktop rollback
+    zanken-restart-quickshell
+    echo "Quickshell failed after the update; restored the previous desktop configuration" >&2
+    exit 1
+  fi
+fi

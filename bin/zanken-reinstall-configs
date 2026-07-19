@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Reset all Omarchy user configs to the defaults
+# zanken:summary=Reset all Zanken user configs to the defaults
 # zanken:requires-sudo=true
 
 set -e

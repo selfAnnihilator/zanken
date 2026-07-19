@@ -2,7 +2,7 @@
 
 # zanken:summary=Remove a user-installed theme
 # zanken:args=[theme-name]
-# zanken:examples=omarchy theme remove "Tokyo Night"
+# zanken:examples=zanken theme remove "Tokyo Night"
 
 if [[ -z $1 ]]; then
   mapfile -t extra_themes < <(find ~/.config/zanken/themes -mindepth 1 -maxdepth 1 -type d ! -xtype l -printf '%f\n')

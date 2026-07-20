@@ -31,4 +31,14 @@ ShellRoot {
     NotificationToast  { root: nav }
     ClipboardPopup     { root: nav }
     TrayPopup          { root: nav }
+
+    // A soft reload preserves the Quickshell process and its service
+    // connections. In particular, it avoids disconnecting browser MPRIS
+    // players, which can make YouTube advance a paused video.
+    IpcHandler {
+        target: "zanken"
+        function reload(): void {
+            Quickshell.reload(false);
+        }
+    }
 }

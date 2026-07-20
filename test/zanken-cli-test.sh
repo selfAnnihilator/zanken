@@ -44,9 +44,12 @@ pass "Zanken updates synchronize and protect managed desktop defaults"
 
 rg -Fq 'quickshell/zanken/shell.qml' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart detects the managed config"
 rg -Fq 'config_name=desktop' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart falls back to the legacy config during migration"
-rg -Fq 'zanken-paused-media' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart records paused media before restarting"
-rg -Fq 'playerctl --player="$player" pause' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart restores paused media after restarting"
-pass "Quickshell restart supports both managed and existing configs"
+rg -Fq 'qs -c zanken ipc call zanken reload' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart uses an in-process reload for the managed config"
+if rg -q 'playerctl|zanken-paused-media' "$ROOT/bin/zanken-restart-quickshell"; then
+  fail "Quickshell soft reload does not manipulate media players"
+fi
+rg -Fq 'Quickshell.reload(false);' "$ROOT/default/desktop/quickshell/shell.qml" || fail "managed Quickshell config provides a soft reload IPC target"
+pass "Quickshell restart preserves browser media and supports legacy configs"
 
 if rg -n '\[omarchy\]|pkgs\.omarchy\.org|TrustAll' "$ROOT/default/pacman" "$ROOT/install/preflight/pacman.sh"; then
   fail "fresh installs do not configure the retired Omarchy package repository"

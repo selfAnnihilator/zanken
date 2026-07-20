@@ -4,21 +4,15 @@
 
 CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 config_name=zanken
-paused_players_file=""
 
 if [[ ! -f $CONFIG_HOME/quickshell/zanken/shell.qml ]]; then
   config_name=desktop
 fi
 
-# Firefox resumes paused media when Quickshell's MPRIS client disconnects and
-# reconnects. Preserve the state the user chose across a full shell restart.
-if command -v playerctl >/dev/null; then
-  paused_players_file=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/zanken-paused-media.XXXXXX")
-  while IFS= read -r player; do
-    if [[ $(playerctl --player="$player" status 2>/dev/null) == "Paused" ]]; then
-      printf '%s\n' "$player" >>"$paused_players_file"
-    fi
-  done < <(playerctl -l 2>/dev/null)
+# Prefer Quickshell's soft reload. It preserves the MPRIS service connection,
+# so paused browser media does not resume or advance while the shell reloads.
+if [[ $config_name == "zanken" ]] && qs -c zanken ipc call zanken reload >/dev/null 2>&1; then
+  exit 0
 fi
 
 pkill -f 'qs.*-c.*zanken' 2>/dev/null || true
@@ -26,19 +20,3 @@ pkill -f 'qs.*-c.*desktop' 2>/dev/null || true
 pkill -f 'systemd-inhibit.*zanken' 2>/dev/null || true
 sleep 0.3
 QT_QPA_PLATFORMTHEME=qt6ct setsid /usr/bin/qs -n -d -c "$config_name" >/dev/null 2>&1 &
-
-if [[ -n $paused_players_file && -s $paused_players_file ]]; then
-  (
-    for _ in {1..30}; do
-      while IFS= read -r player; do
-        if [[ $(playerctl --player="$player" status 2>/dev/null) == "Playing" ]]; then
-          playerctl --player="$player" pause 2>/dev/null || true
-        fi
-      done <"$paused_players_file"
-      sleep 0.1
-    done
-    rm -f "$paused_players_file"
-  ) >/dev/null 2>&1 &
-elif [[ -n $paused_players_file ]]; then
-  rm -f "$paused_players_file"
-fi

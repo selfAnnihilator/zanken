@@ -166,7 +166,8 @@ Item {
     NotificationServer {
         id: notifServer
         keepOnReload: true
-        actionsSupported: false
+        actionsSupported: true
+        inlineReplySupported: true
         bodyMarkupSupported: false
         onNotification: function(n) {
             n.tracked = true;
@@ -243,10 +244,72 @@ Item {
         root.toastItems = root.toastItems.filter(function(n) { return n !== targetNotif; });
     }
 
+    function removeNotification(notification) {
+        root.removeFromToast(notification);
+        root.cardItems = root.cardItems.filter(function(c) { return c.notif !== notification; });
+        root.saveNotifications();
+    }
+
     function removeFromCard(item) {
-        if (item.notif) item.notif.dismiss();
+        if (item.notif) {
+            try { item.notif.dismiss(); } catch(e) {}
+            root.removeNotification(item.notif);
+            return;
+        }
         root.cardItems = root.cardItems.filter(function(c) { return c !== item; });
         root.saveNotifications();
+    }
+
+    function notificationDefaultAction(notification) {
+        if (!notification || !notification.actions) return null;
+        for (let i = 0; i < notification.actions.length; i++) {
+            const action = notification.actions[i];
+            if (action && action.identifier === "default") return action;
+        }
+        return null;
+    }
+
+    function notificationActions(notification) {
+        if (!notification || !notification.actions) return [];
+        const actions = [];
+        for (let i = 0; i < notification.actions.length; i++) {
+            const action = notification.actions[i];
+            if (action && action.identifier !== "default") actions.push(action);
+        }
+        return actions;
+    }
+
+    function invokeNotificationAction(notification, action) {
+        if (!notification || !action) return false;
+        try {
+            action.invoke();
+        } catch(e) {
+            return false;
+        }
+        // Non-resident notifications dismiss when their action is invoked.
+        // The user chose the same resolved behavior for resident ones.
+        if (notification.resident) {
+            try { notification.dismiss(); } catch(e) {}
+        }
+        root.removeNotification(notification);
+        return true;
+    }
+
+    function invokeDefaultNotificationAction(notification) {
+        return root.invokeNotificationAction(notification, root.notificationDefaultAction(notification));
+    }
+
+    function sendNotificationReply(notification, replyText) {
+        const reply = replyText ? replyText.trim() : "";
+        if (!notification || !notification.hasInlineReply || reply.length === 0) return false;
+        try {
+            notification.sendInlineReply(reply);
+        } catch(e) {
+            return false;
+        }
+        try { notification.dismiss(); } catch(e) {}
+        root.removeNotification(notification);
+        return true;
     }
 
     function openNotifications() {

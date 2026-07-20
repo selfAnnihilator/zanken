@@ -106,11 +106,18 @@ CardWindow {
                         required property int index
                         width: notifList.width
                         implicitHeight: rowCol.implicitHeight + 16
+                        readonly property var notification: modelData.notif
+                        readonly property var actions: root.notificationActions(notification)
+                        readonly property bool canOpen: root.notificationDefaultAction(notification) !== null
+                        readonly property bool canReply: notification && notification.hasInlineReply
 
                         MouseArea {
                             id: rowHover
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: canOpen
+                            cursorShape: canOpen ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: root.invokeDefaultNotificationAction(notification)
                         }
 
                         Rectangle {
@@ -139,6 +146,7 @@ CardWindow {
                             Text {
                                 width: parent.width
                                 text: modelData.summary
+                                textFormat: Text.PlainText
                                 color: root.ink
                                 font.family: root.mono
                                 font.pixelSize: 12
@@ -151,12 +159,120 @@ CardWindow {
                                 visible: modelData.body.length > 0
                                 width: parent.width
                                 text: modelData.body
+                                textFormat: Text.PlainText
                                 color: root.muted
                                 font.family: root.mono
                                 font.pixelSize: 11
                                 wrapMode: Text.WordWrap
                                 maximumLineCount: 3
                                 elide: Text.ElideRight
+                            }
+
+                            Flow {
+                                visible: actions.length > 0
+                                width: parent.width
+                                spacing: 6
+
+                                Repeater {
+                                    model: actions
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        height: 24
+                                        width: actionLabel.implicitWidth + 16
+                                        radius: 3
+                                        color: actionMouse.containsMouse ? Qt.alpha(root.seal, 0.22) : Qt.alpha(root.paper, 0.08)
+                                        border.color: actionMouse.containsMouse ? root.seal : root.sep
+                                        border.width: 1
+
+                                        Text {
+                                            id: actionLabel
+                                            anchors.centerIn: parent
+                                            text: modelData.text.toUpperCase()
+                                            textFormat: Text.PlainText
+                                            color: actionMouse.containsMouse ? root.ink : root.muted
+                                            font.family: root.mono
+                                            font.pixelSize: 9
+                                            font.letterSpacing: 0.8
+                                        }
+
+                                        MouseArea {
+                                            id: actionMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.invokeNotificationAction(notification, modelData)
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                visible: canReply
+                                width: parent.width
+                                height: 28
+                                radius: 3
+                                color: Qt.alpha(root.paper, 0.06)
+                                border.color: replyInput.activeFocus ? root.seal : root.sep
+                                border.width: 1
+
+                                TextInput {
+                                    id: replyInput
+                                    anchors {
+                                        left: parent.left
+                                        right: sendReply.left
+                                        verticalCenter: parent.verticalCenter
+                                        leftMargin: 8
+                                        rightMargin: 6
+                                    }
+                                    color: root.ink
+                                    font.family: root.mono
+                                    font.pixelSize: 10
+                                    clip: true
+                                    selectByMouse: true
+                                    Keys.onReturnPressed: function(event) {
+                                        if (root.sendNotificationReply(notification, replyInput.text)) event.accepted = true;
+                                    }
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        visible: replyInput.text.length === 0
+                                        text: (notification && notification.inlineReplyPlaceholder) || "REPLY"
+                                        textFormat: Text.PlainText
+                                        color: root.muted
+                                        font: replyInput.font
+                                        opacity: 0.7
+                                    }
+                                }
+
+                                Text {
+                                    id: sendReply
+                                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 8 }
+                                    text: "SEND"
+                                    color: replyMouse.containsMouse && replyInput.text.trim().length > 0 ? root.seal : root.muted
+                                    font.family: root.mono
+                                    font.pixelSize: 9
+                                    font.letterSpacing: 0.8
+                                    opacity: replyInput.text.trim().length > 0 ? 1 : 0.5
+
+                                    MouseArea {
+                                        id: replyMouse
+                                        anchors.fill: parent
+                                        anchors.margins: -4
+                                        hoverEnabled: true
+                                        cursorShape: replyInput.text.trim().length > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        onClicked: root.sendNotificationReply(notification, replyInput.text)
+                                    }
+                                }
+                            }
+
+                            Text {
+                                visible: canOpen && actions.length === 0 && !canReply
+                                text: "CLICK TO OPEN"
+                                color: root.seal
+                                font.family: root.mono
+                                font.pixelSize: 8
+                                font.letterSpacing: 1
+                                opacity: rowHover.containsMouse ? 1 : 0.7
                             }
                         }
 

@@ -1,6 +1,7 @@
 //@ pragma UseQApplication
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 // Combined entry point: one Quickshell process hosting both the navbar and
 // the omni-menu command palette. Both share the same Theme instance, so an

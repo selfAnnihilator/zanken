@@ -135,6 +135,16 @@ rg -Fq 'readonly property bool hasTrackTimeline: Number.isFinite(trackLen) && tr
 rg -Fq 'property real displayRatio: Number.isFinite(rawRatio) ? Math.max(0, Math.min(1, rawRatio)) : 0' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress clamps transient MPRIS ratios"
 pass "music progress stays within its popup during transient MPRIS timelines"
 
+rg -Fq 'actionsSupported: true' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification server advertises notification actions"
+rg -Fq 'inlineReplySupported: true' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification server advertises inline replies"
+rg -Fq 'function invokeDefaultNotificationAction(notification)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification default actions can be invoked"
+rg -Fq 'function sendNotificationReply(notification, replyText)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification inline replies can be sent"
+rg -Fq 'root.notificationActions(notification)' "$ROOT/default/desktop/quickshell/NotificationsPopup.qml" || fail "notification panel renders sender-provided actions"
+rg -Fq 'root.sendNotificationReply(notification, replyInput.text)' "$ROOT/default/desktop/quickshell/NotificationsPopup.qml" || fail "notification panel submits inline replies"
+rg -Fq 'toastPanel.root.invokeDefaultNotificationAction(notif)' "$ROOT/default/desktop/quickshell/NotificationToast.qml" || fail "notification toasts invoke default actions"
+rg -Fxq 'import Quickshell.Io' "$ROOT/default/desktop/quickshell/shell.qml" || fail "Quickshell restart IPC imports its handler type"
+pass "notification actions, replies, and default opens are wired to their sender"
+
 nvidia_config="$TMPDIR/nvidia-config.kdl"
 printf '%s\n' \
   'environment {' \

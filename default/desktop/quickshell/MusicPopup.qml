@@ -43,7 +43,7 @@ CardWindow {
             }
             event.accepted = true;
         } else if (event.key === Qt.Key_Right) {
-            if (player && player.canSeek && trackLen > 0) {
+            if (player && player.canSeek && hasTrackTimeline) {
                 const p = Math.min(trackLen, trackPos + 10);
                 player.position = p; trackPos = p;
             }
@@ -55,6 +55,10 @@ CardWindow {
 
     readonly property var player: root.musicPlayer
     readonly property real trackLen: player ? player.length : 0
+    // Some browser MPRIS implementations report a transient zero or tiny
+    // duration while changing YouTube Shorts. Hide the timeline until it is
+    // meaningful so a stale position cannot overflow the progress fill.
+    readonly property bool hasTrackTimeline: Number.isFinite(trackLen) && trackLen >= 1
     property real trackPos: 0
 
     onPlayerChanged: {
@@ -226,7 +230,7 @@ CardWindow {
         Column {
             width: parent.width
             spacing: 4
-            visible: !!musicPopup.player && musicPopup.trackLen > 0
+            visible: !!musicPopup.player && musicPopup.hasTrackTimeline
 
             Item {
                 id: scrubBar
@@ -236,9 +240,10 @@ CardWindow {
                 property bool hovered: false
                 property bool dragging: false
                 property real dragRatio: 0
-                property real displayRatio: dragging
+                property real rawRatio: dragging
                     ? dragRatio
-                    : (musicPopup.trackLen > 0 ? musicPopup.trackPos / musicPopup.trackLen : 0)
+                    : (musicPopup.hasTrackTimeline ? musicPopup.trackPos / musicPopup.trackLen : 0)
+                property real displayRatio: Number.isFinite(rawRatio) ? Math.max(0, Math.min(1, rawRatio)) : 0
 
                 Rectangle {
                     id: trackBg
@@ -251,7 +256,7 @@ CardWindow {
 
                     Rectangle {
                         id: trackFill
-                        width: Math.max(0, trackBg.width * scrubBar.displayRatio)
+                        width: Math.min(trackBg.width, Math.max(0, trackBg.width * scrubBar.displayRatio))
                         height: parent.height
                         radius: parent.radius
                         color: musicPopup.root.seal
@@ -293,7 +298,7 @@ CardWindow {
                             scrubBar.dragRatio = Math.max(0, Math.min(1, e.x / width));
                     }
                     onReleased: (e) => {
-                        if (musicPopup.player && musicPopup.player.canSeek && musicPopup.trackLen > 0) {
+                        if (musicPopup.player && musicPopup.player.canSeek && musicPopup.hasTrackTimeline) {
                             const pos = scrubBar.dragRatio * musicPopup.trackLen;
                             musicPopup.player.position = pos;
                             musicPopup.trackPos = pos;

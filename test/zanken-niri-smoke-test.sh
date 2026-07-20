@@ -131,6 +131,10 @@ rg -Fq 'Mod+B { spawn "zanken-launch-browser" "--quick"; }' "$ROOT/default/deskt
 rg -Fq 'Mod+Shift+B { spawn "zanken-launch-browser"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "preferred-browser hotkey uses the Zanken browser launcher"
 pass "browser hotkeys use their configurable Zanken launchers"
 
+rg -Fq 'readonly property bool hasTrackTimeline: Number.isFinite(trackLen) && trackLen >= 1' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress waits for a valid MPRIS timeline"
+rg -Fq 'property real displayRatio: Number.isFinite(rawRatio) ? Math.max(0, Math.min(1, rawRatio)) : 0' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress clamps transient MPRIS ratios"
+pass "music progress stays within its popup during transient MPRIS timelines"
+
 nvidia_config="$TMPDIR/nvidia-config.kdl"
 printf '%s\n' \
   'environment {' \

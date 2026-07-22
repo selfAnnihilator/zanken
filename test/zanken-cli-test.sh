@@ -51,6 +51,11 @@ fi
 rg -Fq 'Quickshell.reload(false);' "$ROOT/default/desktop/quickshell/shell.qml" || fail "managed Quickshell config provides a soft reload IPC target"
 pass "Quickshell restart preserves browser media and supports legacy configs"
 
+if rg -q 'ipc call idle disable' "$ROOT/bin/zanken-system-lock"; then
+  fail "locking preserves an active idle inhibitor"
+fi
+pass "locking preserves an active idle inhibitor"
+
 if rg -n '\[omarchy\]|pkgs\.omarchy\.org|TrustAll' "$ROOT/default/pacman" "$ROOT/install/preflight/pacman.sh"; then
   fail "fresh installs do not configure the retired Omarchy package repository"
 fi

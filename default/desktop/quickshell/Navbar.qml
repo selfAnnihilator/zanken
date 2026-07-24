@@ -64,6 +64,7 @@ Item {
     readonly property string icoSearch:  String.fromCodePoint(0xf0349)
     readonly property string icoUpdate:  String.fromCodePoint(0xf021)
     readonly property string icoPlug:    String.fromCodePoint(0xf06a5)
+    readonly property string icoCharging: String.fromCodePoint(0xf0084)
     readonly property string icoMusic:   String.fromCodePoint(0xf001)
     readonly property string icoPause:   String.fromCodePoint(0xf04c)
     readonly property string icoPlay:    String.fromCodePoint(0xf04b)
@@ -2315,14 +2316,14 @@ Item {
     }
 
     // ---------- Battery icon helper ----------
-    // "Not charging" covers plugged-in-but-topped-up laptops; "Full" is the
-    // briefly-stable Charging→Full edge. Treat all three as AC-powered and
-    // swap the battery ramp for a single plug glyph — once AC is in, the
-    // % digit in the tooltip is the only number worth glancing at.
+    // Charging needs its own glyph while the battery is gaining energy. Once
+    // charging has stopped, including the briefly-stable Charging→Full edge,
+    // the plug glyph communicates that AC remains connected.
     function batteryIcon() {
-        if (root.batState === "Charging"
-            || root.batState === "Full"
-            || root.batState === "Not charging") return root.icoPlug;
+        if (root.batState === "Charging") {
+            return root.batPower >= 0.05 ? root.icoCharging : root.icoPlug;
+        }
+        if (root.batState === "Full" || root.batState === "Not charging") return root.icoPlug;
         const c = root.batVal;
         const r = ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"];
         return r[Math.min(9, Math.floor(c / 10))];

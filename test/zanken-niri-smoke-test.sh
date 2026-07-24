@@ -145,6 +145,11 @@ rg -Fq 'toastPanel.root.invokeDefaultNotificationAction(notif)' "$ROOT/default/d
 rg -Fxq 'import Quickshell.Io' "$ROOT/default/desktop/quickshell/shell.qml" || fail "Quickshell restart IPC imports its handler type"
 pass "notification actions, replies, and default opens are wired to their sender"
 
+rg -Fq 'readonly property string icoCharging: String.fromCodePoint(0xf0084)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry defines a charging glyph"
+rg -Fq 'return root.batPower >= 0.05 ? root.icoCharging : root.icoPlug;' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry uses the charging glyph while gaining charge"
+rg -Fq 'if (root.batState === "Full" || root.batState === "Not charging") return root.icoPlug;' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry uses the plug glyph when charging has stopped"
+pass "battery telemetry distinguishes charging from plugged in"
+
 nvidia_config="$TMPDIR/nvidia-config.kdl"
 printf '%s\n' \
   'environment {' \

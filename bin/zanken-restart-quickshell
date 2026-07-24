@@ -11,8 +11,12 @@ fi
 
 # Prefer Quickshell's soft reload. It preserves the MPRIS service connection,
 # so paused browser media does not resume or advance while the shell reloads.
-if [[ $config_name == "zanken" ]] && qs -c zanken ipc call zanken reload >/dev/null 2>&1; then
-  exit 0
+if [[ $config_name == "zanken" ]]; then
+  reload_output=$(timeout 5 qs -c zanken ipc call zanken reload 2>&1)
+  reload_status=$?
+  if (( reload_status == 0 )) && [[ -z $reload_output ]]; then
+    exit 0
+  fi
 fi
 
 pkill -f 'qs.*-c.*zanken' 2>/dev/null || true

@@ -310,7 +310,7 @@ binds {
     Print { spawn "zanken-capture-screenshot"; }
     Ctrl+Print { spawn "zanken-capture-screenshot" "fullscreen"; }
     Shift+Print { spawn "zanken-capture-screenshot" "region"; }
-    Ctrl+T { spawn "zanken-capture-text-extraction"; }
+    Mod+Ctrl+Print { spawn "zanken-capture-text-extraction"; }
 
     // Volume (via zanken-swayosd-client)
     XF86AudioRaiseVolume allow-when-locked=true { spawn "zanken-swayosd-client" "--output-volume" "raise"; }

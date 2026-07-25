@@ -131,8 +131,8 @@ rg -Fq 'Mod+B { spawn "zanken-launch-browser" "--quick"; }' "$ROOT/default/deskt
 rg -Fq 'Mod+Shift+B { spawn "zanken-launch-browser"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "preferred-browser hotkey uses the Zanken browser launcher"
 pass "browser hotkeys use their configurable Zanken launchers"
 
-rg -Fq 'Ctrl+T { spawn "zanken-capture-text-extraction"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "text extraction uses the Ctrl+T hotkey"
-pass "text extraction uses the Ctrl+T hotkey"
+rg -Fq 'Mod+Ctrl+Print { spawn "zanken-capture-text-extraction"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "text extraction uses the Mod+Ctrl+Print hotkey"
+pass "text extraction uses the Mod+Ctrl+Print hotkey"
 
 rg -Fq 'readonly property bool hasTrackTimeline: Number.isFinite(trackLen) && trackLen >= 1' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress waits for a valid MPRIS timeline"
 rg -Fq 'property real displayRatio: Number.isFinite(rawRatio) ? Math.max(0, Math.min(1, rawRatio)) : 0' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress clamps transient MPRIS ratios"

@@ -76,6 +76,7 @@
 | `Mod+Alt+Shift+R` | Start or stop screen recording |
 | `Ctrl+Print` | Screenshot (full screen) |
 | `Shift+Print` | Screenshot to clipboard |
+| `Ctrl+T` | Extract text from a selected screen region |
 
 ## System
 

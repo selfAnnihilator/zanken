@@ -402,6 +402,8 @@ Item {
     property var    wifiKnownSsids: []
     property string wifiConnectingSSID: ""
     property string wifiConnectError: ""
+    property bool   wifiDetailsLoading: false
+    property var    wifiConnectionDetails: ({ address: "", gateway: "", band: "" })
 
     // iwd-based: zanken uses iwctl, not nmcli. The probe detects the
     // first station-mode device dynamically so multi-radio laptops work.
@@ -410,6 +412,12 @@ Item {
         root.wifiScanning = true;
         wifiScanProbe.running = false;
         wifiScanProbe.running = true;
+    }
+    function refreshWifiDetails() {
+        if (wifiDetailsProbe.running) return;
+        root.wifiDetailsLoading = true;
+        wifiDetailsProbe.running = false;
+        wifiDetailsProbe.running = true;
     }
     function connectWifi(ssid, passphrase) {
         if (!ssid) return;
@@ -427,12 +435,14 @@ Item {
     }
     function disconnectWifi() {
         root.run("nmcli device disconnect $(nmcli -t -f DEVICE,TYPE device 2>/dev/null | grep ':802-11-wireless$\\|:wifi$' | cut -d: -f1 | head -1)");
+        root.wifiConnectionDetails = ({ address: "", gateway: "", band: "" });
         wifiPostConnectTimer.restart();
     }
     function toggleWifiRadio() {
         const target = root.wifiRadioOn ? "off" : "on";
         root.wifiRadioOn = !root.wifiRadioOn;
         root.run("nmcli radio wifi " + target);
+        if (target === "off") root.wifiConnectionDetails = ({ address: "", gateway: "", band: "" });
         wifiPostConnectTimer.restart();
     }
     function forgetWifi(ssid) {
@@ -456,6 +466,7 @@ Item {
             }
             wifiKnownProbe.running = false;
             wifiKnownProbe.running = true;
+            root.refreshWifiDetails();
         }
     }
     Process {
@@ -1233,6 +1244,7 @@ Item {
         }
         wifiKnownProbe.running = false;
         wifiKnownProbe.running = true;
+        root.refreshWifiDetails();
     }
     function openBluetooth() {
         root.closeAllCards();
@@ -1692,6 +1704,44 @@ Item {
     // Silently rescans every 8s while popup is open so new/gone networks
     // appear/disappear without needing a manual refresh button press.
     // Live timer disabled — user controls refresh via the button in the popup.
+
+    // ---------- Wi-Fi active-link diagnostics ----------
+    // Keep this intentionally small: the popup already has scan data, while
+    // this probe supplies the live address, gateway, and radio band only when
+    // the user opens the panel or asks for details.
+    Process {
+        id: wifiDetailsProbe
+        running: false
+        command: ["bash", "-lc",
+            "DEV=$(iwctl --dont-ask device list 2>/dev/null"
+            + " | sed 's/\\x1b\\[[0-9;]*m//g'"
+            + " | awk '/station/{print $1; exit}');"
+            + " [ -n \"$DEV\" ] || exit 0;"
+            + " address=$(ip -o -4 addr show dev \"$DEV\" 2>/dev/null | awk '{print $4; exit}' | cut -d/ -f1);"
+            + " gateway=$(ip route show default dev \"$DEV\" 2>/dev/null | awk '{print $3; exit}');"
+            + " freq=$(iw dev \"$DEV\" link 2>/dev/null | awk '/freq:/{print $2; exit}');"
+            + " band=\"\";"
+            + " if [ -n \"$freq\" ]; then"
+            + "   if [ \"$freq\" -ge 5925 ]; then band=\"6 GHz\";"
+            + "   elif [ \"$freq\" -ge 4900 ]; then band=\"5 GHz\";"
+            + "   else band=\"2.4 GHz\"; fi;"
+            + " fi;"
+            + " printf '%s\\t%s\\t%s\\n' \"$address\" \"$gateway\" \"$band\"" ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const fields = this.text.trim().split("\t");
+                root.wifiConnectionDetails = ({
+                    address: fields[0] || "",
+                    gateway: fields[1] || "",
+                    band: fields[2] || ""
+                });
+                root.wifiDetailsLoading = false;
+            }
+        }
+        onRunningChanged: {
+            if (!running) root.wifiDetailsLoading = false;
+        }
+    }
 
     // ---------- Wi-Fi scan probe ----------
     // iwctl path (zanken ships iwd, not NetworkManager): detect the
@@ -2416,6 +2466,16 @@ Item {
         }
         function open(): void  { root.openCalendar(); }
         function close(): void { root.calendarVisible = false; }
+    }
+
+    IpcHandler {
+        target: "wifi"
+        function toggle(): void {
+            if (root.wifiVisible) root.wifiVisible = false;
+            else root.openWifi();
+        }
+        function open(): void  { root.openWifi(); }
+        function close(): void { root.wifiVisible = false; }
     }
 
     IpcHandler {

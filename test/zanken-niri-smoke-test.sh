@@ -152,6 +152,14 @@ rg -Fq 'toastPanel.root.invokeDefaultNotificationAction(notif)' "$ROOT/default/d
 rg -Fxq 'import Quickshell.Io' "$ROOT/default/desktop/quickshell/shell.qml" || fail "Quickshell restart IPC imports its handler type"
 pass "notification triage, actions, replies, and default opens are wired to their sender"
 
+rg -Fq 'property bool detailsExpanded: false' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel can reveal active connection details"
+rg -Fq 'text: "CONNECTED"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel presents one dedicated connected-network state"
+rg -Fq 'text: "SAVED NEARBY"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel separates saved nearby networks"
+rg -Fq '"NEARBY · SCANNING…" : "NEARBY"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel separates new nearby networks"
+rg -Fq 'function refreshWifiDetails()' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Wi-Fi panel can read active connection diagnostics"
+rg -Fq 'target: "wifi"' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Wi-Fi panel can be opened through Quickshell IPC"
+pass "Wi-Fi panel keeps the connected network singular and diagnostics on demand"
+
 rg -Fq 'readonly property string icoCharging: String.fromCodePoint(0xf0084)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry defines a charging glyph"
 rg -Fq 'return root.batPower >= 0.05 ? root.icoCharging : root.icoPlug;' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry uses the charging glyph while gaining charge"
 rg -Fq 'if (root.batState === "Full" || root.batState === "Not charging") return root.icoPlug;' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry uses the plug glyph when charging has stopped"

@@ -502,6 +502,8 @@ Item {
     property var    btDevices: []
     property bool   btScanning: false
     property string _btDevicesSer: ""
+    property string btPairingMac: ""
+    property string btPairError: ""
 
     function refreshBluetooth() {
         if (btDevicesProbe.running) return;
@@ -514,6 +516,16 @@ Item {
         if (!mac) return;
         root.run("bluetoothctl connect " + mac);
         btPostActionTimer.restart();
+    }
+    function btPairAndConnect(mac) {
+        if (!/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(mac)) return;
+        if (root.btPairingMac !== "") return;
+        root.btPairingMac = mac;
+        root.btPairError = "";
+        btPairConnectProc.command = ["bash", "-lc",
+            "bluetoothctl pair " + mac + " && bluetoothctl connect " + mac];
+        btPairConnectProc.running = false;
+        btPairConnectProc.running = true;
     }
     function btDisconnect(mac) {
         if (!mac) return;
@@ -530,6 +542,9 @@ Item {
         if (root.btScanning) {
             root.run("setsid -f bluetoothctl --timeout 15 scan on >/dev/null 2>&1");
             btScanStopTimer.restart();
+        } else {
+            root.run("bluetoothctl scan off");
+            btScanStopTimer.stop();
         }
         btPostActionTimer.restart();
     }
@@ -545,6 +560,28 @@ Item {
         interval: 15000
         repeat: false
         onTriggered: root.btScanning = false
+    }
+    Timer {
+        id: btPairErrorTimer
+        interval: 3000
+        repeat: false
+        onTriggered: root.btPairError = ""
+    }
+    Process {
+        id: btPairConnectProc
+        running: false
+        command: ["true"]
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+        onExited: function(code) {
+            const mac = root.btPairingMac;
+            root.btPairingMac = "";
+            if (code !== 0 && mac !== "") {
+                root.btPairError = mac;
+                btPairErrorTimer.restart();
+            }
+            btPostActionTimer.restart();
+        }
     }
     property string audioIcon: ""
     property int    audioVol: 0
@@ -2476,6 +2513,16 @@ Item {
         }
         function open(): void  { root.openWifi(); }
         function close(): void { root.wifiVisible = false; }
+    }
+
+    IpcHandler {
+        target: "bluetooth"
+        function toggle(): void {
+            if (root.bluetoothVisible) root.bluetoothVisible = false;
+            else root.openBluetooth();
+        }
+        function open(): void  { root.openBluetooth(); }
+        function close(): void { root.bluetoothVisible = false; }
     }
 
     IpcHandler {

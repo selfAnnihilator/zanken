@@ -152,6 +152,13 @@ rg -Fq 'toastPanel.root.invokeDefaultNotificationAction(notif)' "$ROOT/default/d
 rg -Fxq 'import Quickshell.Io' "$ROOT/default/desktop/quickshell/shell.qml" || fail "Quickshell restart IPC imports its handler type"
 pass "notification triage, actions, replies, and default opens are wired to their sender"
 
+rg -Fq 'text: "CONNECTED"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel separates connected devices"
+rg -Fq 'text: "SAVED DEVICES"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel separates saved devices"
+rg -Fq 'text: "DISCOVERING…"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel shows a discovery state while scanning"
+rg -Fq 'function btPairAndConnect(mac)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Bluetooth panel pairs before connecting new devices"
+rg -Fq 'target: "bluetooth"' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Bluetooth panel can be opened through Quickshell IPC"
+pass "Bluetooth panel groups device states and pairs new devices before connecting"
+
 rg -Fq 'property bool detailsExpanded: false' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel can reveal active connection details"
 rg -Fq 'text: "CONNECTED"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel presents one dedicated connected-network state"
 rg -Fq 'text: "SAVED NEARBY"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel separates saved nearby networks"

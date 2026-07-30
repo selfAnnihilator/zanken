@@ -4,13 +4,34 @@
 
 THEME_DIR="$HOME/.config/zanken/current/theme"
 
-if [ -f "$THEME_DIR/light.mode" ]; then
-    gsettings set org.gnome.desktop.interface color-scheme 'default'
-    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+set_gtk_theme_name() {
+  local settings_file="$1"
+  local gtk_theme="$2"
+
+  mkdir -p "$(dirname "$settings_file")"
+
+  if [[ ! -f $settings_file ]]; then
+    printf '[Settings]\ngtk-theme-name=%s\n' "$gtk_theme" >"$settings_file"
+  elif rg -q '^gtk-theme-name=' "$settings_file"; then
+    sed -i "s/^gtk-theme-name=.*/gtk-theme-name=$gtk_theme/" "$settings_file"
+  elif rg -q '^\[Settings\]$' "$settings_file"; then
+    sed -i "/^\[Settings\]$/a gtk-theme-name=$gtk_theme" "$settings_file"
+  else
+    printf '[Settings]\ngtk-theme-name=%s\n' "$gtk_theme" >"$settings_file"
+  fi
+}
+
+if [[ -f $THEME_DIR/light.mode ]]; then
+  gtk_theme='adw-gtk3'
+  gsettings set org.gnome.desktop.interface color-scheme 'default'
 else
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+  gtk_theme='adw-gtk3-dark'
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 fi
+
+gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme"
+set_gtk_theme_name "$HOME/.config/gtk-3.0/settings.ini" "$gtk_theme"
+set_gtk_theme_name "$HOME/.config/gtk-4.0/settings.ini" "$gtk_theme"
 
 # Deploy GTK4 theme CSS so file manager and other GTK4 apps pick up theme colors
 if [ -f "$THEME_DIR/gtk4.css" ]; then

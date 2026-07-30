@@ -26,10 +26,27 @@ assert_output_contains() {
 export PATH="$ROOT/bin:$PATH"
 
 quick_browser_home=$(mktemp -d)
-trap 'rm -rf "$quick_browser_home"' EXIT
+gtk_theme_home=$(mktemp -d)
+trap 'rm -rf "$quick_browser_home" "$gtk_theme_home"' EXIT
 HOME="$quick_browser_home" "$CLI" default quick browser qutebrowser
 [[ $(HOME="$quick_browser_home" "$CLI" default quick browser) == "qutebrowser" ]] || fail "quick browser preference persists independently"
 pass "quick browser preference persists independently"
+
+mkdir -p "$gtk_theme_home/bin" "$gtk_theme_home/.config/zanken/current/theme" \
+  "$gtk_theme_home/.config/gtk-3.0" "$gtk_theme_home/.config/gtk-4.0"
+printf '%s\n' '#!/bin/bash' 'exit 0' >"$gtk_theme_home/bin/gsettings"
+chmod +x "$gtk_theme_home/bin/gsettings"
+printf '%s\n' '[Settings]' 'gtk-theme-name=adw-gtk3-dark' >"$gtk_theme_home/.config/gtk-3.0/settings.ini"
+printf '%s\n' '[Settings]' 'gtk-theme-name=adw-gtk3-dark' >"$gtk_theme_home/.config/gtk-4.0/settings.ini"
+touch "$gtk_theme_home/.config/zanken/current/theme/light.mode"
+HOME="$gtk_theme_home" PATH="$gtk_theme_home/bin:$PATH" "$ROOT/bin/zanken-theme-set-gnome"
+rg -Fxq 'gtk-theme-name=adw-gtk3' "$gtk_theme_home/.config/gtk-3.0/settings.ini" || fail "GTK3 theme follows light Zanken themes"
+rg -Fxq 'gtk-theme-name=adw-gtk3' "$gtk_theme_home/.config/gtk-4.0/settings.ini" || fail "GTK4 theme follows light Zanken themes"
+rm "$gtk_theme_home/.config/zanken/current/theme/light.mode"
+HOME="$gtk_theme_home" PATH="$gtk_theme_home/bin:$PATH" "$ROOT/bin/zanken-theme-set-gnome"
+rg -Fxq 'gtk-theme-name=adw-gtk3-dark' "$gtk_theme_home/.config/gtk-3.0/settings.ini" || fail "GTK3 theme follows dark Zanken themes"
+rg -Fxq 'gtk-theme-name=adw-gtk3-dark' "$gtk_theme_home/.config/gtk-4.0/settings.ini" || fail "GTK4 theme follows dark Zanken themes"
+pass "GTK theme files follow the active Zanken theme"
 
 "$CLI" commands --check >/dev/null
 pass "command metadata and fast-path aliases are valid"

@@ -134,7 +134,7 @@ CardWindow {
                 delegate: Item {
                     required property var modelData
                     width: parent.width
-                    height: 34
+                    height: 52
 
                     Rectangle {
                         anchors.fill: parent
@@ -146,7 +146,8 @@ CardWindow {
                         id: connectedIcon
                         anchors.left: parent.left
                         anchors.leftMargin: 8
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.top: parent.top
+                        anchors.topMargin: 10
                         width: 20
                         text: "󰂱"
                         color: btPopup.root.seal
@@ -159,7 +160,8 @@ CardWindow {
                         anchors.leftMargin: 6
                         anchors.right: disconnectLabel.left
                         anchors.rightMargin: 8
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.top: parent.top
+                        anchors.topMargin: 9
                         elide: Text.ElideRight
                         text: modelData.name || modelData.mac || "Unknown"
                         color: btPopup.root.ink
@@ -170,10 +172,23 @@ CardWindow {
                     }
 
                     Text {
+                        anchors.left: connectedIcon.right
+                        anchors.leftMargin: 6
+                        anchors.top: connectedIcon.bottom
+                        anchors.topMargin: 4
+                        text: "ACTIVE CONNECTION"
+                        color: btPopup.root.inkDeep
+                        font.family: btPopup.root.mono
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                    }
+
+                    Text {
                         id: disconnectLabel
                         anchors.right: parent.right
                         anchors.rightMargin: 8
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.top: parent.top
+                        anchors.topMargin: 18
                         text: "DISCONNECT"
                         color: disconnectArea.containsMouse ? btPopup.root.seal : btPopup.root.inkDeep
                         font.family: btPopup.root.mono
@@ -280,11 +295,116 @@ CardWindow {
             }
         }
 
+        // Empty Bluetooth is an actionable discovery station, not a dead end.
+        Item {
+            id: discoveryStation
+            width: parent.width
+            height: 116
+            visible: btPopup.root.btPowered && (btPopup.root.btScanning
+                || (btPopup.connectedDevices.length === 0
+                    && btPopup.savedDevices.length === 0
+                    && btPopup.nearbyDevices.length === 0))
+
+            Rectangle {
+                anchors.fill: parent
+                color: btPopup.root.seal
+                opacity: 0.07
+            }
+
+            Text {
+                id: discoveryGlyph
+                anchors.left: parent.left
+                anchors.leftMargin: 14
+                anchors.top: parent.top
+                anchors.topMargin: 16
+                text: btPopup.root.btScanning ? "󰂯" : "󰂲"
+                color: btPopup.root.seal
+                font.family: btPopup.root.mono
+                font.pixelSize: 25
+            }
+
+            Column {
+                anchors.left: discoveryGlyph.right
+                anchors.leftMargin: 12
+                anchors.right: parent.right
+                anchors.rightMargin: 14
+                anchors.top: parent.top
+                anchors.topMargin: 14
+                spacing: 5
+
+                Text {
+                    width: parent.width
+                    text: btPopup.root.btScanning ? "DISCOVERING…" : "NO DEVICES DISCOVERED"
+                    color: btPopup.root.ink
+                    font.family: btPopup.root.mono
+                    font.pixelSize: 11
+                    font.letterSpacing: 2
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    text: btPopup.root.btScanning
+                        ? "Looking for Bluetooth devices near you."
+                        : "Scan for headphones, controllers, keyboards, and nearby devices."
+                    color: btPopup.root.inkDeep
+                    font.family: btPopup.root.mono
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.5
+                    lineHeight: 1.15
+                }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                color: btPopup.root.sep
+                opacity: 0.5
+            }
+
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 14
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 12
+                text: btPopup.root.btScanning ? "STOP SCANNING" : "DISCOVER DEVICES"
+                color: discoveryMouse.containsMouse ? btPopup.root.seal : btPopup.root.ink
+                font.family: btPopup.root.mono
+                font.pixelSize: 11
+                font.letterSpacing: 2
+                Behavior on color { ColorAnimation { duration: 140 } }
+            }
+
+            Text {
+                anchors.right: parent.right
+                anchors.rightMargin: 14
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 10
+                text: btPopup.root.btScanning ? "󰑦" : "󰑣"
+                color: discoveryMouse.containsMouse ? btPopup.root.seal : btPopup.root.inkDeep
+                font.family: btPopup.root.mono
+                font.pixelSize: 16
+                Behavior on color { ColorAnimation { duration: 140 } }
+            }
+
+            MouseArea {
+                id: discoveryMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: btPopup.root.btToggleScan()
+            }
+        }
+
         // === NEARBY ===
         Column {
             width: parent.width
             spacing: 0
-            visible: btPopup.root.btPowered
+            visible: btPopup.root.btPowered && !btPopup.root.btScanning
+                && btPopup.nearbyDevices.length > 0
 
             Text {
                 text: "NEARBY"
@@ -296,36 +416,8 @@ CardWindow {
                 bottomPadding: 6
             }
 
-            Text {
-                width: parent.width
-                height: 36
-                visible: btPopup.root.btScanning
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                text: "DISCOVERING…"
-                color: btPopup.root.inkDeep
-                font.family: btPopup.root.mono
-                font.pixelSize: 11
-                font.letterSpacing: 3
-                opacity: 0.6
-            }
-
-            Text {
-                width: parent.width
-                height: 36
-                visible: !btPopup.root.btScanning && btPopup.nearbyDevices.length === 0
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                text: "NO DEVICES FOUND · PRESS S TO SCAN"
-                color: btPopup.root.inkDeep
-                font.family: btPopup.root.mono
-                font.pixelSize: 10
-                font.letterSpacing: 1
-                opacity: 0.6
-            }
-
             Repeater {
-                model: btPopup.root.btScanning ? [] : btPopup.nearbyDevices.slice(0, 6)
+                model: btPopup.nearbyDevices.slice(0, 6)
                 delegate: Item {
                     required property var modelData
                     width: parent.width
@@ -404,7 +496,7 @@ CardWindow {
         Rectangle {
             width: parent.width
             height: 1
-            visible: btPopup.root.btPowered
+            visible: btPopup.root.btPowered && !discoveryStation.visible
             color: btPopup.root.sep
             opacity: 0.5
         }
@@ -412,7 +504,7 @@ CardWindow {
         Item {
             width: parent.width
             height: 34
-            visible: btPopup.root.btPowered
+            visible: btPopup.root.btPowered && !discoveryStation.visible
 
             Text {
                 anchors.left: parent.left

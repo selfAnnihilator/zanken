@@ -82,6 +82,13 @@ HOME="$work_tree" ZANKEN_PATH="$work_tree/zanken" "$ROOT/bin/zanken-config-deskt
 niri validate --config "$NIRI_CONFIG" >/dev/null
 pass "managed desktop defaults can roll back safely"
 
+rg -Fq 'QsMenuOpener {' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray context menus use the Zanken renderer"
+rg -Fq 'menuEntry.trigger();' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray context menu actions trigger their provider entries"
+if rg -q 'item\.display\(' "$ROOT/default/desktop/quickshell/TrayPopup.qml"; then
+  fail "tray context menus do not use the unthemed platform menu"
+fi
+pass "tray context menus use the Zanken theme"
+
 HOME="$work_tree" ZANKEN_PATH="$work_tree/zanken" "$ROOT/bin/zanken-refresh-config" uwsm/env
 cmp -s "$ROOT/config/uwsm/env" "$work_tree/.config/uwsm/env" || fail "refresh config uses the Zanken checkout"
 pass "refresh config uses the Zanken checkout"

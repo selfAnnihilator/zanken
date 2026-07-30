@@ -223,10 +223,10 @@ PanelWindow {
 
     Rectangle {
         id: menuPanel
-        readonly property int contentHeight: Math.min(menuList.implicitHeight, 420)
+        readonly property int contentHeight: Math.min(menuList.implicitHeight, 360)
 
         visible: trayPopup.menuHandle !== null
-        width: 272
+        width: 248
         height: menuHeader.height + contentHeight + 8
         x: Math.max(8, Math.min(parent.width - width - 8, trayPopup.menuX))
         y: Math.max(8, Math.min(parent.height - height - 8, trayPopup.menuY))
@@ -241,7 +241,7 @@ PanelWindow {
         Item {
             id: menuHeader
             width: parent.width
-            height: 36
+            height: 32
 
             Image {
                 id: menuAppIcon
@@ -317,7 +317,7 @@ PanelWindow {
                         readonly property bool separator: menuEntry ? menuEntry.isSeparator : false
 
                         width: menuList.width
-                        height: separator ? 7 : 30
+                        height: separator ? 6 : 28
 
                         Rectangle {
                             visible: parent.separator
@@ -350,7 +350,7 @@ PanelWindow {
                             }
                             color: trayPopup.root.seal
                             font.family: trayPopup.root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: 10
                         }
 
                         Image {
@@ -377,7 +377,7 @@ PanelWindow {
                             color: parent.menuEntry.enabled ? trayPopup.root.fg : trayPopup.root.muted
                             elide: Text.ElideRight
                             font.family: trayPopup.root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: 10
                         }
 
                         Text {

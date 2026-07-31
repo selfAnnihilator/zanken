@@ -403,7 +403,7 @@ PanelWindow {
                                     trayPopup.openSubmenu(parent.menuEntry);
                                     return;
                                 }
-                                parent.menuEntry.trigger();
+                                parent.menuEntry.triggered();
                                 trayPopup.closeMenu();
                                 root.trayVisible = false;
                             }

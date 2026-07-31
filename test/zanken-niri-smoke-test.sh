@@ -83,7 +83,7 @@ niri validate --config "$NIRI_CONFIG" >/dev/null
 pass "managed desktop defaults can roll back safely"
 
 rg -Fq 'QsMenuOpener {' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray context menus use the Zanken renderer"
-rg -Fq 'menuEntry.trigger();' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray context menu actions trigger their provider entries"
+rg -Fq 'menuEntry.triggered();' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray context menu actions trigger their provider entries"
 if rg -q 'item\.display\(' "$ROOT/default/desktop/quickshell/TrayPopup.qml"; then
   fail "tray context menus do not use the unthemed platform menu"
 fi

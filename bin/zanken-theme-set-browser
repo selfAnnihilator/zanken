@@ -15,9 +15,14 @@ fi
 
 set_browser_policy() {
   local policy_dir="$1"
+  local policy_json="{\"BrowserThemeColor\": \"$THEME_HEX_COLOR\", \"BrowserColorScheme\": \"device\"}"
 
   [[ -d $policy_dir ]] || return
-  echo "{\"BrowserThemeColor\": \"$THEME_HEX_COLOR\", \"BrowserColorScheme\": \"device\"}" | tee "$policy_dir/color.json" >/dev/null
+  if [[ -w $policy_dir ]]; then
+    echo "$policy_json" | tee "$policy_dir/color.json" >/dev/null
+  else
+    echo "$policy_json" | sudo tee "$policy_dir/color.json" >/dev/null
+  fi
 }
 
 refresh_running_browser() {

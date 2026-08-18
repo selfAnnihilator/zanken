@@ -319,9 +319,15 @@ if ! send_request; then
   fi
 fi
 
-while [[ ! -e $done_file ]]; do
+for ((attempt = 0; attempt < 1500; attempt++)); do
+  [[ -e $done_file ]] && break
   sleep 0.01
 done
+
+if [[ ! -e $done_file ]]; then
+  echo "Image selector timed out waiting for a selection" >&2
+  exit 1
+fi
 
 if [[ -s $selection_file ]]; then
   if [[ $print_name == true ]]; then

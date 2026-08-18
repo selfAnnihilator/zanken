@@ -405,8 +405,8 @@ Item {
     property bool   wifiDetailsLoading: false
     property var    wifiConnectionDetails: ({ address: "", gateway: "", band: "" })
 
-    // iwd-based: zanken uses iwctl, not nmcli. The probe detects the
-    // first station-mode device dynamically so multi-radio laptops work.
+    // NetworkManager-based: detect the wifi device dynamically so
+    // multi-radio laptops work. Reads and controls go through nmcli.
     function refreshWifi() {
         if (wifiScanProbe.running) return;
         root.wifiScanning = true;
@@ -1271,7 +1271,7 @@ Item {
         root.closeAllCards();
         if (root.wifiAnchorItem) root.anchorPopupTo(root.wifiAnchorItem);
         root.wifiVisible = true;
-        // Instant: read iwd's cached scan list
+        // Instant: read NetworkManager's cached scan list
         wifiQuickProbe.running = false;
         wifiQuickProbe.running = true;
         // Silent background: trigger fresh scan, update without SCANNING indicator
@@ -1750,9 +1750,8 @@ Item {
         id: wifiDetailsProbe
         running: false
         command: ["bash", "-lc",
-            "DEV=$(iwctl --dont-ask device list 2>/dev/null"
-            + " | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + " | awk '/station/{print $1; exit}');"
+            "DEV=$(nmcli -t -f DEVICE,TYPE device 2>/dev/null"
+            + "   | awk -F: '/:wifi$/{print $1; exit}');"
             + " [ -n \"$DEV\" ] || exit 0;"
             + " address=$(ip -o -4 addr show dev \"$DEV\" 2>/dev/null | awk '{print $4; exit}' | cut -d/ -f1);"
             + " gateway=$(ip route show default dev \"$DEV\" 2>/dev/null | awk '{print $3; exit}');"
@@ -1781,39 +1780,22 @@ Item {
     }
 
     // ---------- Wi-Fi scan probe ----------
-    // iwctl path (zanken ships iwd, not NetworkManager): detect the
-    // station device, check Powered state, kick a non-blocking scan,
-    // then parse human-formatted get-networks output. Signal is reported
-    // in tenths of dBm (e.g. -6400 = -64 dBm); convert to a 0-100% bar
-    // on the QML side. ANSI codes are stripped before parsing.
+    // nmcli path (NetworkManager owns wlan0 and holds saved credentials):
+    // check radio state, kick a non-blocking rescan, then read the cached
+    // scan list. Signal is a 0-100% percentage; SSIDs with a colon are
+    // escaped by nmcli's terse mode and unescaped before splitting.
     Process {
         id: wifiScanProbe
         running: false
         command: ["bash", "-lc",
-            "DEV=$(iwctl --dont-ask device list 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/station/{print $1; exit}');"
-            + " if [ -z \"$DEV\" ]; then echo 'RADIO|off'; exit 0; fi;"
-            + " powered=$(iwctl --dont-ask device \"$DEV\" show 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/Powered/{print $NF; exit}');"
-            + " if [ \"$powered\" != on ]; then echo 'RADIO|off'; exit 0; fi;"
+            "radio=$(nmcli -t radio wifi 2>/dev/null);"
+            + " if [ \"$radio\" != enabled ]; then echo 'RADIO|off'; exit 0; fi;"
             + " echo 'RADIO|on';"
-            + " iwctl --dont-ask station \"$DEV\" scan >/dev/null 2>&1;"
+            + " nmcli device wifi rescan >/dev/null 2>&1;"
             + " sleep 1;"
-            + " iwctl --dont-ask station \"$DEV\" get-networks rssi-dbms 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '"
-            + "       /^-+$/ { sep++; next }"
-            + "       sep < 2 || $0 ~ /^[[:space:]]*$/ { next }"
-            + "       {"
-            + "         line=$0;"
-            + "         conn=(index(substr(line,1,4),\">\")>0)?1:0;"
-            + "         sub(/^[ >]+/, \"\", line);"
-            + "         sub(/[ ]+$/, \"\", line);"
-            + "         if (match(line, /^(.*[^ ])  +([^ ]+)  +(-?[0-9]+)$/, m))"
-            + "           printf \"%d\\t%s\\t%s\\t%s\\n\", conn, m[1], m[2], m[3];"
-            + "       }'"]
+            + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null"
+            + "   | sed 's/\\\\:/%/g'"
+            + "   | awk -F: '{ gsub(/%/, \":\", $2); printf \"%s\\t%s\\t%s\\t%s\\n\", $1, $2, $3, $4 }'"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = this.text.split("\n").filter(s => s.length > 0);
@@ -1825,12 +1807,10 @@ Item {
                         continue;
                     }
                     const f = line.split("\t");
-                    if (f.length < 4) continue;
-                    // dBm tenths -> dBm -> 0-100%. -50dBm or stronger pegs at 100%.
-                    const dbm = parseInt(f[3]) / 100;
-                    const pct = Math.max(0, Math.min(100, Math.round(2 * (dbm + 100))));
+                    if (f.length < 4 || !f[1]) continue;
+                    const pct = Math.max(0, Math.min(100, parseInt(f[3]) || 0));
                     networks.push({
-                        inUse: f[0] === "1",
+                        inUse: f[0] === "*",
                         ssid: f[1],
                         signal: pct,
                         security: f[2]
@@ -1849,35 +1829,19 @@ Item {
     }
 
     // ---------- Wi-Fi quick-read probe ----------
-    // Reads iwd's existing cached scan list without triggering a new scan.
-    // Used on popup open so available networks appear instantly, while
-    // wifiScanProbe runs silently in the background for fresh results.
+    // Reads NetworkManager's existing cached scan list without triggering a
+    // new scan. Used on popup open so available networks appear instantly,
+    // while wifiScanProbe runs silently in the background for fresh results.
     Process {
         id: wifiQuickProbe
         running: false
         command: ["bash", "-lc",
-            "DEV=$(iwctl --dont-ask device list 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/station/{print $1; exit}');"
-            + " if [ -z \"$DEV\" ]; then echo 'RADIO|off'; exit 0; fi;"
-            + " powered=$(iwctl --dont-ask device \"$DEV\" show 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/Powered/{print $NF; exit}');"
-            + " if [ \"$powered\" != on ]; then echo 'RADIO|off'; exit 0; fi;"
+            "radio=$(nmcli -t radio wifi 2>/dev/null);"
+            + " if [ \"$radio\" != enabled ]; then echo 'RADIO|off'; exit 0; fi;"
             + " echo 'RADIO|on';"
-            + " iwctl --dont-ask station \"$DEV\" get-networks rssi-dbms 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '"
-            + "       /^-+$/ { sep++; next }"
-            + "       sep < 2 || $0 ~ /^[[:space:]]*$/ { next }"
-            + "       {"
-            + "         line=$0;"
-            + "         conn=(index(substr(line,1,4),\">\")>0)?1:0;"
-            + "         sub(/^[ >]+/, \"\", line);"
-            + "         sub(/[ ]+$/, \"\", line);"
-            + "         if (match(line, /^(.*[^ ])  +([^ ]+)  +(-?[0-9]+)$/, m))"
-            + "           printf \"%d\\t%s\\t%s\\t%s\\n\", conn, m[1], m[2], m[3];"
-            + "       }'"]
+            + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null"
+            + "   | sed 's/\\\\:/%/g'"
+            + "   | awk -F: '{ gsub(/%/, \":\", $2); printf \"%s\\t%s\\t%s\\t%s\\n\", $1, $2, $3, $4 }'"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = this.text.split("\n").filter(s => s.length > 0);
@@ -1889,10 +1853,9 @@ Item {
                         continue;
                     }
                     const f = line.split("\t");
-                    if (f.length < 4) continue;
-                    const dbm = parseInt(f[3]) / 100;
-                    const pct = Math.max(0, Math.min(100, Math.round(2 * (dbm + 100))));
-                    networks.push({ inUse: f[0] === "1", ssid: f[1], signal: pct, security: f[2] });
+                    if (f.length < 4 || !f[1]) continue;
+                    const pct = Math.max(0, Math.min(100, parseInt(f[3]) || 0));
+                    networks.push({ inUse: f[0] === "*", ssid: f[1], signal: pct, security: f[2] });
                 }
                 networks.sort((a, b) => (b.inUse - a.inUse) || (b.signal - a.signal));
                 if (root.wifiRadioOn !== radioOn) root.wifiRadioOn = radioOn;

@@ -1,6 +1,6 @@
 [Unit]
-Description=Omarchy Battery Monitor Timer
-Requires=omarchy-battery-monitor.service
+Description=Zanken Battery Monitor Timer
+Requires=zanken-battery-monitor.service
 
 [Timer]
 OnBootSec=1min

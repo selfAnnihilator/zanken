@@ -7,7 +7,6 @@ mkdir -p ~/.config/zanken/themes
 
 # Chromium policy directory for theme
 sudo mkdir -p /etc/chromium/policies/managed
-sudo chmod a+rw /etc/chromium/policies/managed
 
 # Set initial theme
 zanken-theme-set "Tokyo Night"

@@ -161,7 +161,7 @@ pass "notification triage, actions, replies, and default opens are wired to thei
 
 rg -Fq 'text: "CONNECTED"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel separates connected devices"
 rg -Fq 'text: "SAVED DEVICES"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel separates saved devices"
-rg -Fq 'text: "DISCOVERING…"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel shows a discovery state while scanning"
+rg -Fq 'btScanning ? "DISCOVERING…" : "NO DEVICES DISCOVERED"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel shows a discovery state while scanning"
 rg -Fq 'text: "DISCOVER DEVICES"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel gives its empty state a primary discovery action"
 rg -Fq 'Scan for headphones, controllers, keyboards, and nearby devices.' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel explains what discovery finds"
 rg -Fq 'function btPairAndConnect(mac)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Bluetooth panel pairs before connecting new devices"

@@ -2,6 +2,12 @@
 mkdir -p ~/.local/state/zanken
 touch ~/.local/state/zanken/first-run.mode
 
+# Reject usernames that would corrupt or broaden the sudoers grant
+if [[ ! $USER =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+  echo "Refusing to write sudoers with invalid username: $USER" >&2
+  exit 1
+fi
+
 # Setup sudo-less access for first-run
 sudo tee /etc/sudoers.d/first-run >/dev/null <<EOF
 Cmnd_Alias FIRST_RUN_CLEANUP = /bin/rm -f /etc/sudoers.d/first-run

@@ -30,22 +30,22 @@ if [[ -n $BATTERY_LEVEL && $BATTERY_LEVEL =~ ^[0-9]+$ ]]; then
     if (( BATTERY_LEVEL <= BATTERY_CRITICAL_THRESHOLD )); then
       if [[ ! -f $CRITICAL_FLAG ]]; then
         send_critical $BATTERY_LEVEL
-        touch $CRITICAL_FLAG
+        touch "$CRITICAL_FLAG"
       fi
     else
-      rm -f $CRITICAL_FLAG
+      rm -f "$CRITICAL_FLAG"
     fi
 
     # Warning alert (10% < level ≤ 25%)
     if (( BATTERY_LEVEL > BATTERY_CRITICAL_THRESHOLD && BATTERY_LEVEL <= BATTERY_WARNING_THRESHOLD )); then
       if [[ ! -f $WARNING_FLAG ]]; then
         send_warning $BATTERY_LEVEL
-        touch $WARNING_FLAG
+        touch "$WARNING_FLAG"
       fi
     elif (( BATTERY_LEVEL > BATTERY_WARNING_THRESHOLD )); then
-      rm -f $WARNING_FLAG
+      rm -f "$WARNING_FLAG"
     fi
   else
-    rm -f $WARNING_FLAG $CRITICAL_FLAG
+    rm -f "$WARNING_FLAG" "$CRITICAL_FLAG"
   fi
 fi

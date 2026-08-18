@@ -23,6 +23,9 @@ start_log_output() {
       for ((i = 0; i < log_lines; i++)); do
         line="${current_lines[i]:-}"
 
+        # Strip escape bytes so hostile log content cannot inject terminal sequences
+        line="${line//$'\e'/}"
+
         # Truncate if needed
         if (( ${#line} > max_line_width )); then
           line="${line:0:$max_line_width}..."
@@ -54,7 +57,11 @@ stop_log_output() {
 
 start_install_log() {
   sudo touch "$ZANKEN_INSTALL_LOG_FILE"
-  sudo chmod 666 "$ZANKEN_INSTALL_LOG_FILE"
+  # Own the log by the invoking user so only that user can write it (no log
+  # poisoning / terminal injection by other local users). Readable by all so
+  # the display tail still works without extra privileges.
+  sudo chown "$(id -un)" "$ZANKEN_INSTALL_LOG_FILE"
+  sudo chmod 0644 "$ZANKEN_INSTALL_LOG_FILE"
 
   export ZANKEN_START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 

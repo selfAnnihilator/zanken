@@ -5,8 +5,10 @@
 # zanken:hidden=true
 
 LOG_TYPE="${1:-install}"
-TEMP_LOG="/tmp/upload-log.txt"
-SYSTEM_INFO="/tmp/system-info.txt"
+TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/zanken-upload-log.XXXXXX")
+trap 'rm -rf "$TMP_DIR"' EXIT
+TEMP_LOG="$TMP_DIR/upload-log.txt"
+SYSTEM_INFO="$TMP_DIR/system-info.txt"
 
 # Get system information if fastfetch is available
 if command -v fastfetch >/dev/null 2>&1; then
@@ -46,7 +48,7 @@ install)
 
   # Combine system info with logs
   cat "$SYSTEM_INFO" >"$TEMP_LOG"
-  cat $ARCHINSTALL_LOG $OMARCHY_LOG >>"$TEMP_LOG" 2>/dev/null
+  cat "$ARCHINSTALL_LOG" "$OMARCHY_LOG" >>"$TEMP_LOG" 2>/dev/null
 
   if [[ ! -s $TEMP_LOG ]]; then
     echo "Error: No install logs found"

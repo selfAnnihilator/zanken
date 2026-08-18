@@ -97,7 +97,7 @@ python)
   echo -e "Installing Python...\n"
   mise use --global python@latest
   echo -e "\nInstalling uv...\n"
-  curl -fsSL https://astral.sh/uv/install.sh | sh
+  mise use --global uv@latest
   ;;
 elixir)
   echo -e "Installing Elixir...\n"
@@ -132,7 +132,7 @@ zig)
   ;;
 ocaml)
   echo -e "Installing OCaml...\n"
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh)"
+  zanken-pkg-add opam
   opam init --yes
   eval "$(opam env)"
   opam install ocaml-lsp-server odoc ocamlformat utop --yes

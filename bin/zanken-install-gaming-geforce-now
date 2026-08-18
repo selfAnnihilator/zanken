@@ -6,10 +6,12 @@ set -e
 
 echo "Installing GeForce NOW..."
 zanken-pkg-add flatpak
-cd /tmp
 
-# Download and run GeForce NOW
-curl -LO https://international.download.nvidia.com/GFNLinux/GeForceNOWSetup.bin
+# Download and run GeForce NOW from a private temp dir (avoids predictable-path attacks)
+GFN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/geforce-now.XXXXXX")
+trap 'rm -rf "$GFN_DIR"' EXIT
+cd "$GFN_DIR"
+curl -fL --proto '=https' --tlsv1.2 -o GeForceNOWSetup.bin https://international.download.nvidia.com/GFNLinux/GeForceNOWSetup.bin
 chmod +x GeForceNOWSetup.bin
 ./GeForceNOWSetup.bin
 

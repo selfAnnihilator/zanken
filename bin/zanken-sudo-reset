@@ -2,4 +2,10 @@
 
 # zanken:summary=Reset the sudo lockout/faillock for the current user.
 
+USER="${USER:-$(id -un)}"
+if [[ ! $USER =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+  echo "Invalid username: $USER" >&2
+  exit 1
+fi
+
 su -c "faillock --reset --user $USER"

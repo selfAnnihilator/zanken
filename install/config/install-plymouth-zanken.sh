@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -e
 THEME_SRC="${ZANKEN_PATH:-$HOME/zanken}/install/config/plymouth-zanken"
 THEME_DEST="/usr/share/plymouth/themes/zanken"

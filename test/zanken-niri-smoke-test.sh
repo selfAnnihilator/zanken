@@ -50,6 +50,7 @@ assert_file_contains "Niri entry point includes managed Zanken defaults" "$NIRI_
 [[ $(readlink "$work_tree/.config/quickshell/zanken") == "$work_tree/.local/share/zanken/desktop/quickshell" ]] || fail "Quickshell entry point targets managed Zanken defaults"
 [[ -f $work_tree/.config/zanken/niri.kdl ]] || fail "desktop adoption creates a local Niri override"
 [[ -f $work_tree/.config/zanken/settings.json ]] || fail "desktop adoption creates local Zanken settings"
+rg -Fq 'spawn-sh-at-startup "QSG_RENDER_LOOP=basic qs -n -d -c zanken"' "$ROOT/default/desktop/niri/config.kdl" || fail "Quickshell uses the basic render loop"
 parser_home="$TMPDIR/parser-home"
 parser_config="$parser_home/.config/niri/config.kdl"
 parser_managed="$parser_home/.local/share/zanken/desktop/niri/config.kdl"

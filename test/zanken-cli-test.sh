@@ -44,6 +44,7 @@ pass "Zanken updates synchronize and protect managed desktop defaults"
 
 rg -Fq 'quickshell/zanken/shell.qml' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart detects the managed config"
 rg -Fq 'config_name=desktop' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart falls back to the legacy config during migration"
+rg -Fq 'QSG_RENDER_LOOP=basic' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart avoids the threaded Qt render loop"
 rg -Fq 'reload_output=$(timeout 5 qs -c zanken ipc call zanken reload 2>&1)' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart bounds its in-process reload"
 rg -Fq 'if (( reload_status == 0 )) && [[ -z $reload_output ]]; then' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart falls back when reload IPC reports an error"
 if rg -q 'playerctl|zanken-paused-media' "$ROOT/bin/zanken-restart-quickshell"; then

@@ -65,6 +65,14 @@ PanelWindow {
             border.color: theme.sep
             border.width: 1
 
+            MouseArea {
+                anchors.fill: parent
+                enabled: toastPanel.root.notificationDefaultAction(notif) !== null
+                hoverEnabled: true
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: toastPanel.root.invokeDefaultNotificationAction(notif)
+            }
+
             Column {
                 id: cardCol
                 anchors {
@@ -85,6 +93,7 @@ PanelWindow {
                 Text {
                     width: parent.width
                     text: notif.summary
+                    textFormat: Text.PlainText
                     color: theme.ink
                     font.family: theme.mono
                     font.pixelSize: 12
@@ -97,6 +106,7 @@ PanelWindow {
                     visible: notif.body.length > 0
                     width: parent.width
                     text: notif.body
+                    textFormat: Text.PlainText
                     color: theme.muted
                     font.family: theme.mono
                     font.pixelSize: 11

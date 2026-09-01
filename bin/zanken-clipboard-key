@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# zanken:summary=Emit clipboard copy/paste/cut shortcuts via ydotool with terminal-aware handling
+# zanken:group=cmd
+# zanken:name=clipboard-key
+# zanken:args=<copy|paste|cut>
+# zanken:examples=zanken cmd clipboard-key copy | zanken cmd clipboard-key paste | zanken cmd clipboard-key cut
+
+ACTION=${1:-unknown}
+APP_ID=$(niri msg --json focused-window 2>/dev/null | jq -r '.app_id // ""')
+
+# Niri consumes Mod+letter. Wait for the real keyboard's Super key to be
+# released before emitting the application shortcut, otherwise the synthetic
+# Ctrl+letter becomes Super+Ctrl+letter and triggers another Niri binding.
+deadline=$((SECONDS + 3))
+while (( SECONDS < deadline )); do
+  mod_held=false
+  for device in /dev/input/by-path/*event-kbd; do
+    [[ -e "$device" ]] || continue
+    evtest --query "$device" EV_KEY KEY_LEFTMETA
+    [[ $? -eq 10 ]] && mod_held=true
+    evtest --query "$device" EV_KEY KEY_RIGHTMETA
+    [[ $? -eq 10 ]] && mod_held=true
+  done
+  $mod_held || break
+  sleep 0.01
+done
+
+case "$ACTION" in
+  copy)
+    case "$APP_ID" in
+      foot*|kitty|com.mitchellh.ghostty|org.wezfurlong.wezterm|Alacritty|alacritty)
+        ydotool key 29:1 42:1 46:1 46:0 42:0 29:0
+        ;;
+      *)
+        ydotool key 29:1 46:1 46:0 29:0
+        ;;
+    esac
+    ;;
+  paste)
+    case "$APP_ID" in
+      foot*|kitty|com.mitchellh.ghostty|org.wezfurlong.wezterm|Alacritty|alacritty)
+        ydotool key 42:1 110:1 110:0 42:0
+        ;;
+      *)
+        ydotool key 29:1 47:1 47:0 29:0
+        ;;
+    esac
+    ;;
+  cut)
+    ydotool key 29:1 45:1 45:0 29:0
+    ;;
+  *)
+    exit 2
+    ;;
+esac
+
+exit $?

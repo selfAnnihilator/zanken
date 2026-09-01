@@ -40,6 +40,12 @@ else
     [ -z "$SELECTION" ] && exit 0
 fi
 
+# Reject names that could break out of the pkexec shell string or the themes path
+if [[ ! $SELECTION =~ ^[A-Za-z0-9._/-]+$ ]] || [[ $SELECTION == *..* ]]; then
+    notify-send "qylock" "Invalid theme name: $SELECTION" -t 3000
+    exit 1
+fi
+
 [ ! -f "$THEMES_DIR/$SELECTION/Main.qml" ] && { notify-send "qylock" "Theme not found: $SELECTION" -t 3000; exit 1; }
 
 echo "$SELECTION" > "$CONFIG"
@@ -50,10 +56,10 @@ notify-send "Lock Screen Theme" "Changed to: $SELECTION" -t 3000
 # Update SDDM theme in background — use leaf dir name as SDDM theme name
 SDDM_NAME=$(basename "$SELECTION")
 if command -v pkexec >/dev/null 2>&1; then
-    pkexec bash -c "
-        cp -r '$THEMES_DIR/$SELECTION' /usr/share/sddm/themes/
-        printf '[Theme]\nCurrent=$SDDM_NAME\n' > /etc/sddm.conf
+    pkexec bash -c '
+        cp -r "$1" /usr/share/sddm/themes/
+        printf "[Theme]\nCurrent=$2\n" > /etc/sddm.conf
         mkdir -p /etc/sddm.conf.d
-        printf '[Theme]\nCurrent=$SDDM_NAME\n' > /etc/sddm.conf.d/theme.conf
-    " 2>/dev/null && notify-send "Lock Screen Theme" "SDDM login screen also updated" -t 2000 || true
+        printf "[Theme]\nCurrent=$2\n" > /etc/sddm.conf.d/theme.conf
+    ' bash "$THEMES_DIR/$SELECTION" "$SDDM_NAME" 2>/dev/null && notify-send "Lock Screen Theme" "SDDM login screen also updated" -t 2000 || true
 fi

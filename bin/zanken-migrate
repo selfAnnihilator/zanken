@@ -10,7 +10,7 @@ mkdir -p "$STATE_DIR"
 mkdir -p "$STATE_DIR/skipped"
 
 # Run any pending migrations
-for file in $ZANKEN_PATH/migrations/*.sh; do
+for file in "$ZANKEN_PATH"/migrations/*.sh; do
   filename=$(basename "$file")
   if [[ ! $filename =~ ^([0-9]+)(_.+)?\.sh$ ]]; then
     echo "Skipping migration with an invalid filename: $filename" >&2
@@ -25,7 +25,7 @@ for file in $ZANKEN_PATH/migrations/*.sh; do
   if [[ ! -f $STATE_DIR/$filename && ! -f $STATE_DIR/skipped/$filename ]]; then
     echo -e "\e[32m\nRunning migration (${filename%.sh})\e[0m"
 
-    if bash $file; then
+    if bash "$file"; then
       touch "$STATE_DIR/$filename"
     else
       if gum confirm "Migration ${filename%.sh} failed. Skip and continue?"; then

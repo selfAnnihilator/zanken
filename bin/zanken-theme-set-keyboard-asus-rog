@@ -5,6 +5,12 @@
 
 ASUSCTL_THEME=~/.config/zanken/current/theme/keyboard.rgb
 
-if zanken-cmd-present asusctl; then
-  asusctl aura effect static -c $(sed 's/^#//' $ASUSCTL_THEME)
+if zanken-cmd-present asusctl && [[ -f $ASUSCTL_THEME ]]; then
+  hex=$(cat "$ASUSCTL_THEME")
+  if [[ ! $hex =~ ^#?[[:xdigit:]]{6}$ ]]; then
+    echo "Invalid ASUS keyboard color: expected exactly 6 hexadecimal digits" >&2
+    exit 1
+  fi
+
+  asusctl aura effect static -c "${hex#\#}"
 fi

@@ -6,7 +6,7 @@
 
 - **Compositor**: [Niri](https://github.com/YaLTeR/niri) — a scrolling tiling Wayland compositor
 - **Bar**: [Quickshell](https://quickshell.outfoxxed.me/) — QML-based desktop shell with popups for audio, wifi, bluetooth, music, weather
-- **Notifications**: [Mako](https://github.com/emersion/mako)
+- **Notifications**: Quickshell notification server with sender-provided actions and inline replies
 - **Terminal**: [Foot](https://codeberg.org/dnkl/foot)
 - **Launcher**: OmniMenu — built-in Quickshell search (`Mod+Space`)
 - **Scripts**: 280+ `zanken-*` shell scripts covering everything from theming to hardware detection

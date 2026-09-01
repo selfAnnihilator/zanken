@@ -1,6 +1,7 @@
 //@ pragma UseQApplication
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 // Combined entry point: one Quickshell process hosting both the navbar and
 // the omni-menu command palette. Both share the same Theme instance, so an
@@ -31,4 +32,14 @@ ShellRoot {
     NotificationToast  { root: nav }
     ClipboardPopup     { root: nav }
     TrayPopup          { root: nav }
+
+    // A soft reload preserves the Quickshell process and its service
+    // connections. In particular, it avoids disconnecting browser MPRIS
+    // players, which can make YouTube advance a paused video.
+    IpcHandler {
+        target: "zanken"
+        function reload(): void {
+            Quickshell.reload(false);
+        }
+    }
 }

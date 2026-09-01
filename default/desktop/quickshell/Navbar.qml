@@ -64,6 +64,7 @@ Item {
     readonly property string icoSearch:  String.fromCodePoint(0xf0349)
     readonly property string icoUpdate:  String.fromCodePoint(0xf021)
     readonly property string icoPlug:    String.fromCodePoint(0xf06a5)
+    readonly property string icoCharging: String.fromCodePoint(0xf0084)
     readonly property string icoMusic:   String.fromCodePoint(0xf001)
     readonly property string icoPause:   String.fromCodePoint(0xf04c)
     readonly property string icoPlay:    String.fromCodePoint(0xf04b)
@@ -81,6 +82,11 @@ Item {
     // arrow points.
     property string barEdge: "top"
     readonly property bool isHorizontal: barEdge === "top" || barEdge === "bottom"
+    // The rounded horizontal bar includes outer and inner air around its
+    // 26px content row. Popup overlays must exclude the whole surface so a
+    // second bar click reaches the original trigger instead of dismissing
+    // against the overlay first.
+    readonly property int barSurfaceThickness: barHeight + (round && isHorizontal ? 15 : 0)
 
     function cycleBarEdge() {
         const edges = ["top", "right", "bottom", "left"];
@@ -166,7 +172,8 @@ Item {
     NotificationServer {
         id: notifServer
         keepOnReload: true
-        actionsSupported: false
+        actionsSupported: true
+        inlineReplySupported: true
         bodyMarkupSupported: false
         onNotification: function(n) {
             n.tracked = true;
@@ -240,13 +247,84 @@ Item {
     }
 
     function removeFromToast(targetNotif) {
-        root.toastItems = root.toastItems.filter(function(n) { return n !== targetNotif; });
+        // A toast's expiry timer runs from inside its Repeater delegate.
+        // Replacing the model synchronously there can make Qt regenerate the
+        // Repeater while it is still dispatching that delegate's signal.
+        Qt.callLater(function() {
+            root.toastItems = root.toastItems.filter(function(n) { return n !== targetNotif; });
+        });
+    }
+
+    function removeNotification(notification) {
+        root.removeFromToast(notification);
+        Qt.callLater(function() {
+            root.cardItems = root.cardItems.filter(function(c) { return c.notif !== notification; });
+            root.saveNotifications();
+        });
     }
 
     function removeFromCard(item) {
-        if (item.notif) item.notif.dismiss();
-        root.cardItems = root.cardItems.filter(function(c) { return c !== item; });
-        root.saveNotifications();
+        if (item.notif) {
+            try { item.notif.dismiss(); } catch(e) {}
+            root.removeNotification(item.notif);
+            return;
+        }
+        Qt.callLater(function() {
+            root.cardItems = root.cardItems.filter(function(c) { return c !== item; });
+            root.saveNotifications();
+        });
+    }
+
+    function notificationDefaultAction(notification) {
+        if (!notification || !notification.actions) return null;
+        for (let i = 0; i < notification.actions.length; i++) {
+            const action = notification.actions[i];
+            if (action && action.identifier === "default") return action;
+        }
+        return null;
+    }
+
+    function notificationActions(notification) {
+        if (!notification || !notification.actions) return [];
+        const actions = [];
+        for (let i = 0; i < notification.actions.length; i++) {
+            const action = notification.actions[i];
+            if (action && action.identifier !== "default") actions.push(action);
+        }
+        return actions;
+    }
+
+    function invokeNotificationAction(notification, action) {
+        if (!notification || !action) return false;
+        try {
+            action.invoke();
+        } catch(e) {
+            return false;
+        }
+        // Non-resident notifications dismiss when their action is invoked.
+        // The user chose the same resolved behavior for resident ones.
+        if (notification.resident) {
+            try { notification.dismiss(); } catch(e) {}
+        }
+        root.removeNotification(notification);
+        return true;
+    }
+
+    function invokeDefaultNotificationAction(notification) {
+        return root.invokeNotificationAction(notification, root.notificationDefaultAction(notification));
+    }
+
+    function sendNotificationReply(notification, replyText) {
+        const reply = replyText ? replyText.trim() : "";
+        if (!notification || !notification.hasInlineReply || reply.length === 0) return false;
+        try {
+            notification.sendInlineReply(reply);
+        } catch(e) {
+            return false;
+        }
+        try { notification.dismiss(); } catch(e) {}
+        root.removeNotification(notification);
+        return true;
     }
 
     function openNotifications() {
@@ -338,43 +416,52 @@ Item {
     property var    wifiKnownSsids: []
     property string wifiConnectingSSID: ""
     property string wifiConnectError: ""
+    property bool   wifiDetailsLoading: false
+    property var    wifiConnectionDetails: ({ address: "", gateway: "", band: "" })
 
-    // iwd-based: zanken uses iwctl, not nmcli. The probe detects the
-    // first station-mode device dynamically so multi-radio laptops work.
+    // NetworkManager-based: detect the wifi device dynamically so
+    // multi-radio laptops work. Reads and controls go through nmcli.
     function refreshWifi() {
         if (wifiScanProbe.running) return;
         root.wifiScanning = true;
         wifiScanProbe.running = false;
         wifiScanProbe.running = true;
     }
+    function refreshWifiDetails() {
+        if (wifiDetailsProbe.running) return;
+        root.wifiDetailsLoading = true;
+        wifiDetailsProbe.running = false;
+        wifiDetailsProbe.running = true;
+    }
     function connectWifi(ssid, passphrase) {
         if (!ssid) return;
         root.wifiConnectingSSID = ssid;
         root.wifiConnectError = "";
-        const safeSsid = ssid.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const command = ["nmcli", "device", "wifi", "connect", ssid];
         if (passphrase && passphrase.length > 0) {
-            const safePass = passphrase.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-            wifiConnectProc.command = ["bash", "-lc", 'nmcli device wifi connect "' + safeSsid + '" password "' + safePass + '"'];
-        } else {
-            wifiConnectProc.command = ["bash", "-lc", 'nmcli device wifi connect "' + safeSsid + '"'];
+            command.push("password", passphrase);
         }
+        wifiConnectProc.command = command;
         wifiConnectProc.running = false;
         wifiConnectProc.running = true;
     }
     function disconnectWifi() {
         root.run("nmcli device disconnect $(nmcli -t -f DEVICE,TYPE device 2>/dev/null | grep ':802-11-wireless$\\|:wifi$' | cut -d: -f1 | head -1)");
+        root.wifiConnectionDetails = ({ address: "", gateway: "", band: "" });
         wifiPostConnectTimer.restart();
     }
     function toggleWifiRadio() {
         const target = root.wifiRadioOn ? "off" : "on";
         root.wifiRadioOn = !root.wifiRadioOn;
         root.run("nmcli radio wifi " + target);
+        if (target === "off") root.wifiConnectionDetails = ({ address: "", gateway: "", band: "" });
         wifiPostConnectTimer.restart();
     }
     function forgetWifi(ssid) {
         if (!ssid) return;
-        const safeSsid = ssid.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-        root.run('nmcli connection delete "' + safeSsid + '" 2>/dev/null');
+        wifiForgetProc.command = ["nmcli", "connection", "delete", ssid];
+        wifiForgetProc.running = false;
+        wifiForgetProc.running = true;
         root.wifiKnownSsids = root.wifiKnownSsids.filter(s => s !== ssid);
         wifiKnownProbe.running = false;
         wifiKnownProbe.running = true;
@@ -392,6 +479,7 @@ Item {
             }
             wifiKnownProbe.running = false;
             wifiKnownProbe.running = true;
+            root.refreshWifiDetails();
         }
     }
     Process {
@@ -413,6 +501,12 @@ Item {
             }
         }
     }
+    Process {
+        id: wifiForgetProc
+        running: false
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+    }
     Timer {
         id: wifiConnectErrorTimer
         interval: 3000
@@ -427,6 +521,8 @@ Item {
     property var    btDevices: []
     property bool   btScanning: false
     property string _btDevicesSer: ""
+    property string btPairingMac: ""
+    property string btPairError: ""
 
     function refreshBluetooth() {
         if (btDevicesProbe.running) return;
@@ -439,6 +535,16 @@ Item {
         if (!mac) return;
         root.run("bluetoothctl connect " + mac);
         btPostActionTimer.restart();
+    }
+    function btPairAndConnect(mac) {
+        if (!/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(mac)) return;
+        if (root.btPairingMac !== "") return;
+        root.btPairingMac = mac;
+        root.btPairError = "";
+        btPairConnectProc.command = ["bash", "-lc",
+            "bluetoothctl pair " + mac + " && bluetoothctl connect " + mac];
+        btPairConnectProc.running = false;
+        btPairConnectProc.running = true;
     }
     function btDisconnect(mac) {
         if (!mac) return;
@@ -455,6 +561,9 @@ Item {
         if (root.btScanning) {
             root.run("setsid -f bluetoothctl --timeout 15 scan on >/dev/null 2>&1");
             btScanStopTimer.restart();
+        } else {
+            root.run("bluetoothctl scan off");
+            btScanStopTimer.stop();
         }
         btPostActionTimer.restart();
     }
@@ -470,6 +579,28 @@ Item {
         interval: 15000
         repeat: false
         onTriggered: root.btScanning = false
+    }
+    Timer {
+        id: btPairErrorTimer
+        interval: 3000
+        repeat: false
+        onTriggered: root.btPairError = ""
+    }
+    Process {
+        id: btPairConnectProc
+        running: false
+        command: ["true"]
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+        onExited: function(code) {
+            const mac = root.btPairingMac;
+            root.btPairingMac = "";
+            if (code !== 0 && mac !== "") {
+                root.btPairError = mac;
+                btPairErrorTimer.restart();
+            }
+            btPostActionTimer.restart();
+        }
     }
     property string audioIcon: ""
     property int    audioVol: 0
@@ -927,6 +1058,7 @@ Item {
     }
 
     function openCalendar() {
+        root.closeAllCards();
         if (root.calendarAnchorItem) root.anchorPopupTo(root.calendarAnchorItem);
         root.calendarMonthOffset = 0;
         root.calendarTick++;
@@ -1130,6 +1262,7 @@ Item {
     }
 
     function closeAllCards() {
+        root.calendarVisible      = false;
         root.weatherVisible       = false;
         root.wifiVisible          = false;
         root.bluetoothVisible     = false;
@@ -1159,7 +1292,7 @@ Item {
         root.closeAllCards();
         if (root.wifiAnchorItem) root.anchorPopupTo(root.wifiAnchorItem);
         root.wifiVisible = true;
-        // Instant: read iwd's cached scan list
+        // Instant: read NetworkManager's cached scan list
         wifiQuickProbe.running = false;
         wifiQuickProbe.running = true;
         // Silent background: trigger fresh scan, update without SCANNING indicator
@@ -1169,6 +1302,7 @@ Item {
         }
         wifiKnownProbe.running = false;
         wifiKnownProbe.running = true;
+        root.refreshWifiDetails();
     }
     function openBluetooth() {
         root.closeAllCards();
@@ -1629,40 +1763,60 @@ Item {
     // appear/disappear without needing a manual refresh button press.
     // Live timer disabled — user controls refresh via the button in the popup.
 
+    // ---------- Wi-Fi active-link diagnostics ----------
+    // Keep this intentionally small: the popup already has scan data, while
+    // this probe supplies the live address, gateway, and radio band only when
+    // the user opens the panel or asks for details.
+    Process {
+        id: wifiDetailsProbe
+        running: false
+        command: ["bash", "-lc",
+            "DEV=$(nmcli -t -f DEVICE,TYPE device 2>/dev/null"
+            + "   | awk -F: '/:wifi$/{print $1; exit}');"
+            + " [ -n \"$DEV\" ] || exit 0;"
+            + " address=$(ip -o -4 addr show dev \"$DEV\" 2>/dev/null | awk '{print $4; exit}' | cut -d/ -f1);"
+            + " gateway=$(ip route show default dev \"$DEV\" 2>/dev/null | awk '{print $3; exit}');"
+            + " freq=$(iw dev \"$DEV\" link 2>/dev/null | awk '/freq:/{print $2; exit}');"
+            + " band=\"\";"
+            + " if [ -n \"$freq\" ]; then"
+            + "   if [ \"$freq\" -ge 5925 ]; then band=\"6 GHz\";"
+            + "   elif [ \"$freq\" -ge 4900 ]; then band=\"5 GHz\";"
+            + "   else band=\"2.4 GHz\"; fi;"
+            + " fi;"
+            + " printf '%s\\t%s\\t%s\\n' \"$address\" \"$gateway\" \"$band\"" ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const fields = this.text.trim().split("\t");
+                root.wifiConnectionDetails = ({
+                    address: fields[0] || "",
+                    gateway: fields[1] || "",
+                    band: fields[2] || ""
+                });
+                root.wifiDetailsLoading = false;
+            }
+        }
+        onRunningChanged: {
+            if (!running) root.wifiDetailsLoading = false;
+        }
+    }
+
     // ---------- Wi-Fi scan probe ----------
-    // iwctl path (zanken ships iwd, not NetworkManager): detect the
-    // station device, check Powered state, kick a non-blocking scan,
-    // then parse human-formatted get-networks output. Signal is reported
-    // in tenths of dBm (e.g. -6400 = -64 dBm); convert to a 0-100% bar
-    // on the QML side. ANSI codes are stripped before parsing.
+    // nmcli path (NetworkManager owns wlan0 and holds saved credentials):
+    // check radio state, kick a non-blocking rescan, then read the cached
+    // scan list. Signal is a 0-100% percentage; SSIDs with a colon are
+    // escaped by nmcli's terse mode and unescaped before splitting.
     Process {
         id: wifiScanProbe
         running: false
         command: ["bash", "-lc",
-            "DEV=$(iwctl --dont-ask device list 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/station/{print $1; exit}');"
-            + " if [ -z \"$DEV\" ]; then echo 'RADIO|off'; exit 0; fi;"
-            + " powered=$(iwctl --dont-ask device \"$DEV\" show 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/Powered/{print $NF; exit}');"
-            + " if [ \"$powered\" != on ]; then echo 'RADIO|off'; exit 0; fi;"
+            "radio=$(nmcli -t radio wifi 2>/dev/null);"
+            + " if [ \"$radio\" != enabled ]; then echo 'RADIO|off'; exit 0; fi;"
             + " echo 'RADIO|on';"
-            + " iwctl --dont-ask station \"$DEV\" scan >/dev/null 2>&1;"
+            + " nmcli device wifi rescan >/dev/null 2>&1;"
             + " sleep 1;"
-            + " iwctl --dont-ask station \"$DEV\" get-networks rssi-dbms 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '"
-            + "       /^-+$/ { sep++; next }"
-            + "       sep < 2 || $0 ~ /^[[:space:]]*$/ { next }"
-            + "       {"
-            + "         line=$0;"
-            + "         conn=(index(substr(line,1,4),\">\")>0)?1:0;"
-            + "         sub(/^[ >]+/, \"\", line);"
-            + "         sub(/[ ]+$/, \"\", line);"
-            + "         if (match(line, /^(.*[^ ])  +([^ ]+)  +(-?[0-9]+)$/, m))"
-            + "           printf \"%d\\t%s\\t%s\\t%s\\n\", conn, m[1], m[2], m[3];"
-            + "       }'"]
+            + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null"
+            + "   | sed 's/\\\\:/%/g'"
+            + "   | awk -F: '{ gsub(/%/, \":\", $2); printf \"%s\\t%s\\t%s\\t%s\\n\", $1, $2, $3, $4 }'"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = this.text.split("\n").filter(s => s.length > 0);
@@ -1674,12 +1828,10 @@ Item {
                         continue;
                     }
                     const f = line.split("\t");
-                    if (f.length < 4) continue;
-                    // dBm tenths -> dBm -> 0-100%. -50dBm or stronger pegs at 100%.
-                    const dbm = parseInt(f[3]) / 100;
-                    const pct = Math.max(0, Math.min(100, Math.round(2 * (dbm + 100))));
+                    if (f.length < 4 || !f[1]) continue;
+                    const pct = Math.max(0, Math.min(100, parseInt(f[3]) || 0));
                     networks.push({
-                        inUse: f[0] === "1",
+                        inUse: f[0] === "*",
                         ssid: f[1],
                         signal: pct,
                         security: f[2]
@@ -1698,35 +1850,19 @@ Item {
     }
 
     // ---------- Wi-Fi quick-read probe ----------
-    // Reads iwd's existing cached scan list without triggering a new scan.
-    // Used on popup open so available networks appear instantly, while
-    // wifiScanProbe runs silently in the background for fresh results.
+    // Reads NetworkManager's existing cached scan list without triggering a
+    // new scan. Used on popup open so available networks appear instantly,
+    // while wifiScanProbe runs silently in the background for fresh results.
     Process {
         id: wifiQuickProbe
         running: false
         command: ["bash", "-lc",
-            "DEV=$(iwctl --dont-ask device list 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/station/{print $1; exit}');"
-            + " if [ -z \"$DEV\" ]; then echo 'RADIO|off'; exit 0; fi;"
-            + " powered=$(iwctl --dont-ask device \"$DEV\" show 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '/Powered/{print $NF; exit}');"
-            + " if [ \"$powered\" != on ]; then echo 'RADIO|off'; exit 0; fi;"
+            "radio=$(nmcli -t radio wifi 2>/dev/null);"
+            + " if [ \"$radio\" != enabled ]; then echo 'RADIO|off'; exit 0; fi;"
             + " echo 'RADIO|on';"
-            + " iwctl --dont-ask station \"$DEV\" get-networks rssi-dbms 2>/dev/null"
-            + "   | sed 's/\\x1b\\[[0-9;]*m//g'"
-            + "   | awk '"
-            + "       /^-+$/ { sep++; next }"
-            + "       sep < 2 || $0 ~ /^[[:space:]]*$/ { next }"
-            + "       {"
-            + "         line=$0;"
-            + "         conn=(index(substr(line,1,4),\">\")>0)?1:0;"
-            + "         sub(/^[ >]+/, \"\", line);"
-            + "         sub(/[ ]+$/, \"\", line);"
-            + "         if (match(line, /^(.*[^ ])  +([^ ]+)  +(-?[0-9]+)$/, m))"
-            + "           printf \"%d\\t%s\\t%s\\t%s\\n\", conn, m[1], m[2], m[3];"
-            + "       }'"]
+            + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null"
+            + "   | sed 's/\\\\:/%/g'"
+            + "   | awk -F: '{ gsub(/%/, \":\", $2); printf \"%s\\t%s\\t%s\\t%s\\n\", $1, $2, $3, $4 }'"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = this.text.split("\n").filter(s => s.length > 0);
@@ -1738,10 +1874,9 @@ Item {
                         continue;
                     }
                     const f = line.split("\t");
-                    if (f.length < 4) continue;
-                    const dbm = parseInt(f[3]) / 100;
-                    const pct = Math.max(0, Math.min(100, Math.round(2 * (dbm + 100))));
-                    networks.push({ inUse: f[0] === "1", ssid: f[1], signal: pct, security: f[2] });
+                    if (f.length < 4 || !f[1]) continue;
+                    const pct = Math.max(0, Math.min(100, parseInt(f[3]) || 0));
+                    networks.push({ inUse: f[0] === "*", ssid: f[1], signal: pct, security: f[2] });
                 }
                 networks.sort((a, b) => (b.inUse - a.inUse) || (b.signal - a.signal));
                 if (root.wifiRadioOn !== radioOn) root.wifiRadioOn = radioOn;
@@ -2252,14 +2387,14 @@ Item {
     }
 
     // ---------- Battery icon helper ----------
-    // "Not charging" covers plugged-in-but-topped-up laptops; "Full" is the
-    // briefly-stable Charging→Full edge. Treat all three as AC-powered and
-    // swap the battery ramp for a single plug glyph — once AC is in, the
-    // % digit in the tooltip is the only number worth glancing at.
+    // Charging needs its own glyph while the battery is gaining energy. Once
+    // charging has stopped, including the briefly-stable Charging→Full edge,
+    // the plug glyph communicates that AC remains connected.
     function batteryIcon() {
-        if (root.batState === "Charging"
-            || root.batState === "Full"
-            || root.batState === "Not charging") return root.icoPlug;
+        if (root.batState === "Charging") {
+            return root.batPower >= 0.05 ? root.icoCharging : root.icoPlug;
+        }
+        if (root.batState === "Full" || root.batState === "Not charging") return root.icoPlug;
         const c = root.batVal;
         const r = ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"];
         return r[Math.min(9, Math.floor(c / 10))];
@@ -2352,6 +2487,26 @@ Item {
         }
         function open(): void  { root.openCalendar(); }
         function close(): void { root.calendarVisible = false; }
+    }
+
+    IpcHandler {
+        target: "wifi"
+        function toggle(): void {
+            if (root.wifiVisible) root.wifiVisible = false;
+            else root.openWifi();
+        }
+        function open(): void  { root.openWifi(); }
+        function close(): void { root.wifiVisible = false; }
+    }
+
+    IpcHandler {
+        target: "bluetooth"
+        function toggle(): void {
+            if (root.bluetoothVisible) root.bluetoothVisible = false;
+            else root.openBluetooth();
+        }
+        function open(): void  { root.openBluetooth(); }
+        function close(): void { root.bluetoothVisible = false; }
     }
 
     IpcHandler {

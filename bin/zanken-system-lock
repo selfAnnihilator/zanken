@@ -18,12 +18,6 @@ current_session_locked() {
     [[ -n "$session_id" ]] && [[ "$(loginctl show-session "$session_id" -p LockedHint --value 2>/dev/null)" == "yes" ]]
 }
 
-quickshell_config=desktop
-if [[ -f ~/.config/quickshell/zanken/shell.qml ]]; then
-    quickshell_config=zanken
-fi
-qs -c "$quickshell_config" ipc call idle disable 2>/dev/null || true
-
 if pgrep -u "$USER" -f "$LOCK_QML" >/dev/null; then
     if current_session_locked; then
         exit 0

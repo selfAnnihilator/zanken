@@ -15,13 +15,17 @@ while [[ $# -gt 1 ]]; do
 done
 
 FLAG_NAME="$1"
+if [[ -z $FLAG_NAME || $FLAG_NAME == */* || $FLAG_NAME == *..* ]]; then
+  echo "Invalid flag name: $FLAG_NAME" >&2
+  exit 1
+fi
 FLAG="$HOME/.local/state/zanken/toggles/$FLAG_NAME"
 
 if [[ -f $FLAG ]]; then
-  rm $FLAG
+  rm -- "$FLAG"
   [[ -n $DISABLED_NOTIFICATION ]] && notify-send -u low "$DISABLED_NOTIFICATION"
 else
-  mkdir -p "$(dirname $FLAG)"
-  touch $FLAG
+  mkdir -p "$(dirname "$FLAG")"
+  touch -- "$FLAG"
   [[ -n $ENABLED_NOTIFICATION ]] && notify-send -u low "$ENABLED_NOTIFICATION"
 fi

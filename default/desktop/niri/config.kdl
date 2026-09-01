@@ -23,7 +23,10 @@ input {
 spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
 spawn-sh-at-startup "wl-paste --watch cliphist store"
 spawn-at-startup "hypridle"
-spawn-at-startup "qs" "-n" "-d" "-c" "zanken"
+// Qt's threaded scene-graph loop can crash in Mesa while a transient
+// notification surface is being presented. Keep GPU rendering, but perform
+// scene-graph rendering on Quickshell's main thread.
+spawn-sh-at-startup "QSG_RENDER_LOOP=basic qs -n -d -c zanken"
 spawn-at-startup "elephant"
 spawn-at-startup "zanken-wallpaper-start"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"

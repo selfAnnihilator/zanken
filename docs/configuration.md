@@ -117,3 +117,20 @@ Restart the bar after edits:
 ```bash
 zanken-restart-quickshell
 ```
+
+## Notifications
+
+Quickshell owns the Zanken notification server. The notification panel keeps
+the sender's capabilities intact:
+
+* Click a notification with a default action to open its originating message,
+  video, or application.
+* Sender-provided buttons, including media controls, appear beneath that
+  notification only when they are supported.
+* Reply-capable notifications, such as KDE Connect messages, show an inline
+  reply field. Press Enter or select **SEND** to reply.
+* Completing an action or reply dismisses that notification. Notifications
+  without an action remain readable and manually dismissible.
+
+Notifications restored from a previous shell session are intentionally
+display-only because their originating sender action is no longer available.

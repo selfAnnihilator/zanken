@@ -55,10 +55,14 @@ if [[ ! -f /etc/fido2/fido2 ]]; then
   echo -e "\e[32m\nLet's setup your device by confirming on the device now.\e[0m"
   echo -e "Touch your FIDO2 key when it lights up...\n"
 
-  if pamu2fcfg >/tmp/fido2; then
-    sudo mv /tmp/fido2 /etc/fido2/fido2
+  FIDO2_TMP=$(mktemp /tmp/fido2.XXXXXX)
+  chmod 600 "$FIDO2_TMP"
+  if pamu2fcfg >"$FIDO2_TMP"; then
+    sudo install -m 0644 -o root -g root "$FIDO2_TMP" /etc/fido2/fido2
+    rm -f "$FIDO2_TMP"
     echo -e "\e[32mFIDO2 device registered successfully!\e[0m"
   else
+    rm -f "$FIDO2_TMP"
     echo -e "\e[31m\nFIDO2 registration failed. Please try again.\e[0m"
     exit 1
   fi

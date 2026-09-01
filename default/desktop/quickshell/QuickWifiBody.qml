@@ -1,9 +1,9 @@
 import QtQuick
 
-// Wi-Fi detail — radio toggle + scan + network list. iwd does all the
-// heavy lifting; the panel just reads `wifiNetworks` and asks iwctl to
-// connect by SSID. Saved networks reconnect silently; first-time
-// connects need a passphrase iwctl can't pull from here (run iwctl
+// Wi-Fi detail — radio toggle + scan + network list. NetworkManager does
+// all the heavy lifting; the panel just reads `wifiNetworks` and asks
+// nmcli to connect by SSID. Saved networks reconnect silently; first-time
+// connects need a passphrase nmcli can't pull from here (run nmcli
 // manually for those). Keyboard: arrow up/down moves through header
 // buttons and network rows, Enter activates.
 Item {

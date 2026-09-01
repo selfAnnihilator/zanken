@@ -22,18 +22,23 @@ CardWindow {
         return inUse ? inUse.ssid : (wifiPopup.root.wifiSsid || "");
     }
 
-    // Connected = only the currently active network(s).
-    // Falls back to bar's wifiSsid before the first scan completes.
-    property var connectedNetworks: {
+    // The active network is shown exactly once in its own detail block.
+    // Fall back to bar telemetry before the first scan completes.
+    readonly property var activeNetwork: {
         const active = wifiPopup.activeSsid;
         const networks = wifiPopup.root.wifiNetworks || [];
-        if (networks.length > 0) {
-            return networks.filter(n => n.inUse || (active && n.ssid === active));
-        }
-        // No scan data yet — derive from bar state
-        if (active) return [{ ssid: active, inUse: true, signal: wifiPopup.root.wifiSignal || 0, security: "" }];
-        return [];
+        const inUse = networks.find(n => n.inUse || (active && n.ssid === active));
+        if (inUse) return inUse;
+        if (active) return { ssid: active, inUse: true, signal: wifiPopup.root.wifiSignal || 0, security: "" };
+        return null;
     }
+    readonly property var activeNetworkData: wifiPopup.activeNetwork || ({
+        ssid: "",
+        signal: 0,
+        security: ""
+    })
+
+    property bool detailsExpanded: false
     // SSID awaiting password entry (shows inline password panel in available list)
     property string pendingConnectSsid: ""
 
@@ -42,7 +47,8 @@ CardWindow {
         const active = wifiPopup.activeSsid;
         const known = new Set(wifiPopup.root.wifiKnownSsids || []);
         return (wifiPopup.root.wifiNetworks || []).filter(n =>
-            !n.inUse && n.ssid !== active && known.has(n.ssid));
+            !n.inUse && n.ssid !== active && known.has(n.ssid))
+            .sort((a, b) => (b.signal || 0) - (a.signal || 0));
     }
 
     // Available = in-range + not connected + NOT saved to NM (new/unknown networks)
@@ -50,7 +56,8 @@ CardWindow {
         const active = wifiPopup.activeSsid;
         const known = new Set(wifiPopup.root.wifiKnownSsids || []);
         return (wifiPopup.root.wifiNetworks || []).filter(n =>
-            !n.inUse && n.ssid !== active && !known.has(n.ssid));
+            !n.inUse && n.ssid !== active && !known.has(n.ssid))
+            .sort((a, b) => (b.signal || 0) - (a.signal || 0));
     }
 
     onKeyPressed: function(event) {
@@ -77,7 +84,8 @@ CardWindow {
         anchors.rightMargin: 8
         spacing: 12
 
-        // Header: title + toggle switch
+        // Header identifies the surface and radio state only. The SSID lives
+        // in the connected-network block below, so it is never duplicated.
         Item {
             width: parent.width
             height: 43
@@ -100,9 +108,7 @@ CardWindow {
                     width: parent.width
                     elide: Text.ElideRight
                     text: wifiPopup.root.wifiRadioOn
-                        ? (wifiPopup.root.wifiSsid.length > 0
-                            ? wifiPopup.root.wifiSsid.toUpperCase()
-                            : "NOT CONNECTED")
+                        ? (wifiPopup.activeNetwork ? "CONNECTED" : "NOT CONNECTED")
                         : "RADIO OFF"
                     color: wifiPopup.root.inkDeep
                     font.family: wifiPopup.root.mono
@@ -139,181 +145,162 @@ CardWindow {
             opacity: 0.6
         }
 
-        // === CONNECTED NETWORKS ===
+        // === ACTIVE CONNECTION ===
         Column {
             width: parent.width
-            spacing: 0
-            visible: wifiPopup.root.wifiRadioOn && wifiPopup.connectedNetworks.length > 0
+            spacing: 4
+            visible: wifiPopup.root.wifiRadioOn && wifiPopup.activeNetwork !== null
 
             Text {
-                text: "CONNECTED NETWORKS"
+                text: "CONNECTED"
                 color: wifiPopup.root.inkDeep
                 font.family: wifiPopup.root.mono
                 font.pixelSize: 9
                 font.letterSpacing: 2
                 opacity: 0.7
-                bottomPadding: 6
             }
 
-            Repeater {
-                model: wifiPopup.connectedNetworks.slice(0, 6)
-                delegate: Item {
-                    required property var modelData
-                    width: parent.width
-                    height: 34
+            Item {
+                width: parent.width
+                height: wifiPopup.detailsExpanded ? 100 : 62
+                Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutQuad } }
 
-                    readonly property bool isActive: modelData.inUse === true
-                        || modelData.ssid === wifiPopup.activeSsid
+                Rectangle {
+                    anchors.fill: parent
+                    color: wifiPopup.root.seal
+                    opacity: 0.08
+                }
 
-                    // Active row background
-                    Rectangle {
-                        anchors.fill: parent
-                        color: isActive ? wifiPopup.root.seal : "transparent"
-                        opacity: isActive ? 0.10 : 0
-                    }
+                Text {
+                    id: activeSignal
+                    anchors.left: parent.left
+                    anchors.leftMargin: 8
+                    anchors.top: parent.top
+                    anchors.topMargin: 8
+                    width: 20
+                    text: wifiPopup.root.wifiBarsGlyph(wifiPopup.activeNetworkData.signal || 0)
+                    color: wifiPopup.root.seal
+                    font.family: wifiPopup.root.mono
+                    font.pixelSize: 14
+                }
 
-                    // WiFi signal icon
+                Text {
+                    anchors.left: activeSignal.right
+                    anchors.leftMargin: 6
+                    anchors.right: activeMeta.left
+                    anchors.rightMargin: 8
+                    anchors.top: parent.top
+                    anchors.topMargin: 7
+                    elide: Text.ElideRight
+                    text: wifiPopup.activeNetworkData.ssid || "(hidden)"
+                    color: wifiPopup.root.ink
+                    font.family: wifiPopup.root.mono
+                    font.pixelSize: 12
+                    font.letterSpacing: 1
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    id: activeMeta
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8
+                    anchors.top: parent.top
+                    anchors.topMargin: 8
+                    text: (wifiPopup.activeNetworkData.signal || 0) + "%"
+                    color: wifiPopup.root.seal
+                    font.family: wifiPopup.root.mono
+                    font.pixelSize: 10
+                    font.letterSpacing: 1
+                }
+
+                Text {
+                    anchors.left: activeSignal.right
+                    anchors.leftMargin: 6
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8
+                    anchors.top: activeSignal.bottom
+                    anchors.topMargin: 3
+                    elide: Text.ElideRight
+                    text: (wifiPopup.activeNetworkData.security || "OPEN").toUpperCase()
+                        + " · " + (wifiPopup.root.wifiConnectionDetails.band || "LINK ACTIVE")
+                    color: wifiPopup.root.inkDeep
+                    font.family: wifiPopup.root.mono
+                    font.pixelSize: 9
+                    font.letterSpacing: 1
+                }
+
+                Row {
+                    anchors.left: activeSignal.right
+                    anchors.leftMargin: 6
+                    anchors.top: parent.top
+                    anchors.topMargin: 42
+                    spacing: 16
+
                     Text {
-                        id: kSigIcon
-                        anchors.left: parent.left
-                        anchors.leftMargin: 8
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 20
-                        text: wifiPopup.root.wifiBarsGlyph(modelData.signal || 0)
-                        color: isActive ? wifiPopup.root.seal : wifiPopup.root.inkDeep
+                        text: "DETAILS"
+                        color: activeDetailsMouse.containsMouse ? wifiPopup.root.seal : wifiPopup.root.inkDeep
                         font.family: wifiPopup.root.mono
-                        font.pixelSize: 14
-                    }
-
-                    // SSID
-                    Text {
-                        anchors.left: kSigIcon.right
-                        anchors.leftMargin: 6
-                        anchors.right: kRightRow.left
-                        anchors.rightMargin: 6
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideRight
-                        text: modelData.ssid || "(hidden)"
-                        color: isActive ? wifiPopup.root.seal : wifiPopup.root.ink
-                        font.family: wifiPopup.root.mono
-                        font.pixelSize: 12
+                        font.pixelSize: 9
                         font.letterSpacing: 1
-                        font.weight: isActive ? Font.Medium : Font.Normal
-                    }
-
-                    // Right area: status + disconnect (if active) + delete
-                    Row {
-                        id: kRightRow
-                        anchors.right: parent.right
-                        anchors.rightMargin: 8
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 10
-
-                        // Status label — "CONNECTED" or signal%
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: isActive
-                            text: "CONNECTED"
-                            color: wifiPopup.root.seal
-                            font.family: wifiPopup.root.mono
-                            font.pixelSize: 9
-                            font.letterSpacing: 1
-                            font.weight: Font.Medium
-                        }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: !isActive
-                            text: (modelData.security && modelData.security !== "" && modelData.security !== "none" ? "󰌆 " : "") + (modelData.signal || 0) + "%"
-                            color: wifiPopup.root.inkDeep
-                            font.family: wifiPopup.root.mono
-                            font.pixelSize: 10
-                            font.letterSpacing: 1
-                        }
-
-                        // Disconnect button — only when connected
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: isActive
-                            text: "󰖭"
-                            color: kDisconnectArea.containsMouse ? "#f87171" : wifiPopup.root.inkDeep
-                            opacity: kDisconnectArea.containsMouse ? 1.0 : 0.5
-                            font.family: wifiPopup.root.mono
-                            font.pixelSize: 14
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            Behavior on opacity { NumberAnimation { duration: 120 } }
-
-                            MouseArea {
-                                id: kDisconnectArea
-                                anchors.fill: parent
-                                anchors.margins: -5
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: wifiPopup.root.disconnectWifi()
-                            }
-                        }
-
-                        // Delete/forget icon — always visible for known networks
-                        Text {
-                            id: kDeleteIcon
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "󰩺"
-                            color: kDeleteArea.containsMouse ? wifiPopup.root.seal : wifiPopup.root.inkDeep
-                            opacity: kDeleteArea.containsMouse ? 1.0 : 0.35
-                            font.family: wifiPopup.root.mono
-                            font.pixelSize: 14
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            Behavior on opacity { NumberAnimation { duration: 120 } }
-
-                            MouseArea {
-                                id: kDeleteArea
-                                anchors.fill: parent
-                                anchors.margins: -5
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: wifiPopup.root.forgetWifi(modelData.ssid)
+                        MouseArea {
+                            id: activeDetailsMouse
+                            anchors.fill: parent
+                            anchors.margins: -5
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                wifiPopup.detailsExpanded = !wifiPopup.detailsExpanded;
+                                if (wifiPopup.detailsExpanded) wifiPopup.root.refreshWifiDetails();
                             }
                         }
                     }
 
-                    // Row double-click — connect to this network (disconnects current automatically)
-                    MouseArea {
-                        anchors.left: parent.left
-                        anchors.right: kRightRow.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {}
-                        onDoubleClicked: wifiPopup.root.connectWifi(modelData.ssid)
+                    Text {
+                        text: "DISCONNECT"
+                        color: activeDisconnectMouse.containsMouse ? wifiPopup.root.seal : wifiPopup.root.inkDeep
+                        font.family: wifiPopup.root.mono
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                        MouseArea {
+                            id: activeDisconnectMouse
+                            anchors.fill: parent
+                            anchors.margins: -5
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: wifiPopup.root.disconnectWifi()
+                        }
                     }
+                }
 
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        width: parent.width
-                        height: 1
-                        color: wifiPopup.root.sep
-                        opacity: 0.4
-                    }
+                Text {
+                    anchors.left: activeSignal.right
+                    anchors.leftMargin: 6
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 7
+                    visible: wifiPopup.detailsExpanded
+                    elide: Text.ElideRight
+                    text: wifiPopup.root.wifiDetailsLoading
+                        ? "READING LINK…"
+                        : ((wifiPopup.root.wifiConnectionDetails.address || "NO IPV4")
+                            + " · " + (wifiPopup.root.wifiConnectionDetails.gateway || "NO GATEWAY"))
+                    color: wifiPopup.root.inkDeep
+                    font.family: wifiPopup.root.mono
+                    font.pixelSize: 9
+                    font.letterSpacing: 1
                 }
             }
         }
 
-        // === KNOWN NETWORKS (saved to NM, in range, not connected) ===
+        // === SAVED NEARBY (in range, saved to NetworkManager) ===
         Column {
             width: parent.width
             spacing: 0
-            visible: wifiPopup.root.wifiRadioOn
-                  && !wifiPopup.root.wifiScanning
-                  && wifiPopup.knownAvailableNetworks.length > 0
-
-            Item {
-                width: parent.width
-                height: wifiPopup.connectedNetworks.length > 0 ? 8 : 0
-                visible: wifiPopup.connectedNetworks.length > 0
-            }
+            visible: wifiPopup.root.wifiRadioOn && wifiPopup.knownAvailableNetworks.length > 0
 
             Text {
-                text: "KNOWN NETWORKS"
+                text: "SAVED NEARBY"
                 color: wifiPopup.root.inkDeep
                 font.family: wifiPopup.root.mono
                 font.pixelSize: 9
@@ -429,12 +416,12 @@ CardWindow {
             }
         }
 
-        // === AVAILABLE NETWORKS header ===
+        // === NEARBY (new networks, sorted strongest first) ===
         Text {
             width: parent.width
             visible: wifiPopup.root.wifiRadioOn
                   && (wifiPopup.availableNetworks.length > 0 || wifiPopup.root.wifiScanning)
-            text: "AVAILABLE NETWORKS"
+            text: wifiPopup.root.wifiScanning ? "NEARBY · SCANNING…" : "NEARBY"
             color: wifiPopup.root.inkDeep
             font.family: wifiPopup.root.mono
             font.pixelSize: 9
@@ -449,27 +436,11 @@ CardWindow {
             visible: wifiPopup.root.wifiRadioOn
                   && (wifiPopup.availableNetworks.length > 0 || wifiPopup.root.wifiScanning)
 
-            // Scanning placeholder — replaces list while scan in progress
-            Text {
-                width: parent.width
-                height: 40
-                visible: wifiPopup.root.wifiScanning
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                text: "SCANNING…"
-                color: wifiPopup.root.inkDeep
-                font.family: wifiPopup.root.mono
-                font.pixelSize: 11
-                font.letterSpacing: 3
-                opacity: 0.6
-            }
-
             ListView {
                 id: availList
                 width: parent.width
                 height: Math.min(contentHeight, 5 * 34)
                 clip: true
-                visible: !wifiPopup.root.wifiScanning
                 model: wifiPopup.availableNetworks
                 boundsBehavior: Flickable.StopAtBounds
                 delegate: Item {
@@ -581,7 +552,7 @@ CardWindow {
                         onVisibleChanged: {
                             if (visible) {
                                 passInput.text = "";
-                                passInput.forceActiveFocus();
+                                wifiPopup.requestKeyboardFocus(passInput);
                             }
                         }
 
@@ -688,6 +659,10 @@ CardWindow {
                             TextInput {
                                 id: passInput
                                 anchors.fill: parent
+                                onActiveFocusChanged: if (activeFocus) wifiPopup.requestKeyboardFocus(passInput)
+                                TapHandler {
+                                    onTapped: wifiPopup.requestKeyboardFocus(passInput)
+                                }
                                 echoMode: TextInput.Password
                                 color: wifiPopup.root.ink
                                 font.family: wifiPopup.root.mono

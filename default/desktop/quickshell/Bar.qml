@@ -306,7 +306,8 @@ PanelWindow {
                 fontSize: 14
                 onActivated: {
                     bar.root.anchorPopupTo(zankenModule);
-                    bar.root.openSystem();
+                    if (bar.root.systemVisible) bar.root.systemVisible = false;
+                    else bar.root.openSystem();
                 }
                 onRightActivated: bar.root.run("xdg-terminal-exec")
             }

@@ -1,6 +1,6 @@
 # All Commands
 
-264 public commands generated from CLI metadata.
+265 public commands generated from CLI metadata.
 
 | Command | Description |
 |---------|-------------|
@@ -25,6 +25,7 @@
 | `zanken-capture-text-extraction` | Extract text from a selected screen region |
 | `zanken-channel-set` | Set the Zanken git release channel |
 | `zanken-paste` | Paste with terminal-aware keyboard shortcuts |
+| `zanken-clipboard-key` | Emit clipboard copy/paste/cut shortcuts via ydotool with terminal-aware handling |
 | `zanken-cmd-missing` | Check whether any required commands are missing |
 | `zanken-cmd-present` | Check whether all required commands are available |
 | `zanken-config-desktop` | Sync or adopt the managed Zanken desktop configuration |

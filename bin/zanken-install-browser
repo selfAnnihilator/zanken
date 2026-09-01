@@ -8,7 +8,6 @@ ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
 
 setup_policy_directory() {
   sudo mkdir -p "$1"
-  sudo chmod a+rw "$1"
 }
 
 announce_browser_installed() {

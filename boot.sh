@@ -38,7 +38,9 @@ sudo pacman -Syu --noconfirm --needed git
 ZANKEN_REPO="${ZANKEN_REPO:-selfAnnihilator/zanken}"
 
 echo -e "\nCloning Zanken from: https://github.com/${ZANKEN_REPO}.git"
-rm -rf ~/zanken/
+if [[ -n $HOME && -d "$HOME/zanken" ]]; then
+  rm -rf "$HOME/zanken/"
+fi
 git clone "https://github.com/${ZANKEN_REPO}.git" ~/zanken >/dev/null
 
 echo -e "\e[32mUsing branch: $ZANKEN_REF\e[0m"

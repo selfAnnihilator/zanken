@@ -32,6 +32,7 @@ PanelWindow {
     property string subtitle: ""
     property string footer: ""
     property string layerNamespace: "zanken-card"
+    property bool keyboardFocusRequested: false
     // Right-side header content (chevrons, refresh buttons, etc.). The
     // inline Component is instantiated as a Loader child; lexical scope
     // means ids declared in the popup file are reachable from inside.
@@ -52,6 +53,14 @@ PanelWindow {
     signal dismiss()
     signal keyPressed(var event)
 
+    function requestKeyboardFocus(item) {
+        if (!card.revealed) return;
+        card.keyboardFocusRequested = true;
+        Qt.callLater(function() {
+            if (card.revealed && item) item.forceActiveFocus();
+        });
+    }
+
     default property alias bodyData: bodyContainer.data
     readonly property alias cardSurface: surface
 
@@ -61,15 +70,19 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: layerNamespace
-    WlrLayershell.keyboardFocus: revealed ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // Opening a bar card must not redirect keystrokes away from the active
+    // application. OnDemand permits an explicit interaction such as clicking
+    // a text input to request focus without doing so merely on reveal.
+    WlrLayershell.keyboardFocus: revealed && keyboardFocusRequested ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     // Shrink the surface away from the bar edge so pointer events on the bar
     // pass through to bar buttons instead of hitting the dismiss MouseArea.
-    WlrLayershell.margins.top:    card.anchorEdge === "top"    ? card.theme.barHeight : 0
-    WlrLayershell.margins.bottom: card.anchorEdge === "bottom" ? card.theme.barHeight : 0
-    WlrLayershell.margins.left:   card.anchorEdge === "left"   ? card.theme.barHeight : 0
-    WlrLayershell.margins.right:  card.anchorEdge === "right"  ? card.theme.barHeight : 0
+    WlrLayershell.margins.top:    card.anchorEdge === "top"    ? card.theme.barSurfaceThickness : 0
+    WlrLayershell.margins.bottom: card.anchorEdge === "bottom" ? card.theme.barSurfaceThickness : 0
+    WlrLayershell.margins.left:   card.anchorEdge === "left"   ? card.theme.barSurfaceThickness : 0
+    WlrLayershell.margins.right:  card.anchorEdge === "right"  ? card.theme.barSurfaceThickness : 0
 
     property real _reveal: revealed ? 1 : 0
+    onRevealedChanged: if (!revealed) keyboardFocusRequested = false
     Behavior on _reveal {
         NumberAnimation {
             duration: card.revealed ? 220 : 140
@@ -126,9 +139,13 @@ PanelWindow {
         }
 
         // Swallow clicks so the dismiss MouseArea doesn't fire on body taps.
-        MouseArea { anchors.fill: parent }
+        // A body click is deliberate interaction, so keyboard navigation may
+        // take focus from the application at this point (but never on reveal).
+        MouseArea {
+            anchors.fill: parent
+            onPressed: card.requestKeyboardFocus(surface)
+        }
 
-        focus: card.revealed
         Keys.onPressed: function(event) {
             if (event.key === Qt.Key_Escape) {
                 card.dismiss();

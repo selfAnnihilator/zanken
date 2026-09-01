@@ -6,6 +6,34 @@ CONFIG="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
 # Optional positional override (used by NiriKeybinds.qml)
 [[ -n $2 ]] && CONFIG="$2"
 
+# Niri desktop adoption uses a small entry point that includes the managed
+# defaults and optional local overrides. Flatten those includes before awk so
+# callers can use the same entry point Niri itself loads.
+declare -A config_seen=()
+config_files=()
+
+collect_config_files() {
+  local config="$1"
+  local line include_path canonical
+
+  [[ -f $config ]] || return 0
+  canonical=$(readlink -f -- "$config" 2>/dev/null || printf '%s' "$config")
+  [[ -n ${config_seen[$canonical]+x} ]] && return 0
+
+  config_seen[$canonical]=1
+  config_files+=("$canonical")
+
+  while IFS= read -r line; do
+    if [[ $line =~ ^[[:space:]]*include[[:space:]]+(optional=true[[:space:]]+)?\"([^\"]+)\"[[:space:]]*$ ]]; then
+      include_path=${BASH_REMATCH[2]}
+      if [[ $include_path != /* ]]; then
+        include_path="$(dirname "$canonical")/$include_path"
+      fi
+      collect_config_files "$include_path"
+    fi
+  done <"$canonical"
+}
+
 awk_script='
 function prettify_action(action,    out, part) {
     if (action ~ /^spawn /) {
@@ -56,12 +84,14 @@ if [[ ! -f $CONFIG ]]; then
     exit 1
 fi
 
+collect_config_files "$CONFIG"
+
 if [[ $1 == "--print-tsv" ]]; then
-    awk -v tsv=1 "$awk_script" "$CONFIG"
+    awk -v tsv=1 "$awk_script" "${config_files[@]}"
     exit 0
 fi
 
-awk "$awk_script" "$CONFIG" | fzf \
+awk "$awk_script" "${config_files[@]}" | fzf \
     --no-sort \
     --prompt="  Keybindings › " \
     --layout=reverse \

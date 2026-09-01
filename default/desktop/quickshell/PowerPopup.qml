@@ -11,7 +11,11 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "zanken-power"
-    WlrLayershell.keyboardFocus: root.powerVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.margins.top:    root.barEdge === "top"    ? root.barSurfaceThickness : 0
+    WlrLayershell.margins.bottom: root.barEdge === "bottom" ? root.barSurfaceThickness : 0
+    WlrLayershell.margins.left:   root.barEdge === "left"   ? root.barSurfaceThickness : 0
+    WlrLayershell.margins.right:  root.barEdge === "right"  ? root.barSurfaceThickness : 0
 
     visible: root.powerVisible || _reveal > 0.001
 
@@ -52,8 +56,6 @@ PanelWindow {
         anchors.centerIn: parent
         width: buttonRow.implicitWidth
         height: buttonRow.implicitHeight
-        focus: root.powerVisible
-
         Keys.onPressed: function(e) {
             const n = powerPopup.actions.length;
             if (e.key === Qt.Key_Escape) {

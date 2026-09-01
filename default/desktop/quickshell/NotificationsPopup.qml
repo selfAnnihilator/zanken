@@ -478,7 +478,10 @@ CardWindow {
                                                     anchors.fill: parent
                                                     hoverEnabled: true
                                                     cursorShape: Qt.PointingHandCursor
-                                                    onClicked: replyOpen = true
+                                                    onClicked: {
+                                                        replyOpen = true;
+                                                        notifPopup.requestKeyboardFocus(replyInput);
+                                                    }
                                                 }
                                             }
                                         }
@@ -507,6 +510,10 @@ CardWindow {
                                                 clip: true
                                                 selectByMouse: true
                                                 focus: replyOpen
+                                                onActiveFocusChanged: if (activeFocus) notifPopup.requestKeyboardFocus(replyInput)
+                                                TapHandler {
+                                                    onTapped: notifPopup.requestKeyboardFocus(replyInput)
+                                                }
                                                 Keys.onReturnPressed: function(event) {
                                                     if (root.sendNotificationReply(notification, replyInput.text)) event.accepted = true;
                                                 }

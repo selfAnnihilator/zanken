@@ -7,8 +7,12 @@ set -e
 
 FIRST_RUN_MODE=~/.local/state/zanken/first-run.mode
 
+cleanup_first_run_privileges() {
+  sudo /usr/bin/rm -f /etc/sudoers.d/first-run
+}
+
 if [[ -f $FIRST_RUN_MODE ]]; then
-  rm -f "$FIRST_RUN_MODE"
+  trap cleanup_first_run_privileges EXIT
 
   bash "$ZANKEN_PATH/install/first-run/battery-monitor.sh"
   bash "$ZANKEN_PATH/install/first-run/recover-internal-monitor.sh"
@@ -21,7 +25,9 @@ if [[ -f $FIRST_RUN_MODE ]]; then
   bash "$ZANKEN_PATH/install/first-run/gtk-primary-paste.sh"
   bash "$ZANKEN_PATH/install/first-run/elephant.sh"
   zanken-hook-install post-update "$ZANKEN_PATH/install/first-run/install-voxtype.hook"
-  sudo rm -f /etc/sudoers.d/first-run
+  cleanup_first_run_privileges
+  trap - EXIT
+  rm -f "$FIRST_RUN_MODE"
 
   bash "$ZANKEN_PATH/install/first-run/welcome.sh"
   bash "$ZANKEN_PATH/install/first-run/wifi.sh"

@@ -552,7 +552,7 @@ CardWindow {
                         onVisibleChanged: {
                             if (visible) {
                                 passInput.text = "";
-                                passInput.forceActiveFocus();
+                                wifiPopup.requestKeyboardFocus(passInput);
                             }
                         }
 
@@ -659,6 +659,10 @@ CardWindow {
                             TextInput {
                                 id: passInput
                                 anchors.fill: parent
+                                onActiveFocusChanged: if (activeFocus) wifiPopup.requestKeyboardFocus(passInput)
+                                TapHandler {
+                                    onTapped: wifiPopup.requestKeyboardFocus(passInput)
+                                }
                                 echoMode: TextInput.Password
                                 color: wifiPopup.root.ink
                                 font.family: wifiPopup.root.mono

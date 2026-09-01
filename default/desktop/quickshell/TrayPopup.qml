@@ -59,11 +59,11 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "zanken-tray"
-    WlrLayershell.keyboardFocus: root.trayVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-    WlrLayershell.margins.top:    root.barEdge === "top"    ? root.barHeight : 0
-    WlrLayershell.margins.bottom: root.barEdge === "bottom" ? root.barHeight : 0
-    WlrLayershell.margins.left:   root.barEdge === "left"   ? root.barHeight : 0
-    WlrLayershell.margins.right:  root.barEdge === "right"  ? root.barHeight : 0
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.margins.top:    root.barEdge === "top"    ? root.barSurfaceThickness : 0
+    WlrLayershell.margins.bottom: root.barEdge === "bottom" ? root.barSurfaceThickness : 0
+    WlrLayershell.margins.left:   root.barEdge === "left"   ? root.barSurfaceThickness : 0
+    WlrLayershell.margins.right:  root.barEdge === "right"  ? root.barSurfaceThickness : 0
 
     visible: root.trayVisible || _reveal > 0.001
 
@@ -111,7 +111,6 @@ PanelWindow {
         // Swallow clicks so dismiss area doesn't fire on icon clicks
         MouseArea { anchors.fill: parent }
 
-        focus: root.trayVisible
         Keys.onPressed: function(e) {
             if (e.key === Qt.Key_Escape) {
                 if (trayPopup.menuHandle) trayPopup.closeMenu();

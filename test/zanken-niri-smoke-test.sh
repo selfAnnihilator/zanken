@@ -50,6 +50,26 @@ assert_file_contains "Niri entry point includes managed Zanken defaults" "$NIRI_
 [[ $(readlink "$work_tree/.config/quickshell/zanken") == "$work_tree/.local/share/zanken/desktop/quickshell" ]] || fail "Quickshell entry point targets managed Zanken defaults"
 [[ -f $work_tree/.config/zanken/niri.kdl ]] || fail "desktop adoption creates a local Niri override"
 [[ -f $work_tree/.config/zanken/settings.json ]] || fail "desktop adoption creates local Zanken settings"
+parser_home="$TMPDIR/parser-home"
+parser_config="$parser_home/.config/niri/config.kdl"
+parser_managed="$parser_home/.local/share/zanken/desktop/niri/config.kdl"
+parser_local="$parser_home/.config/zanken/niri.kdl"
+mkdir -p "$(dirname "$parser_config")" "$(dirname "$parser_managed")" "$(dirname "$parser_local")"
+printf '%s\n' \
+  "include \"$parser_managed\"" \
+  "include optional=true \"$parser_local\"" >"$parser_config"
+printf '%s\n' \
+  'binds {' \
+  '  Mod+Return { spawn "foot"; }' \
+  '}' >"$parser_managed"
+printf '%s\n' \
+  'binds {' \
+  '  Mod+Shift+F23 { spawn "local-dictate"; }' \
+  '}' >"$parser_local"
+parser_output=$("$ROOT/bin/zanken-niri-keybindings" --print-tsv "$parser_config")
+[[ $parser_output == *$'Super+Return\tfoot\t'* ]] || fail "keybinding parser follows managed Niri includes"
+[[ $parser_output == *$'Super+Shift+F23\tlocal-dictate\t'* ]] || fail "keybinding parser follows optional local Niri includes"
+pass "keybinding parser follows Niri include entry points"
 rg -q '^run_logged \$ZANKEN_INSTALL/config/desktop\.sh$' "$ROOT/install/config/all.sh" || fail "managed desktop stage is wired into installer"
 [[ ! -e $ROOT/install/config/dotfiles.sh ]] || fail "installer does not depend on a separate dotfiles repository"
 pass "installer adopts self-contained managed desktop defaults"
@@ -145,6 +165,27 @@ rg -Fq 'readonly property bool hasTrackTimeline: Number.isFinite(trackLen) && tr
 rg -Fq 'property real displayRatio: Number.isFinite(rawRatio) ? Math.max(0, Math.min(1, rawRatio)) : 0' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress clamps transient MPRIS ratios"
 pass "music progress stays within its popup during transient MPRIS timelines"
 
+rg -Uq 'function closeAllCards\(\) \{\n        root\.calendarVisible' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "shared card dismissal includes the calendar"
+rg -Uq 'function openCalendar\(\) \{\n        root\.closeAllCards\(\);' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "opening the calendar dismisses the previous bar card"
+rg -Fq 'readonly property int barSurfaceThickness: barHeight + (round && isHorizontal ? 15 : 0)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "popup input margins cover the full cloud bar"
+rg -Fq 'card.theme.barSurfaceThickness' "$ROOT/default/desktop/quickshell/CardWindow.qml" || fail "shared cards leave the full bar clickable"
+rg -Fq 'root.barSurfaceThickness' "$ROOT/default/desktop/quickshell/PowerPopup.qml" || fail "power overlay leaves the full bar clickable"
+rg -Fq 'root.barSurfaceThickness' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray overlay leaves the full bar clickable"
+rg -Fq 'WlrLayershell.keyboardFocus: revealed && keyboardFocusRequested ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/CardWindow.qml" || fail "shared cards request keyboard focus only after interaction"
+rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/PowerPopup.qml" || fail "power card preserves application focus"
+rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray card preserves application focus"
+if rg -q 'focus: (card\.revealed|root\.powerVisible|root\.trayVisible)' \
+  "$ROOT/default/desktop/quickshell/CardWindow.qml" \
+  "$ROOT/default/desktop/quickshell/PowerPopup.qml" \
+  "$ROOT/default/desktop/quickshell/TrayPopup.qml"; then
+  fail "opening a bar card does not request keyboard focus"
+fi
+if rg -Uq '(?s)onRevealedChanged:.{0,300}forceActiveFocus' "$ROOT/default/desktop/quickshell/ClipboardPopup.qml"; then
+  fail "opening clipboard does not focus its search field"
+fi
+rg -Uq '(?s)id: zankenModule.{0,500}if \(bar\.root\.systemVisible\)' "$ROOT/default/desktop/quickshell/Bar.qml" || fail "system button toggles its open card"
+pass "bar cards keep a single popup open at a time"
+
 rg -Fq 'actionsSupported: true' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification server advertises notification actions"
 rg -Fq 'inlineReplySupported: true' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification server advertises inline replies"
 rg -Fq 'function invokeDefaultNotificationAction(notification)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification default actions can be invoked"
@@ -156,13 +197,14 @@ rg -Fq 'function relativeTime(timestamp)' "$ROOT/default/desktop/quickshell/Noti
 rg -Fq 'function setSourceCollapsed(key, collapsed)' "$ROOT/default/desktop/quickshell/NotificationsPopup.qml" || fail "notification panel can collapse a source group"
 rg -Fq 'root.notificationDefaultAction(notification)' "$ROOT/default/desktop/quickshell/NotificationsPopup.qml" || fail "notification panel promotes real default actions"
 rg -Fq 'toastPanel.root.invokeDefaultNotificationAction(notif)' "$ROOT/default/desktop/quickshell/NotificationToast.qml" || fail "notification toasts invoke default actions"
+rg -Uq '(?s)function removeFromToast\(targetNotif\) \{.{0,500}Qt\.callLater' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification removals defer repeater model mutations"
 rg -Fxq 'import Quickshell.Io' "$ROOT/default/desktop/quickshell/shell.qml" || fail "Quickshell restart IPC imports its handler type"
 pass "notification triage, actions, replies, and default opens are wired to their sender"
 
 rg -Fq 'text: "CONNECTED"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel separates connected devices"
 rg -Fq 'text: "SAVED DEVICES"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel separates saved devices"
 rg -Fq 'btScanning ? "DISCOVERING…" : "NO DEVICES DISCOVERED"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel shows a discovery state while scanning"
-rg -Fq 'text: "DISCOVER DEVICES"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel gives its empty state a primary discovery action"
+rg -Fq 'text: btPopup.root.btScanning ? "STOP SCANNING" : "DISCOVER DEVICES"' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel gives its empty state a primary discovery action"
 rg -Fq 'Scan for headphones, controllers, keyboards, and nearby devices.' "$ROOT/default/desktop/quickshell/BluetoothPopup.qml" || fail "Bluetooth panel explains what discovery finds"
 rg -Fq 'function btPairAndConnect(mac)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Bluetooth panel pairs before connecting new devices"
 rg -Fq 'target: "bluetooth"' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Bluetooth panel can be opened through Quickshell IPC"

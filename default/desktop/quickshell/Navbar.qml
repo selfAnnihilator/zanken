@@ -82,6 +82,11 @@ Item {
     // arrow points.
     property string barEdge: "top"
     readonly property bool isHorizontal: barEdge === "top" || barEdge === "bottom"
+    // The rounded horizontal bar includes outer and inner air around its
+    // 26px content row. Popup overlays must exclude the whole surface so a
+    // second bar click reaches the original trigger instead of dismissing
+    // against the overlay first.
+    readonly property int barSurfaceThickness: barHeight + (round && isHorizontal ? 15 : 0)
 
     function cycleBarEdge() {
         const edges = ["top", "right", "bottom", "left"];
@@ -242,13 +247,20 @@ Item {
     }
 
     function removeFromToast(targetNotif) {
-        root.toastItems = root.toastItems.filter(function(n) { return n !== targetNotif; });
+        // A toast's expiry timer runs from inside its Repeater delegate.
+        // Replacing the model synchronously there can make Qt regenerate the
+        // Repeater while it is still dispatching that delegate's signal.
+        Qt.callLater(function() {
+            root.toastItems = root.toastItems.filter(function(n) { return n !== targetNotif; });
+        });
     }
 
     function removeNotification(notification) {
         root.removeFromToast(notification);
-        root.cardItems = root.cardItems.filter(function(c) { return c.notif !== notification; });
-        root.saveNotifications();
+        Qt.callLater(function() {
+            root.cardItems = root.cardItems.filter(function(c) { return c.notif !== notification; });
+            root.saveNotifications();
+        });
     }
 
     function removeFromCard(item) {
@@ -257,8 +269,10 @@ Item {
             root.removeNotification(item.notif);
             return;
         }
-        root.cardItems = root.cardItems.filter(function(c) { return c !== item; });
-        root.saveNotifications();
+        Qt.callLater(function() {
+            root.cardItems = root.cardItems.filter(function(c) { return c !== item; });
+            root.saveNotifications();
+        });
     }
 
     function notificationDefaultAction(notification) {
@@ -423,13 +437,11 @@ Item {
         if (!ssid) return;
         root.wifiConnectingSSID = ssid;
         root.wifiConnectError = "";
-        const safeSsid = ssid.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const command = ["nmcli", "device", "wifi", "connect", ssid];
         if (passphrase && passphrase.length > 0) {
-            const safePass = passphrase.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-            wifiConnectProc.command = ["bash", "-lc", 'nmcli device wifi connect "' + safeSsid + '" password "' + safePass + '"'];
-        } else {
-            wifiConnectProc.command = ["bash", "-lc", 'nmcli device wifi connect "' + safeSsid + '"'];
+            command.push("password", passphrase);
         }
+        wifiConnectProc.command = command;
         wifiConnectProc.running = false;
         wifiConnectProc.running = true;
     }
@@ -447,8 +459,9 @@ Item {
     }
     function forgetWifi(ssid) {
         if (!ssid) return;
-        const safeSsid = ssid.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-        root.run('nmcli connection delete "' + safeSsid + '" 2>/dev/null');
+        wifiForgetProc.command = ["nmcli", "connection", "delete", ssid];
+        wifiForgetProc.running = false;
+        wifiForgetProc.running = true;
         root.wifiKnownSsids = root.wifiKnownSsids.filter(s => s !== ssid);
         wifiKnownProbe.running = false;
         wifiKnownProbe.running = true;
@@ -487,6 +500,12 @@ Item {
                 }
             }
         }
+    }
+    Process {
+        id: wifiForgetProc
+        running: false
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
     }
     Timer {
         id: wifiConnectErrorTimer
@@ -1039,6 +1058,7 @@ Item {
     }
 
     function openCalendar() {
+        root.closeAllCards();
         if (root.calendarAnchorItem) root.anchorPopupTo(root.calendarAnchorItem);
         root.calendarMonthOffset = 0;
         root.calendarTick++;
@@ -1242,6 +1262,7 @@ Item {
     }
 
     function closeAllCards() {
+        root.calendarVisible      = false;
         root.weatherVisible       = false;
         root.wifiVisible          = false;
         root.bluetoothVisible     = false;

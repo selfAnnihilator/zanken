@@ -9,25 +9,25 @@
 | `zanken-audio-output-switch` | Switch between audio outputs while preserving the mute status. By default mapped to Super + Mute. |
 | `zanken-battery-capacity` | Returns the battery full capacity in Wh (rounded to whole number). |
 | `zanken-battery-present` | Returns true if a battery is present on the system. |
-| `zanken-battery-remaining-time` | Returns the battery time remaining (to empty or full) in a compact format. |
 | `zanken-battery-remaining` | Returns the battery percentage remaining as an integer. |
+| `zanken-battery-remaining-time` | Returns the battery time remaining (to empty or full) in a compact format. |
 | `zanken-battery-status` | Returns a formatted battery status string with percentage and power draw/charge. |
 | `zanken-branch-set` | Set the branch for Zanken's git repository. |
 | `zanken-branding-about` | Edit, set, or reset About branding |
 | `zanken-branding-screensaver` | Edit, set, or reset screensaver branding |
-| `zanken-brightness-display-apple` | Adjust the brightness on Apple Studio Displays and Apple XDR Displays using asdcontrol. |
 | `zanken-brightness-display` | Adjust brightness on the most likely display device. |
-| `zanken-brightness-keyboard-mute` | Set the mic-mute indicator LED on laptops that expose a platform::micmute LED node. |
+| `zanken-brightness-display-apple` | Adjust the brightness on Apple Studio Displays and Apple XDR Displays using asdcontrol. |
 | `zanken-brightness-keyboard` | Adjust keyboard backlight brightness using available steps. |
+| `zanken-brightness-keyboard-mute` | Set the mic-mute indicator LED on laptops that expose a platform::micmute LED node. |
 | `zanken-capture-colorpicker` | Pick a screen color and copy its hex value |
 | `zanken-capture-screenrecording` | Start or stop screen recording |
 | `zanken-capture-screenshot` | Take a screenshot |
 | `zanken-capture-text-extraction` | Extract text from a selected screen region |
 | `zanken-channel-set` | Set the Zanken git release channel |
+| `zanken-paste` | Paste with terminal-aware keyboard shortcuts |
 | `zanken-clipboard-key` | Emit clipboard copy/paste/cut shortcuts via ydotool with terminal-aware handling |
 | `zanken-cmd-missing` | Check whether any required commands are missing |
 | `zanken-cmd-present` | Check whether all required commands are available |
-| `zanken-paste` | Paste with terminal-aware keyboard shortcuts |
 | `zanken-config-desktop` | Sync or adopt the managed Zanken desktop configuration |
 | `zanken-config-direct-boot` | Add or remove an EFI boot entry for the Zanken UKI, allowing the system to boot directly |
 | `zanken-debug` | Print debugging information |
@@ -36,8 +36,8 @@
 | `zanken-default-quick-browser` | Set the browser launched by the Mod+B quick-browser hotkey |
 | `zanken-default-terminal` | Set the default terminal used by xdg-terminal-exec |
 | `zanken-dev-add-migration` | Creates a new Zanken migration named after the unix timestamp of the last commit. |
-| `zanken-dev-benchmark-theme-switcher` | Measure theme switcher cache and selector prep times |
 | `zanken-dev-benchmark` | Measure Zanken CLI response times |
+| `zanken-dev-benchmark-theme-switcher` | Measure theme switcher cache and selector prep times |
 | `zanken-dev-bin-metadata` | Show Zanken bin metadata fields and defaults |
 | `zanken-dev-generate-command-docs` | Generate the public command reference from CLI metadata |
 | `zanken-drive-info` | Print drive information such as size, model, and mount details |
@@ -53,8 +53,8 @@
 | `zanken-hibernation-available` | Check if hibernation is supported |
 | `zanken-hibernation-remove` | Remove hibernation setup including swap and boot resume settings |
 | `zanken-hibernation-setup` | Set up hibernation with swap and boot resume configuration |
-| `zanken-hook-install` | Install a hook into ~/.config/zanken/hooks/<type>.d/ |
 | `zanken-hook` | Run a named hook from ~/.config/zanken/hooks/<name> and ~/.config/zanken/hooks/<name>.d/. |
+| `zanken-hook-install` | Install a hook into ~/.config/zanken/hooks/<type>.d/ |
 | `zanken-hw-asus-expertbook-b9406` | Detect ASUS ExpertBook B9406 series laptops on Intel Panther Lake. |
 | `zanken-hw-asus-rog` | Detect whether the computer is an Asus ROG machine. |
 | `zanken-hw-asus-zenbook-ux5406aa` | Detect ASUS Zenbook UX5406AA series laptops on Intel Panther Lake. |
@@ -63,8 +63,8 @@
 | `zanken-hw-external-monitors` | Returns true when an external monitor is physically connected. |
 | `zanken-hw-framework16` | Detect whether the computer is a Framework Laptop 16. |
 | `zanken-hw-hybrid-gpu` | Detect whether the system has an active hybrid GPU configuration |
-| `zanken-hw-intel-ptl` | Detect whether the computer has an Intel Panther Lake GPU. |
 | `zanken-hw-intel` | Detect whether the computer has an Intel CPU. |
+| `zanken-hw-intel-ptl` | Detect whether the computer has an Intel Panther Lake GPU. |
 | `zanken-hw-match` | Match against the computer's DMI product name or product family (case-insensitive). |
 | `zanken-hw-nvidia-gsp` | Detect whether the computer has an NVIDIA GPU with GSP firmware (Turing or newer). |
 | `zanken-hw-nvidia-without-gsp` | Detect whether the computer has an NVIDIA GPU without GSP firmware (Maxwell/Pascal/Volta). |
@@ -99,21 +99,21 @@
 | `zanken-launch-browser` | Launch the default browser or the configurable Mod+B quick browser. |
 | `zanken-launch-editor` | Launch the default editor as determined by $EDITOR (set via ~/.config/uwsm/default) (or nvim if missing). |
 | `zanken-launch-floating-terminal-with-presentation` | Launch a floating terminal with the Zanken presentation wrapper |
+| `zanken-launch-or-focus` | Launch an app or focus an existing window matching a pattern |
 | `zanken-launch-or-focus-tui` | Launch a TUI or focus an existing terminal window for it |
 | `zanken-launch-or-focus-webapp` | Launch or focus on a given web app identified by the window-pattern. |
-| `zanken-launch-or-focus` | Launch an app or focus an existing window matching a pattern |
 | `zanken-launch-screensaver` | Lock the session from the screensaver action |
-| `zanken-launch-terminal-tmux` | Launch or attach to the Work tmux session in a terminal |
 | `zanken-launch-terminal` | Launch a terminal in the active terminal's current directory |
+| `zanken-launch-terminal-tmux` | Launch or attach to the Work tmux session in a terminal |
 | `zanken-launch-tui` | Launch a TUI command in the default terminal with Zanken styling |
 | `zanken-launch-webapp` | Launch a URL as a web app in the default supported browser |
 | `zanken-launch-wifi` | Launch the Zanken wifi controls (provided by the Impala TUI). |
+| `zanken-menu` | Launch the Zanken menu or jump straight to a submenu |
 | `zanken-menu-file` | Pick a file with Walker |
 | `zanken-menu-images` | Open a generic image selector menu |
 | `zanken-menu-input` | Prompt for text input with Walker |
 | `zanken-menu-select` | Pick one option with Walker |
 | `zanken-menu-tmux-keybindings` | Display Tmux keybindings defined in your configuration using walker for an interactive search menu. |
-| `zanken-menu` | Launch the Zanken menu or jump straight to a submenu |
 | `zanken-migrate` | Run all pending migrations to bring the system in line with the installed version. |
 | `zanken-niri-keybindings` | Display niri keybindings from config.kdl using fzf or stdout |
 | `zanken-niri-launch-or-focus` | Launch an app or focus an existing Niri window matching a pattern |
@@ -134,8 +134,8 @@
 | `zanken-pkg-remove` | Show a fuzzy-finder TUI for picking packages installed on the system to be removed. |
 | `zanken-plymouth-preview` | Preview a Plymouth boot screen with custom colors and logo |
 | `zanken-plymouth-reset` | Restore the default Zanken Plymouth boot theme and SDDM login screen |
-| `zanken-plymouth-set-by-theme` | Set the Plymouth boot theme from an Zanken theme |
 | `zanken-plymouth-set` | Set the Plymouth boot theme colors and logo |
+| `zanken-plymouth-set-by-theme` | Set the Plymouth boot theme from an Zanken theme |
 | `zanken-powerprofiles-init` | Set the correct power profile on boot based on current AC/battery state. |
 | `zanken-powerprofiles-list` | Returns a list of all the available power profiles on the system. |
 | `zanken-powerprofiles-set` | Set the power profile to the requested level, falling back to balanced |
@@ -149,12 +149,12 @@
 | `zanken-refresh-sddm` | Refresh the SDDM theme from default |
 | `zanken-refresh-swayosd` | Overwrite the user configs for swayosd (controls on-screen feedback for changing volume/songs etc) with the Zanken defaults and restart the service. |
 | `zanken-refresh-tmux` | Overwrite the user tmux config with the Zanken default and reload tmux. |
+| `zanken-reinstall` | Reinstall Zanken packages and reset default configs |
 | `zanken-reinstall-configs` | Reset all Zanken user configs to the defaults |
 | `zanken-reinstall-git` | Reinstall the stable Zanken source directory from git |
 | `zanken-reinstall-pkgs` | Install all default Zanken packages |
-| `zanken-reinstall` | Reinstall Zanken packages and reset default configs |
-| `zanken-reminder-set` | Set a reminder via fzf (no walker required) |
 | `zanken-reminder` | Set and show lightweight desktop notification reminders |
+| `zanken-reminder-set` | Set a reminder via fzf (no walker required) |
 | `zanken-remove-browser` | Remove a supported browser and clean up Zanken browser defaults |
 | `zanken-remove-dev-env` | Remove a development environment that was previously installed via zanken-install-dev-env. |
 | `zanken-remove-gaming-geforce-now` | Remove the GeForce NOW Flatpak app and its data. |
@@ -220,6 +220,7 @@
 | `zanken-theme-videobg-switcher` | Open video wallpaper picker |
 | `zanken-theme-we-set` | Apply a Wallpaper Engine wallpaper |
 | `zanken-theme-we-switcher` | Open the Wallpaper Engine wallpaper picker |
+| `zanken-toggle` | Toggle Zanken features between enabled and disabled |
 | `zanken-toggle-enabled` | Check if a toggle is enabled (flag file exists) |
 | `zanken-toggle-hybrid-gpu` | Toggle dedicated vs integrated GPU mode via supergfxd (for hybrid gpu laptops, like Asus G14). |
 | `zanken-toggle-idle` | Toggle hypridle idle locking |
@@ -227,13 +228,13 @@
 | `zanken-toggle-screensaver` | Toggle screensaver availability |
 | `zanken-toggle-suspend` | Toggle suspend availability in the system menu |
 | `zanken-toggle-touchpad` | Enable, disable, or toggle the Niri touchpad |
-| `zanken-toggle` | Toggle Zanken features between enabled and disabled |
-| `zanken-transcode-ascii` | Transcode an image into ASCII/Unicode art text |
 | `zanken-transcode` | Transcode pictures and videos for sharing |
+| `zanken-transcode-ascii` | Transcode an image into ASCII/Unicode art text |
 | `zanken-tui-install` | Create a desktop launcher for a terminal UI app |
-| `zanken-tui-remove-all` | Remove all TUIs installed via zanken-tui-install. |
 | `zanken-tui-remove` | Remove terminal UI desktop launchers |
+| `zanken-tui-remove-all` | Remove all TUIs installed via zanken-tui-install. |
 | `zanken-tz-select` | Select and set the system timezone |
+| `zanken-update` | Update the Zanken repository |
 | `zanken-update-analyze-logs` | Check the update log for known failure conditions |
 | `zanken-update-aur-pkgs` | Update AUR packages if any are installed |
 | `zanken-update-available-reset` | Clear the available-update indicator state |
@@ -247,11 +248,10 @@
 | `zanken-zanken-sync` | Sync zanken shell with remote |
 | `zanken-update-system-pkgs` | Update system packages with pacman |
 | `zanken-update-time` | Restart system time synchronization |
-| `zanken-update` | Update the Zanken repository |
+| `zanken-version` | Print the installed Zanken version |
 | `zanken-version-branch` | Print the current Zanken git branch |
 | `zanken-version-channel` | Print the active Zanken git release channel |
 | `zanken-version-pkgs` | Print when system packages were last upgraded |
-| `zanken-version` | Print the installed Zanken version |
 | `zanken-voxtype-config` | Open the Voxtype configuration file |
 | `zanken-voxtype-install` | Install and configure Voxtype dictation |
 | `zanken-voxtype-model` | Open Voxtype AI model setup |
@@ -265,7 +265,7 @@
 | `zanken-webapp-handler-hey` | Open HEY webmail and translate mailto links |
 | `zanken-webapp-handler-zoom` | Open Zoom web meetings from browser protocol links |
 | `zanken-webapp-install` | Create a desktop launcher for a web app |
-| `zanken-webapp-remove-all` | Remove all web apps installed via zanken-webapp-install. |
 | `zanken-webapp-remove` | Remove web app desktop launchers |
+| `zanken-webapp-remove-all` | Remove all web apps installed via zanken-webapp-install. |
 | `zanken-welcome` | Show the Zanken welcome tour |
 | `zanken-wifi-powersave` | Set Wi-Fi power save mode on wireless interfaces |

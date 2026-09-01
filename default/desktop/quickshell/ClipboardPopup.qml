@@ -107,7 +107,6 @@ CardWindow {
             searchInput.text = "";
             fileTypeProbe.running = false;
             fileTypeProbe.running = true;
-            Qt.callLater(function() { searchInput.forceActiveFocus(); });
         }
     }
 
@@ -153,6 +152,10 @@ CardWindow {
                         width: parent.width - 17 - (clearBtn.visible ? 22 : 0)
                         text: ""
                         onTextChanged: clipPopup.clipSearch = text
+                        onActiveFocusChanged: if (activeFocus) clipPopup.requestKeyboardFocus(searchInput)
+                        TapHandler {
+                            onTapped: clipPopup.requestKeyboardFocus(searchInput)
+                        }
                         color: clipPopup.root.ink
                         font.family: clipPopup.root.mono
                         font.pixelSize: 11
@@ -194,7 +197,11 @@ CardWindow {
                             anchors.margins: -4
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: { clipPopup.clipSearch = ""; searchInput.text = ""; searchInput.forceActiveFocus(); }
+                            onClicked: {
+                                clipPopup.clipSearch = "";
+                                searchInput.text = "";
+                                clipPopup.requestKeyboardFocus(searchInput);
+                            }
                         }
                     }
                 }

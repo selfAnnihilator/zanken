@@ -12,24 +12,26 @@
 | Foot terminal | `~/.config/foot/foot.ini` |
 | Fish shell | `~/.config/fish/config.fish` |
 | Qutebrowser | `~/.config/qutebrowser/config.py` |
-| Zanken scripts | `~/zanken/bin/` |
+| Zanken scripts | `~/.local/share/zanken/current-release/source/bin/` after adoption |
 | User scripts | `~/.config/zanken/bin/` |
 | Current theme | `~/.config/zanken/current/` |
 
-Zanken owns the portable Niri and Quickshell defaults. They are synced from the
-Zanken checkout into the managed desktop directory during installation and
-updates. Your local settings and Niri override stay outside that directory and
-are never replaced.
+Zanken owns the portable Niri and Quickshell defaults. Release activation moves
+matching commands and desktop configuration together; `~/.local/share/zanken/desktop`
+points into the active generation. Local settings and the Niri override stay
+outside that directory. See the [release model](releases.md) for adoption and rollback.
 
 ## PATH architecture
 
 Scripts are resolved in this order:
 
 1. `~/.config/zanken/bin/` — your personal overrides (highest priority)
-2. `~/zanken/bin/` — base zanken scripts (308 scripts)
-3. `~/.local/share/zanken/bin/` — install cache (fallback)
+2. `~/.local/share/zanken/current-release/source/bin/` — active release commands
+3. `~/zanken/bin/` — development checkout or an installation not yet adopted
 
 Add personal scripts or override base scripts by placing them in `~/.config/zanken/bin/`.
+Normal `zanken` invocations follow the active generation. Developers can explicitly
+inspect source CLI behavior with `ZANKEN_SOURCE_MODE=1`.
 
 ## Zanken current directory
 

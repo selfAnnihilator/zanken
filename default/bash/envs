@@ -8,5 +8,8 @@ export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 
 # Duplicated from .config/uwsm/env so SSH works too
 export ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+if [[ -d ${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source ]]; then
+  export ZANKEN_PATH="${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source"
+fi
 export OMARCHY_PATH="$ZANKEN_PATH"
 export PATH="$ZANKEN_PATH/bin:$PATH:$HOME/.local/bin"

@@ -1,0 +1,31 @@
+name: Check release model
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main, codex/release-vm-test]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release metadata
+        run: bin/zanken-release validate
+      - name: Exercise release selection and failure behavior
+        run: python3 -B -m unittest discover -s test -p 'test_*.py' -v
+
+  desktop-contract:
+    runs-on: ubuntu-latest
+    container: archlinux:base
+    steps:
+      - name: Install test runtime
+        run: pacman -Syu --noconfirm --needed git python niri quickshell dbus openssh jq
+      - uses: actions/checkout@v4
+      - name: Verify generation behavior with the real Niri validator
+        run: python3 -B -m unittest discover -s test -p 'test_*.py' -v
+      - name: Verify real Quickshell reload on a private bus
+        run: dbus-run-session -- python3 -B test/check_quickshell_reload.py

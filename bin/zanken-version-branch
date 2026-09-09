@@ -1,5 +1,8 @@
 #!/bin/bash
 
-# zanken:summary=Print the current Zanken git branch
+# zanken:summary=Print the source Git branch, independently of installed release mode
 
-echo $(git -C "$ZANKEN_PATH" rev-parse --abbrev-ref HEAD)
+set -euo pipefail
+
+COMMAND_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+"$COMMAND_DIR/zanken-release" status | jq -r '.branch // "detached-or-unavailable"'

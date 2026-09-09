@@ -28,6 +28,7 @@ zanken-audio-input-mute  # e.g. run directly
 | `drive-` | Drive selection and encryption |
 | `font-` | Font management |
 | `games-` | Game launchers and RetroArch helpers |
+| `release-` | Release identity, switching, updates and generation recovery |
 | `hibernation-` | Hibernation setup and removal |
 | `hook-` | User hook runner |
 | `hw-` | Hardware detection (return exit codes) |

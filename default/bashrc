@@ -4,6 +4,9 @@
 # All the default Zanken aliases and functions
 # (don't mess with these directly, just overwrite them here!)
 ZANKEN_PATH="${ZANKEN_PATH:-$HOME/zanken}"
+if [[ -d ${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source ]]; then
+  ZANKEN_PATH="${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source"
+fi
 source "$ZANKEN_PATH/default/bash/rc"
 
 # Add your own exports, aliases, and functions here.

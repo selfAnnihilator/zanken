@@ -698,7 +698,7 @@ Item {
     property string zankenLatestTag: ""
 
     function openOmarchyUpdate() {
-        root.run("zanken-launch-floating-terminal-with-presentation zanken-update");
+        root.run("zanken-launch-floating-terminal-with-presentation zanken-update --fetch");
     }
     function refreshOmarchyUpdateCheck() {
         zankenUpdateProbe.running = false;
@@ -2180,7 +2180,7 @@ Item {
         command: ["zanken-update-available"]
         stdout: StdioCollector { id: zankenUpdateOut }
         onExited: (code, status) => {
-            if (code === 0) {
+            if (code === 1) {
                 const m = zankenUpdateOut.text.match(/\(([^)]+)\)/);
                 root.zankenLatestTag = m ? m[1] : "";
                 root.zankenUpdateAvailable = true;

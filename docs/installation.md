@@ -57,19 +57,23 @@ Zanken stores its updateable Niri and Quickshell defaults in
 `~/.config/zanken/` and are never changed by a sync.
 
 ```bash
-zanken update                 # pull the release branch and sync desktop defaults
-zanken config desktop sync    # sync defaults without pulling source changes
-zanken config desktop rollback # restore the previous managed desktop tree
+zanken release status         # source and installed generation details
+zanken update --fetch         # update the installed mode from origin
+zanken release rollback       # restore the previous desktop generation
 ```
 
 To take ownership of existing Niri or Quickshell configuration, run:
 
 ```bash
-zanken config desktop adopt
+zanken release switch dev --fetch --adopt
 ```
 
-Zanken lists any conflicting entry points and creates timestamped backups only
-after you confirm the change.
+`--adopt` explicitly authorizes replacing conflicting entry points with preserved
+backups. Stable adoption uses `stable` instead of `dev` and requires a trusted
+publisher key and a signed release tag. See the [release model](releases.md).
+Before an eligible release is published, bootstrap will refuse installation.
+For experimental bootstrap set `ZANKEN_RELEASE_MODE=dev`; `ZANKEN_RELEASE_VERSION`
+can pin a stable version. Package provisioning is not covered by desktop rollback.
 
 ## Testing in a VM
 

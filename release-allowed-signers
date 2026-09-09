@@ -1,0 +1,3 @@
+# Personal publisher key; independently verify its fingerprint before trusting.
+# SHA256:Rry1w/9ct2lalOZgWbzQWs2yBmtpnm43SPO8LN1tTWU
+zanken-publisher namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKvJo3vmoJpfb4O5Rc2Al8HD1+SpaMJL0+R04Z2skB/w

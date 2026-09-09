@@ -1,6 +1,6 @@
 # All Commands
 
-265 public commands generated from CLI metadata.
+266 public commands generated from CLI metadata.
 
 | Command | Description |
 |---------|-------------|
@@ -23,7 +23,7 @@
 | `zanken-capture-screenrecording` | Start or stop screen recording |
 | `zanken-capture-screenshot` | Take a screenshot |
 | `zanken-capture-text-extraction` | Extract text from a selected screen region |
-| `zanken-channel-set` | Set the Zanken git release channel |
+| `zanken-channel-set` | Switch the installed Zanken desktop release mode |
 | `zanken-paste` | Paste with terminal-aware keyboard shortcuts |
 | `zanken-clipboard-key` | Emit clipboard copy/paste/cut shortcuts via ydotool with terminal-aware handling |
 | `zanken-cmd-missing` | Check whether any required commands are missing |
@@ -153,6 +153,7 @@
 | `zanken-reinstall-configs` | Reset all Zanken user configs to the defaults |
 | `zanken-reinstall-git` | Reinstall the stable Zanken source directory from git |
 | `zanken-reinstall-pkgs` | Install all default Zanken packages |
+| `zanken-release` | Inspect, switch, update and recover Zanken desktop releases |
 | `zanken-reminder` | Set and show lightweight desktop notification reminders |
 | `zanken-reminder-set` | Set a reminder via fzf (no walker required) |
 | `zanken-remove-browser` | Remove a supported browser and clean up Zanken browser defaults |
@@ -234,7 +235,7 @@
 | `zanken-tui-remove` | Remove terminal UI desktop launchers |
 | `zanken-tui-remove-all` | Remove all TUIs installed via zanken-tui-install. |
 | `zanken-tz-select` | Select and set the system timezone |
-| `zanken-update` | Update the Zanken repository |
+| `zanken-update` | Update the installed Zanken desktop release |
 | `zanken-update-analyze-logs` | Check the update log for known failure conditions |
 | `zanken-update-aur-pkgs` | Update AUR packages if any are installed |
 | `zanken-update-available-reset` | Clear the available-update indicator state |
@@ -248,9 +249,9 @@
 | `zanken-zanken-sync` | Sync zanken shell with remote |
 | `zanken-update-system-pkgs` | Update system packages with pacman |
 | `zanken-update-time` | Restart system time synchronization |
-| `zanken-version` | Print the installed Zanken version |
-| `zanken-version-branch` | Print the current Zanken git branch |
-| `zanken-version-channel` | Print the active Zanken git release channel |
+| `zanken-version` | Print the installed release version or unmanaged source version |
+| `zanken-version-branch` | Print the source Git branch, independently of installed release mode |
+| `zanken-version-channel` | Print the installed release mode or unmanaged |
 | `zanken-version-pkgs` | Print when system packages were last upgraded |
 | `zanken-voxtype-config` | Open the Voxtype configuration file |
 | `zanken-voxtype-install` | Install and configure Voxtype dictation |

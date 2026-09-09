@@ -758,7 +758,7 @@ show_remove_elixir_menu() {
 
 show_update_menu() {
   case $(menu "Update" "󰊂  Zanken\n  Config\n󰸌  Extra Themes\n  Process\n󰇅  Hardware\n  Firmware\n  Password\n  Timezone\n  Time") in
-  *Zanken*) present_terminal "git -C $HOME/zanken pull --rebase" ;;
+  *Zanken*) present_terminal "zanken-update --fetch" ;;
   *Config*) show_update_config_menu ;;
   *Themes*) present_terminal zanken-theme-update ;;
   *Process*) show_update_process_menu ;;
@@ -772,11 +772,9 @@ show_update_menu() {
 }
 
 show_update_channel_menu() {
-  case $(menu "Update channel" "🟢 Stable\n🟡 RC\n🟠 Edge\n🔴 Dev") in
-  *Stable*) present_terminal "zanken-channel-set stable" ;;
-  *RC*) present_terminal "zanken-channel-set rc" ;;
-  *Edge*) present_terminal "zanken-channel-set edge" ;;
-  *Dev*) present_terminal "zanken-channel-set dev" ;;
+  case $(menu "Update channel" "🟢 Stable\n🔴 Dev") in
+  *Stable*) present_terminal "zanken-channel-set stable --fetch" ;;
+  *Dev*) present_terminal "zanken-channel-set dev --fetch" ;;
   *) show_update_menu ;;
   esac
 }

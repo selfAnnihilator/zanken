@@ -1,5 +1,9 @@
 # Documentation Development
 
+Implementation progress is tracked in the [architecture TODO](architecture-todo.md).
+The [release model](releases.md) documents stable/dev candidate resolution and
+the remaining installation and promotion milestones.
+
 Zanken documentation is a [MkDocs](https://www.mkdocs.org/) site using the
 Material theme. Source pages live in `docs/`; the generated `site/` directory
 is disposable and is not committed.

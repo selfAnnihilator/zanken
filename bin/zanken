@@ -2,6 +2,17 @@
 
 set -o pipefail
 
+# Normal invocations follow the activated generation. Developers can inspect
+# source commands explicitly with ZANKEN_SOURCE_MODE=1.
+ACTIVE_SOURCE="${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source"
+if [[ ${ZANKEN_SOURCE_MODE:-0} != "1" && -x $ACTIVE_SOURCE/bin/zanken ]]; then
+  export ZANKEN_PATH="$ACTIVE_SOURCE"
+  export OMARCHY_PATH="$ACTIVE_SOURCE"
+  if [[ $(readlink -f -- "${BASH_SOURCE[0]}") != "$(readlink -f -- "$ACTIVE_SOURCE/bin/zanken")" ]]; then
+    exec "$ACTIVE_SOURCE/bin/zanken" "$@"
+  fi
+fi
+
 ZANKEN_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 METADATA_SCAN_LIMIT=80
 
@@ -67,6 +78,7 @@ GROUP_DESCRIPTIONS[pkg]="Package management helpers"
 GROUP_DESCRIPTIONS[plymouth]="Plymouth boot theme management"
 GROUP_DESCRIPTIONS[powerprofiles]="Power profile management"
 GROUP_DESCRIPTIONS[refresh]="Reset config to defaults"
+GROUP_DESCRIPTIONS[release]="Release identity and candidate resolution"
 GROUP_DESCRIPTIONS[reinstall]="Reinstall and reset workflows"
 GROUP_DESCRIPTIONS[reminder]="Desktop notification reminders"
 GROUP_DESCRIPTIONS[remove]="Removal workflows"

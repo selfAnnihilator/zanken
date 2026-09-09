@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Set install mode to online since boot.sh is used for curl installations
 export ZANKEN_ONLINE_INSTALL=true
 
@@ -14,39 +16,50 @@ ansi_art='                 ▄▄▄
  ▀█████▀    ▀█   ███   █▀   ███   █▀   ███   ███  ███████▀   ███   █▀    ▀█████▀
                                        ███   █▀                                  '
 
-clear
+clear || true
 echo -e "\n$ansi_art\n"
 
-# Use custom branch if instructed, otherwise install the supported release branch.
-ZANKEN_REF="${ZANKEN_REF:-main}"
-
-# Set mirror based on branch
-if [[ $ZANKEN_REF == "dev" ]]; then
-  export ZANKEN_MIRROR=edge
-  echo 'Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
-elif [[ $ZANKEN_REF == "rc" ]]; then
-  export ZANKEN_MIRROR=rc
-  echo 'Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
-else
-  export ZANKEN_MIRROR=stable
-  echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+# Release mode is independent of package mirrors. Preserve the host's configured
+# Arch repositories; selecting dev must not rewrite pacman configuration.
+export ZANKEN_RELEASE_MODE="${ZANKEN_RELEASE_MODE:-stable}"
+if [[ $ZANKEN_RELEASE_MODE != "stable" && $ZANKEN_RELEASE_MODE != "dev" ]]; then
+  echo "ZANKEN_RELEASE_MODE must be stable or dev" >&2
+  exit 2
+fi
+if [[ -n ${ZANKEN_REF:-} ]]; then
+  echo "ZANKEN_REF is retired; use ZANKEN_RELEASE_MODE and ZANKEN_RELEASE_VERSION" >&2
+  exit 2
+fi
+export ZANKEN_REPOSITORY="${ZANKEN_REPOSITORY:-$HOME/zanken}"
+if [[ -e $ZANKEN_REPOSITORY && ! -d $ZANKEN_REPOSITORY/.git ]]; then
+  echo "Repository destination already exists; choose another ZANKEN_REPOSITORY" >&2
+  exit 1
+fi
+sudo pacman -Syu --noconfirm --needed git python jq
+if [[ ! -d $ZANKEN_REPOSITORY/.git ]]; then
+  git clone "https://github.com/${ZANKEN_REPO:-selfAnnihilator/zanken}.git" "$ZANKEN_REPOSITORY"
+fi
+if [[ -n $(git -C "$ZANKEN_REPOSITORY" status --porcelain) ]]; then
+  echo "Preserving modified repository; commit your work or select a clean repository" >&2
+  exit 1
 fi
 
-sudo pacman -Syu --noconfirm --needed git
-
-# Use custom repo if specified, otherwise default to selfAnnihilator/zanken
-ZANKEN_REPO="${ZANKEN_REPO:-selfAnnihilator/zanken}"
-
-echo -e "\nCloning Zanken from: https://github.com/${ZANKEN_REPO}.git"
-if [[ -n $HOME && -d "$HOME/zanken" ]]; then
-  rm -rf "$HOME/zanken/"
+release_args=("$ZANKEN_RELEASE_MODE" --fetch)
+if [[ -n ${ZANKEN_RELEASE_VERSION:-} ]]; then
+  release_args+=(--version "$ZANKEN_RELEASE_VERSION")
 fi
-git clone "https://github.com/${ZANKEN_REPO}.git" ~/zanken >/dev/null
-
-echo -e "\e[32mUsing branch: $ZANKEN_REF\e[0m"
-cd ~/zanken
-git fetch origin "${ZANKEN_REF}" && git checkout "${ZANKEN_REF}"
-cd -
-
-echo -e "\nInstallation starting..."
-source ~/zanken/install.sh "$@"
+bootstrap_dir=$(mktemp -d)
+bundle_json=$("$ZANKEN_REPOSITORY/bin/zanken-release" bundle "${release_args[@]}" --output "$bootstrap_dir/artifact")
+export ZANKEN_INSTALL_COMMIT
+ZANKEN_INSTALL_COMMIT=$(jq -er '.candidate.commit' <<<"$bundle_json")
+(
+  cd "$bootstrap_dir/artifact"
+  sha256sum --check SHA256SUMS
+)
+mkdir "$bootstrap_dir/source"
+tar -xf "$bootstrap_dir/artifact/source.tar" -C "$bootstrap_dir/source"
+export ZANKEN_RELEASE_INSTALL=1
+echo "Installing $ZANKEN_RELEASE_MODE at $ZANKEN_INSTALL_COMMIT"
+bash "$bootstrap_dir/source/install.sh" "$@"
+# Retain the exact source and artifact for installer failure diagnostics.
+echo "Installer source and checksum retained at $bootstrap_dir"

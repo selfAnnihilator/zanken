@@ -38,6 +38,9 @@ ShellRoot {
     // players, which can make YouTube advance a paused video.
     IpcHandler {
         target: "zanken"
+        function releaseIdentity(): string {
+            return "ZANKEN_SOURCE_GENERATION";
+        }
         function reload(): void {
             Quickshell.reload(false);
         }

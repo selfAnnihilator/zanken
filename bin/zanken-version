@@ -1,5 +1,8 @@
 #!/bin/bash
 
-# zanken:summary=Print the installed Zanken version
+# zanken:summary=Print the installed release version or unmanaged source version
 
-cat $ZANKEN_PATH/version
+set -euo pipefail
+
+COMMAND_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+exec "$COMMAND_DIR/zanken-release" version --plain "$@"

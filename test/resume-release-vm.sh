@@ -22,6 +22,13 @@ export ZANKEN_RELEASE_MODE=dev
 export ZANKEN_RELEASE_INSTALL=1
 export PATH="$ZANKEN_PATH/bin:$PATH"
 unset ZANKEN_RELEASE_VERSION ZANKEN_CHROOT_INSTALL
+export ZANKEN_LIMINE_PACKAGE_DIR="${2:-}"
+if [[ -z $ZANKEN_LIMINE_PACKAGE_DIR ]]; then
+  echo "Pass the completed boot-package build directory as the second argument." >&2
+  exit 2
+fi
+source "$ZANKEN_INSTALL/helpers/limine-packages.sh"
+prepare_limine_packages
 
 if [[ -n $(git -C "$ZANKEN_PATH" status --porcelain) ]]; then
   echo "Recovery requires a clean candidate checkout." >&2

@@ -2,11 +2,43 @@
 import pathlib
 import subprocess
 import unittest
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 class InstallerPermissionsTests(unittest.TestCase):
+  def test_missing_boot_packages_fail_preflight(self):
+    helper = (ROOT / "install/helpers/limine-packages.sh").read_text()
+    result = self.shell(helper + '\npacman() { return 1; }\nprepare_limine_packages')
+    self.assertEqual(result.returncode, 1)
+    self.assertIn("boot configuration was not changed", result.stderr)
+    stage = (ROOT / "install/login/limine-snapper.sh").read_text()
+    self.assertLess(stage.index('prepare_limine_packages || exit 1'), stage.index('sudo tee'))
+
+  def test_local_package_identity_and_install_route(self):
+    helper = (ROOT / "install/helpers/limine-packages.sh").read_text()
+    with tempfile.TemporaryDirectory() as directory:
+      for package in ('limine-snapper-sync', 'limine-mkinitcpio-hook'):
+        folder = pathlib.Path(directory) / package
+        folder.mkdir()
+        (folder / (package + '-1-1-x86_64.pkg.tar.zst')).touch()
+      setup = helper + '\nZANKEN_LIMINE_PACKAGE_DIR=' + directory + '''
+pacman() {
+  [[ $1 == -Qp ]] || return 99
+  case "$2" in
+    */limine-snapper-sync/*) echo 'limine-snapper-sync 1-1' ;;
+    *) echo 'limine-mkinitcpio-hook 1-1' ;;
+  esac
+}
+'''
+      result = self.shell(setup + '\nprepare_limine_packages && printf "%s\\n" "${limine_package_args[@]}"')
+      self.assertEqual(result.returncode, 0, result.stderr)
+      self.assertEqual(result.stdout.splitlines()[:2], ['-U', '--needed'])
+      self.assertEqual(len(result.stdout.splitlines()), 4)
+      result = self.shell(setup + '\npacman() { echo "wrong-package 1"; }\nprepare_limine_packages')
+      self.assertEqual(result.returncode, 1)
+
   def test_vm_guard_accepts_qemu_and_kvm_only(self):
     source = (ROOT / "test/resume-release-vm.sh").read_text()
     guard = source.split('export ZANKEN_PATH=', 1)[0]

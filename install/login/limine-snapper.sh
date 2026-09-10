@@ -1,4 +1,7 @@
 if command -v limine &>/dev/null; then
+  source "$ZANKEN_INSTALL/helpers/limine-packages.sh"
+  prepare_limine_packages || exit 1
+
   sudo tee /etc/mkinitcpio.conf.d/omarchy_hooks.conf <<EOF >/dev/null
 HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block encrypt filesystems fsck btrfs-overlayfs)
 EOF
@@ -54,7 +57,9 @@ EOF
   # We overwrite the whole thing knowing the limine-update will add the entries for us
   sudo cp "$ZANKEN_PATH/default/limine/limine.conf" /boot/limine.conf
 
-  sudo pacman -S --noconfirm --needed limine-snapper-sync limine-mkinitcpio-hook
+  if (( ${#limine_package_args[@]} > 0 )); then
+    sudo pacman "${limine_package_args[@]}" || exit 1
+  fi
 
   # Only snapshot root — /home is user data; rolling it back loses user work
   if ! sudo snapper list-configs 2>/dev/null | grep -q "root"; then

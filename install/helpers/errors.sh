@@ -74,15 +74,15 @@ restore_outputs() {
 
 # Error handler
 catch_errors() {
+  # Capture the failing status before any tests or assignments overwrite it.
+  local exit_code=${1:-$?}
+
   # Prevent recursive error handling
   if [[ $ERROR_HANDLING == "true" ]]; then
     return
   else
     ERROR_HANDLING=true
   fi
-
-  # Store exit code immediately before it gets overwritten
-  local exit_code=$?
 
   stop_log_output
   restore_outputs
@@ -148,7 +148,7 @@ exit_handler() {
 
   # Only run if we're exiting with an error and haven't already handled it
   if (( exit_code != 0 )) && [[ $ERROR_HANDLING != "true" ]]; then
-    catch_errors
+    catch_errors "$exit_code"
   else
     stop_log_output
     show_cursor
@@ -156,7 +156,9 @@ exit_handler() {
 }
 
 # Set up traps
-trap catch_errors ERR INT TERM
+trap catch_errors ERR
+trap 'catch_errors 130' INT
+trap 'catch_errors 143' TERM
 trap exit_handler EXIT
 
 # Save original outputs in case we trap

@@ -7,6 +7,15 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 class InstallerPermissionsTests(unittest.TestCase):
+  def test_vm_guard_accepts_qemu_and_kvm_only(self):
+    source = (ROOT / "test/resume-release-vm.sh").read_text()
+    guard = source.split('export ZANKEN_PATH=', 1)[0]
+    guard = guard[guard.index('vm_type='):]
+    for identity, expected in [("qemu", 0), ("kvm", 0), ("none", 2), ("docker", 2)]:
+      with self.subTest(identity=identity):
+        result = self.shell('systemd-detect-virt() { echo ' + identity + '; }\n' + guard)
+        self.assertEqual(result.returncode, expected, result.stderr)
+
   def shell(self, script):
     return subprocess.run(["bash", "-c", script], text=True, capture_output=True)
 

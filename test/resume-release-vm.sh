@@ -8,8 +8,9 @@ if [[ ${1:-} != "--confirm-vm-recovery" ]] || (( EUID == 0 )); then
   echo "Run as the VM's regular user with --confirm-vm-recovery." >&2
   exit 2
 fi
-if [[ $(systemd-detect-virt --vm) != "qemu" ]]; then
-  echo "This recovery is restricted to the QEMU test guest." >&2
+vm_type=$(systemd-detect-virt --vm || true)
+if [[ $vm_type != "qemu" && $vm_type != "kvm" ]]; then
+  echo "This recovery requires a QEMU/KVM test guest (detected: $vm_type)." >&2
   exit 2
 fi
 

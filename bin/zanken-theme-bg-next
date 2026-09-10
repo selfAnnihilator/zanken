@@ -15,6 +15,16 @@ mapfile -d '' -t BACKGROUNDS < <(
 )
 TOTAL=${#BACKGROUNDS[@]}
 
+# Fresh installs may have no theme-specific backgrounds; use the bundled library.
+if (( TOTAL == 0 )); then
+  mapfile -d '' -t BACKGROUNDS < <(
+    find "$HOME/Pictures/wallpaper" -type f \
+      \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' \) \
+      -print0 2>/dev/null | sort -z
+  )
+  TOTAL=${#BACKGROUNDS[@]}
+fi
+
 if (( TOTAL == 0 )); then
   zanken-notification-send "No background was found for theme" -t 2000
 else

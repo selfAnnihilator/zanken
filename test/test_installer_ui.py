@@ -10,6 +10,38 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class InstallerUITests(unittest.TestCase):
+  def test_makepkg_auth_uses_cached_credentials(self):
+    # Exercise Arch's real config loader and run_pacman function, without sudo
+    # or package writes. The fake sudo rejects the cache-invalidating -k flag.
+    makepkg = Path('/usr/bin/makepkg')
+    if not makepkg.exists():
+      self.skipTest('Arch makepkg required')
+    source = makepkg.read_text()
+    function = source[source.index('run_pacman() {'):].split('\n}\n', 1)[0] + '\n}\n'
+    with tempfile.TemporaryDirectory() as directory:
+      folder = Path(directory)
+      for name, body in {
+        'sudo': 'for arg; do [[ $arg == "-k" ]] && { echo "sudo: a password is required" >&2; exit 1; }; done\nexit 0',
+        'pacman-conf': 'echo /nonexistent-zanken-test',
+      }.items():
+        path = folder / name
+        path.write_text('#!/bin/bash\n' + body + '\n')
+        path.chmod(0o755)
+      base = folder / 'base.conf'
+      base.write_text('CARCH=fixture\n')
+      script = '''source /usr/share/makepkg/util/config.sh
+config="$SOURCE/install/helpers/makepkg.conf"
+[[ -f $config ]] || config=$ZANKEN_MAKEPKG_BASE_CONF
+source_makepkg_config "$config"
+[[ $CARCH == fixture ]] || exit 9
+PACMAN_PATH=/usr/bin/pacman
+''' + function + '\nrun_pacman -S go\n'
+      result = subprocess.run(['bash', '-O', 'extglob', '-c', script],
+        env={**os.environ, 'PATH': directory + ':' + os.environ['PATH'],
+          'SOURCE': str(ROOT), 'ZANKEN_MAKEPKG_BASE_CONF': str(base)},
+        capture_output=True, text=True)
+      self.assertEqual(result.returncode, 0, result.stderr)
+
   def test_installer_sudo_shim_does_not_enter_desktop_path(self):
     with tempfile.TemporaryDirectory() as directory:
       folder = Path(directory)
@@ -63,7 +95,12 @@ echo PROGRESS_AFTER_AUTH
       sudo.write_text('#!/bin/bash\nexit 0\n')
       sudo.chmod(0o755)
       stage = folder / 'stage.sh'
-      stage.write_text('echo before\nfalse\necho SHOULD_NOT_RUN\n')
+      stage.write_text('''[[ $MAKEPKG_CONF == "$ZANKEN_INSTALL/helpers/makepkg.conf" ]] || exit 98
+[[ -n $ZANKEN_MAKEPKG_BASE_CONF ]] || exit 97
+echo before
+false
+echo SHOULD_NOT_RUN
+''')
       log = folder / 'install.log'
       result = subprocess.run(['bash', '-c', '''
 source "$SOURCE/install/helpers/logging.sh"

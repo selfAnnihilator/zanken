@@ -69,7 +69,9 @@ run_logged() {
   ZANKEN_AUTH_PID=$!
   start_log_output
   # Hidden stages never ask for a password; the parent authenticates first.
-  if PATH="$ZANKEN_INSTALL/helpers/noninteractive:$PATH" bash -eE -c 'source "$1"' bash "$script" </dev/null >>"$ZANKEN_INSTALL_LOG_FILE" 2>&1; then
+  if ZANKEN_MAKEPKG_BASE_CONF="${MAKEPKG_CONF:-/etc/makepkg.conf}" \
+    MAKEPKG_CONF="$ZANKEN_INSTALL/helpers/makepkg.conf" \
+    PATH="$ZANKEN_INSTALL/helpers/noninteractive:$PATH" bash -eE -c 'source "$1"' bash "$script" </dev/null >>"$ZANKEN_INSTALL_LOG_FILE" 2>&1; then
     exit_code=0
   else
     exit_code=$?

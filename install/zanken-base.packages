@@ -114,6 +114,11 @@ socat
 starship
 sushi
 swaybg
+swaylock
+mpvpaper
+wl-clip-persist
+cliphist
+elephant
 swayosd
 system-config-printer
 tesseract
@@ -144,5 +149,5 @@ xdg-terminal-exec
 xmlstarlet
 xournalpp
 yaru-icon-theme
-yay
+# Yay is bootstrapped only when its command is absent; preserve yay/yay-bin.
 zoxide

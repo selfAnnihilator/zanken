@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Install Hollow Knight Hornet cursor theme (converts Windows .ani → X11 xcursor)
 
 THEME_DIR="$HOME/.local/share/icons/Hornet"
@@ -98,8 +98,10 @@ Comment=Default cursor theme
 Inherits=Hornet
 EOF
 
-gsettings set org.gnome.desktop.interface cursor-theme Hornet 2>/dev/null || true
-gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
+if [[ ${ZANKEN_INSTALL_MODE:-full} != "desktop" ]]; then
+  gsettings set org.gnome.desktop.interface cursor-theme Hornet 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
+fi
 
 # libXcursor searches ~/.icons, not ~/.local/share/icons — symlink so it finds the theme
 mkdir -p "$HOME/.icons"

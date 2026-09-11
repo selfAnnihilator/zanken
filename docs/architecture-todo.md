@@ -4,7 +4,22 @@ Started: 2026-09-09. This is the working implementation ledger. Check a task onl
 after its behavior is implemented and verified; release publishing and live
 desktop changes are separate milestones.
 
+## Installer redesign and takeover acceptance
+
+- [x] Implement Zanken branding and separate authentication/progress screens;
+  clear prompts after authentication, prevent hidden sudo prompts (2026-09-11).
+- [x] Reuse existing Yay and exclude it from the base package transaction.
+- [x] Add opt-in backed-up desktop takeover, without full OS provisioning.
+- [ ] Validate the new UI screenshots after unlocking the host session, then
+  test full installation and existing-Niri takeover/restore in disposable VMs.
+  See `docs/desktop-takeover.md`; no production-ready claim before acceptance.
+
 ## 1. Release model — in progress
+
+- [x] Fix root-only ESP config access and error-status reporting; regression
+  tests pass (2026-09-10). VM recovery helper: `test/resume-release-vm.sh`.
+- [ ] Verify the repaired installer in the partially provisioned VM, then rerun
+  clean-install acceptance. Unit tests do not establish boot recovery success.
 
 - [x] Define versioned release metadata and validate its format.
 - [x] Resolve stable from annotated `zanken-vMAJOR.MINOR.PATCH` tags, excluding

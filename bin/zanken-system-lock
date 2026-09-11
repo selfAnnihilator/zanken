@@ -8,6 +8,15 @@
 LOCK_SCRIPT="$HOME/.local/share/qylock/quickshell-lockscreen/lock.sh"
 LOCK_QML="$HOME/.local/share/qylock/quickshell-lockscreen/lock_shell.qml"
 
+# Fresh installs need a working lock even without the optional qylock checkout.
+if [[ ! -f $LOCK_SCRIPT || ! -f $LOCK_QML ]]; then
+  if command -v swaylock >/dev/null; then
+    exec swaylock --daemonize --color 16161e
+  fi
+  echo 'No lock screen available: install swaylock or restore qylock.' >&2
+  exit 1
+fi
+
 current_session_id() {
     loginctl list-sessions --no-legend 2>/dev/null | awk -v user="$USER" '$3 == user { print $1; exit }'
 }

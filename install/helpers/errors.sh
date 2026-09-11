@@ -1,19 +1,3 @@
-# Directs user to Zanken Discord
-QR_CODE='
-█▀▀▀▀▀█ ▄ ▄ ▀▄▄▄█ █▀▀▀▀▀█
-█ ███ █ ▄▄▄▄▀▄▀▄▀ █ ███ █
-█ ▀▀▀ █ ▄█  ▄█▄▄▀ █ ▀▀▀ █
-▀▀▀▀▀▀▀ ▀▄█ █ █ █ ▀▀▀▀▀▀▀
-▀▀█▀▀▄▀▀▀▀▄█▀▀█  ▀ █ ▀ █
-█▄█ ▄▄▀▄▄ ▀ ▄ ▀█▄▄▄▄ ▀ ▀█
-▄ ▄▀█ ▀▄▀▀▀▄ ▄█▀▄█▀▄▀▄▀█▀
-█ ▄▄█▄▀▄█ ▄▄▄  ▀ ▄▀██▀ ▀█
-▀ ▀   ▀ █ ▀▄  ▀▀█▀▀▀█▄▀
-█▀▀▀▀▀█ ▀█  ▄▀▀ █ ▀ █▄▀██
-█ ███ █ █▀▄▄▀ █▀███▀█▄██▄
-█ ▀▀▀ █ ██  ▀ █▄█ ▄▄▄█▀ █
-▀▀▀▀▀▀▀ ▀ ▀ ▀▀▀  ▀ ▀▀▀▀▀▀'
-
 # Track if we're already handling an error to prevent double-trapping
 ERROR_HANDLING=false
 
@@ -25,7 +9,8 @@ show_cursor() {
 # Display truncated log lines from the install log
 show_log_tail() {
   if [[ -f $ZANKEN_INSTALL_LOG_FILE ]]; then
-    local log_lines=$((TERM_HEIGHT - LOGO_HEIGHT - 35))
+    local log_lines=$((TERM_HEIGHT - 15))
+    (( log_lines < 1 )) && log_lines=1
     local max_line_width=$((LOGO_WIDTH - 4))
 
     tail -n $log_lines "$ZANKEN_INSTALL_LOG_FILE" | while IFS= read -r line; do
@@ -35,7 +20,7 @@ show_log_tail() {
         local truncated_line="$line"
       fi
 
-      gum style "$truncated_line"
+      printf '%s\n' "$truncated_line" | LC_ALL=C tr -d '\000-\010\013-\037\177'
     done
 
     echo
@@ -96,44 +81,22 @@ catch_errors() {
   gum style "This command halted with exit code $exit_code:"
   show_failed_script_or_command
 
-  gum style "$QR_CODE"
-  echo
-  gum style "Get help from the community via QR code or at https://discord.gg/tXFUdasqhY"
+  printf '\nLog retained: %s\n' "$ZANKEN_INSTALL_LOG_FILE"
+  printf 'Installation paused. Inspect the failure before retrying.\n'
 
   # Offer options menu
   while true; do
-    options=()
-
-    # If online install, show retry first
-    if [[ -n ${ZANKEN_ONLINE_INSTALL:-} ]]; then
-      options+=("Retry installation")
-    fi
-
-    # Add upload option if internet is available
-    if ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
-      options+=("Upload log for support")
-    fi
-
-    # Add remaining options
-    options+=("View full log")
-    options+=("Exit")
+    options=("View full log" "Exit")
 
     choice=$(gum choose "${options[@]}" --header "What would you like to do?" --height 6 --padding "1 $PADDING_LEFT")
 
     case "$choice" in
-    "Retry installation")
-      bash "$ZANKEN_PATH/install.sh"
-      break
-      ;;
     "View full log")
       if command -v less &>/dev/null; then
-        less "$ZANKEN_INSTALL_LOG_FILE"
+        less "$ZANKEN_INSTALL_LOG_FILE" </dev/tty >/dev/tty
       else
         tail "$ZANKEN_INSTALL_LOG_FILE"
       fi
-      ;;
-    "Upload log for support")
-      zanken-upload-log
       ;;
     "Exit" | "")
       exit 1

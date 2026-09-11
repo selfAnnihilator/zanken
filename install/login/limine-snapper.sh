@@ -58,7 +58,7 @@ EOF
   sudo cp "$ZANKEN_PATH/default/limine/limine.conf" /boot/limine.conf
 
   if (( ${#limine_package_args[@]} > 0 )); then
-    sudo pacman "${limine_package_args[@]}" || exit 1
+    sudo pacman --noconfirm "${limine_package_args[@]}" || exit 1
   fi
 
   # Only snapshot root — /home is user data; rolling it back loses user work

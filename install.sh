@@ -3,6 +3,12 @@
 # Exit immediately if a command exits with a non-zero status
 set -eEo pipefail
 
+# Existing systems get a scoped desktop takeover, never full OS provisioning.
+if [[ ${1:-} == "--replace-niri" ]]; then
+  shift
+  exec bash "$(dirname -- "${BASH_SOURCE[0]}")/install/desktop.sh" "$@"
+fi
+
 # Parse flags
 ZANKEN_CLEAN=0
 for arg in "$@"; do

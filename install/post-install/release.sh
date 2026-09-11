@@ -3,5 +3,7 @@ if [[ ${ZANKEN_RELEASE_INSTALL:-0} == "1" ]]; then
   if [[ -n ${ZANKEN_RELEASE_VERSION:-} ]]; then
     release_args+=(--version "$ZANKEN_RELEASE_VERSION")
   fi
-  "$ZANKEN_REPOSITORY/bin/zanken-release" "${release_args[@]}"
+  # The installer-only sudo shim must never leak into the desktop's saved PATH.
+  PATH="${PATH#"$ZANKEN_INSTALL/helpers/noninteractive:"}" \
+    "$ZANKEN_REPOSITORY/bin/zanken-release" "${release_args[@]}"
 fi

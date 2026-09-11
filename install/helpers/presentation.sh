@@ -1,48 +1,32 @@
-# Ensure we have gum available
+# A compact Zanken-native installer, including small Linux console layouts.
 if ! command -v gum &>/dev/null; then
   zanken-pkg-add gum
 fi
-
-# Get terminal size from /dev/tty (works in all scenarios: direct, sourced, or piped)
-if [[ -e /dev/tty ]]; then
-  TERM_SIZE=$(stty size 2>/dev/null </dev/tty)
-
-  if [[ -n $TERM_SIZE ]]; then
-    export TERM_HEIGHT=$(echo "$TERM_SIZE" | cut -d' ' -f1)
-    export TERM_WIDTH=$(echo "$TERM_SIZE" | cut -d' ' -f2)
-  else
-    # Fallback to reasonable defaults if stty fails
-    export TERM_WIDTH=80
-    export TERM_HEIGHT=24
-  fi
-else
-  # No terminal available (e.g., non-interactive environment)
-  export TERM_WIDTH=80
-  export TERM_HEIGHT=24
-fi
-
-export LOGO_PATH="$ZANKEN_PATH/logo.txt"
-export LOGO_WIDTH=$(awk '{ if (length > max) max = length } END { print max+0 }' "$LOGO_PATH" 2>/dev/null || echo 0)
-export LOGO_HEIGHT=$(wc -l <"$LOGO_PATH" 2>/dev/null || echo 0)
-
-export PADDING_LEFT=$(((TERM_WIDTH - LOGO_WIDTH) / 2))
-export PADDING_LEFT_SPACES=$(printf "%*s" $PADDING_LEFT "")
-
-# Tokyo Night theme for gum confirm
-export GUM_CONFIRM_PROMPT_FOREGROUND="6"     # Cyan for prompt
-export GUM_CONFIRM_SELECTED_FOREGROUND="0"   # Black text on selected
-export GUM_CONFIRM_SELECTED_BACKGROUND="2"   # Green background for selected
-export GUM_CONFIRM_UNSELECTED_FOREGROUND="7" # White for unselected
-export GUM_CONFIRM_UNSELECTED_BACKGROUND="0" # Black background for unselected
-export PADDING="0 0 0 $PADDING_LEFT"         # Gum Style
-export GUM_CHOOSE_PADDING="$PADDING"
-export GUM_FILTER_PADDING="$PADDING"
-export GUM_INPUT_PADDING="$PADDING"
-export GUM_SPIN_PADDING="$PADDING"
-export GUM_TABLE_PADDING="$PADDING"
-export GUM_CONFIRM_PADDING="$PADDING"
-
+installer_dimensions() {
+  local size
+  size=$(stty size </dev/tty 2>/dev/null || true)
+  read -r TERM_HEIGHT TERM_WIDTH <<<"${size:-24 80}"
+  TERM_HEIGHT=${TERM_HEIGHT:-24}
+  TERM_WIDTH=${TERM_WIDTH:-80}
+  PADDING_LEFT=2
+  (( TERM_WIDTH >= 100 )) && PADDING_LEFT=6
+  LOGO_WIDTH=$((TERM_WIDTH - PADDING_LEFT * 2))
+  (( LOGO_WIDTH > 100 )) && LOGO_WIDTH=100
+  LOGO_HEIGHT=5
+  export TERM_HEIGHT TERM_WIDTH PADDING_LEFT LOGO_WIDTH LOGO_HEIGHT
+  PADDING_LEFT_SPACES=$(printf '%*s' "$PADDING_LEFT" '')
+  export PADDING_LEFT_SPACES
+}
+installer_dimensions
+export GUM_CONFIRM_SELECTED_BACKGROUND=1 GUM_CONFIRM_SELECTED_FOREGROUND=7
+export GUM_CHOOSE_CURSOR_FOREGROUND=1 GUM_CHOOSE_SELECTED_FOREGROUND=7
+export GUM_CONFIRM_PADDING='1 2' GUM_CHOOSE_PADDING='1 2'
 clear_logo() {
-  printf "\033[H\033[2J" # Clear screen and move cursor to top-left
-  gum style --foreground 2 --padding "1 0 0 $PADDING_LEFT" "$(<"$LOGO_PATH")"
+  installer_dimensions
+  printf '\033[H\033[2J\033[0m'
+  printf '\n%s\033[1;31m斬  Z A N K E N\033[0m\n' "$PADDING_LEFT_SPACES"
+  printf '%sNIRI DESKTOP  /  INSTALLER\n\n' "$PADDING_LEFT_SPACES"
+}
+installer_status() {
+  printf '%s%s\n\n' "$PADDING_LEFT_SPACES" "$1"
 }

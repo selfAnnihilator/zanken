@@ -1,0 +1,3 @@
+#!/bin/bash
+# Logged stages must return an error rather than ask an invisible password.
+exec /usr/bin/sudo -n "$@"

@@ -5,19 +5,17 @@ set -euo pipefail
 # Set install mode to online since boot.sh is used for curl installations
 export ZANKEN_ONLINE_INSTALL=true
 
-ansi_art='                 ▄▄▄
- ▄█████▄    ▄███████████▄    ▄███████   ▄███████   ▄███████   ▄█   █▄    ▄█   █▄
-███   ███  ███   ███   ███  ███   ███  ███   ███  ███   ███  ███   ███  ███   ███
-███   ███  ███   ███   ███  ███   ███  ███   ███  ███   █▀   ███   ███  ███   ███
-███   ███  ███   ███   ███ ▄███▄▄▄███ ▄███▄▄▄██▀  ███       ▄███▄▄▄███▄ ███▄▄▄███
-███   ███  ███   ███   ███ ▀███▀▀▀███ ▀███▀▀▀▀    ███      ▀▀███▀▀▀███  ▀▀▀▀▀▀███
-███   ███  ███   ███   ███  ███   ███ ██████████  ███   █▄   ███   ███  ▄██   ███
-███   ███  ███   ███   ███  ███   ███  ███   ███  ███   ███  ███   ███  ███   ███
- ▀█████▀    ▀█   ███   █▀   ███   █▀   ███   ███  ███████▀   ███   █▀    ▀█████▀
-                                       ███   █▀                                  '
+if [[ ${1:-} == "--replace-niri" ]]; then
+  (( EUID != 0 )) || { echo 'Use your regular user, not root.'; exit 2; }
+  [[ -z ${WAYLAND_DISPLAY:-} && -z ${NIRI_SOCKET:-} ]] || {
+    echo 'Log out and run desktop replacement from a TTY.'; exit 2;
+  }
+  echo 'Desktop replacement downloads packages and upgrades the Arch package set.'
+  read -r -p 'Type REPLACE to begin (configuration backup follows): ' takeover_answer
+  [[ $takeover_answer == "REPLACE" ]] || exit 0
+fi
 
-clear || true
-echo -e "\n$ansi_art\n"
+printf '\n  斬  Z A N K E N\n  Preparing verified installation source\n\n'
 
 # Release mode is independent of package mirrors. Preserve the host's configured
 # Arch repositories; selecting dev must not rewrite pacman configuration.

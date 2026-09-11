@@ -45,9 +45,9 @@ mkdir -p "$ZANKEN_LIMINE_PACKAGE_DIR"
 for package in limine-snapper-sync limine-mkinitcpio-hook; do
   git clone "https://aur.archlinux.org/$package.git" "$ZANKEN_LIMINE_PACKAGE_DIR/$package"
   echo "Review $package recipe and any .install files before building."
-  less "$ZANKEN_LIMINE_PACKAGE_DIR/$package/PKGBUILD"
+  less "$ZANKEN_LIMINE_PACKAGE_DIR/$package/PKGBUILD" </dev/tty >/dev/tty
   for hook in "$ZANKEN_LIMINE_PACKAGE_DIR/$package/"*.install; do
-    [[ ! -f $hook ]] || less "$hook"
+    [[ ! -f $hook ]] || less "$hook" </dev/tty >/dev/tty
   done
   read -r -p "Build $package? [y/N] " answer
   [[ $answer == "y" || $answer == "Y" ]] || exit 1

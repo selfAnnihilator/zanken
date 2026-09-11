@@ -1,10 +1,12 @@
 # Installation
 
-Zanken runs on Arch Linux. The install script sets up everything from scratch.
+Zanken has two installation paths: full provisioning on fresh Arch, and an
+opt-in [existing Niri desktop replacement](desktop-takeover.md). The current
+VM-test candidate is not a published stable release.
 
 ## Prerequisites
 
-- Fresh Arch Linux install (bare minimum: `base`, `base-devel`, `git`)
+- Fresh x86_64 Arch Linux, Btrfs root and Limine for full provisioning
 - Internet connection
 - A user account with sudo access
 
@@ -18,26 +20,19 @@ bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/
 
 | Phase | Action |
 |-------|--------|
-| 1 | Install `base-devel git fish` via pacman |
-| 2 | Build and install `yay` AUR helper |
-| 3 | Install all required packages (see below) |
-| 4 | Clone `zanken` repo to `~/zanken` |
-| 5 | Install managed Niri and Quickshell defaults from Zanken itself |
-| 6 | Set fish as default shell |
-| 7 | Enable pipewire, wireplumber, NetworkManager, bluetooth services |
+| 1 | Resolve and verify an exact release source |
+| 2 | Reuse an existing Yay command; bootstrap only when missing |
+| 3 | Install missing packages from official repositories and the AUR |
+| 4 | Apply desktop and full-system configuration |
+| 5 | Activate the verified Niri/Quickshell desktop generation |
+| 6 | Report completion and offer an optional reboot |
 
 ## Packages installed
 
-```
-niri              quickshell        cava              swayosd
-elephant          playerctl         brightnessctl     wireplumber
-pipewire          pipewire-pulse    pipewire-audio    xdg-desktop-portal-gnome
-hypridle          swaybg            foot              fuzzel
-jq                polkit-gnome      grim              slurp
-wl-clipboard      fastfetch         ripgrep           curl
-networkmanager    bluez             bluez-utils       ttf-jetbrains-mono-nerd
-qutebrowser       python-adblock
-```
+Full provisioning uses `install/zanken-base.packages` and additional packaging
+stages. Desktop replacement uses `install/zanken-desktop.packages` only, plus
+bootstrap build tools. Both include the wallpaper/rendering and browser defaults;
+desktop replacement does not run bootloader or full-system configuration stages.
 
 ## After install
 
@@ -45,7 +40,7 @@ Log out and start a Niri session:
 
 ```bash
 # From a TTY (Ctrl+Alt+F2)
-niri --session niri
+niri --session
 ```
 
 Or configure your display manager to launch `niri`.
@@ -88,6 +83,10 @@ quickemu --vm archlinux-latest.conf
 ```
 
 Inside the VM, run `archinstall`, then reboot and run the install script.
+
+For the unpublished candidate, follow the guarded [fresh-VM test](fresh-vm-test.md)
+instead of the stable bootstrap. For a guest with an existing custom desktop,
+follow the [takeover test](desktop-takeover.md).
 
 !!! tip
     After archinstall completes, remove the `iso=` line from the `.conf` file before relaunching — otherwise quickemu boots from the ISO again.

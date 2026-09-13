@@ -86,19 +86,20 @@ sudo() {
 
   def test_error_handler_preserves_failure_status(self):
     source = (ROOT / "install/helpers/errors.sh").read_text()
-    prefix = source.split("catch_errors() {", 1)[1].split("  stop_log_output", 1)[0]
-    result = self.shell('''
-ERROR_HANDLING=false
-catch_errors() {
-''' + prefix + '\nprintf "%s" "$exit_code"\n}\n(exit 37)\ncatch_errors')
-    self.assertEqual(result.stdout, "37")
+    result = self.shell(source + '''
+stop_log_output() { :; }
+ZANKEN_INSTALL_LOG_FILE=/nonexistent-zanken-test.log
+(exit 37)
+''')
+    self.assertEqual(result.returncode, 37)
+    self.assertEqual(result.stdout.count('Installation stopped (status 37)'), 1)
 
   def test_exit_handler_forwards_explicit_exit_status(self):
     source = (ROOT / "install/helpers/errors.sh").read_text()
-    handler = source.split("exit_handler() {", 1)[1].split("# Set up traps", 1)[0]
-    result = self.shell('''
-ERROR_HANDLING=false
-catch_errors() { printf '%s' "$1"; }
-exit_handler() {
-''' + handler + '\n(exit 42)\nexit_handler')
-    self.assertEqual(result.stdout, "42")
+    result = self.shell(source + '''
+stop_log_output() { :; }
+ZANKEN_INSTALL_LOG_FILE=/nonexistent-zanken-test.log
+exit 42
+''')
+    self.assertEqual(result.returncode, 42)
+    self.assertEqual(result.stdout.count('Installation stopped (status 42)'), 1)

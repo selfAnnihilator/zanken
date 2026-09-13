@@ -8,6 +8,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 class PackageReuseTests(unittest.TestCase):
+  def test_spotify_is_not_installed_by_default(self):
+    base_packages = (ROOT / 'install/zanken-base.packages').read_text().splitlines()
+    desktop_packages = (ROOT / 'install/zanken-desktop.packages').read_text().splitlines()
+    self.assertNotIn('spotify', base_packages)
+    self.assertNotIn('spotify', desktop_packages)
+
   def test_bootstrap_keeps_existing_helper(self):
     with tempfile.TemporaryDirectory() as directory:
       folder = pathlib.Path(directory)

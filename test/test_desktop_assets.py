@@ -8,6 +8,25 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 class DesktopAssetsTests(unittest.TestCase):
+  def test_logo_font_installs_from_tracked_asset(self):
+    with tempfile.TemporaryDirectory() as directory:
+      home = pathlib.Path(directory) / 'home'
+      fake_bin = pathlib.Path(directory) / 'bin'
+      home.mkdir()
+      fake_bin.mkdir()
+      fc_cache = fake_bin / 'fc-cache'
+      fc_cache.write_text('#!/bin/bash\nexit 0\n')
+      fc_cache.chmod(0o755)
+      env = dict(os.environ, HOME=str(home), ZANKEN_PATH=str(ROOT),
+                 PATH=str(fake_bin) + ':' + os.environ['PATH'])
+      result = subprocess.run(
+        ['bash', '-e', '-c', f'source "{ROOT / "install/packaging/fonts.sh"}"'],
+        env=env, capture_output=True, text=True)
+      self.assertEqual(result.returncode, 0, result.stderr)
+      installed = home / '.local/share/fonts/omarchy.ttf'
+      self.assertTrue(installed.exists())
+      self.assertEqual(installed.read_bytes(), (ROOT / 'config/omarchy.ttf').read_bytes())
+
   def test_install_preserves_user_wallpaper_and_old_cursor(self):
     with tempfile.TemporaryDirectory() as directory:
       home = pathlib.Path(directory)

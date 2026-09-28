@@ -2,8 +2,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
-import QtQuick.Effects
-import QtQuick.Shapes
 
 ShellRoot {
   id: root
@@ -33,7 +31,6 @@ ShellRoot {
   property int sliceWidth: 108
   property int sliceHeight: 432
   property int sliceSpacing: -30
-  property int skewOffset: 28
   property int bottomChromeHeight: showLabels ? (filterable ? 104 : 74) : (filterable ? 60 : 30)
   property var imagesData: []
   property var videosData: []
@@ -310,7 +307,7 @@ ShellRoot {
   Process {
     id: loadImagesProc
     property string output: ""
-    command: ["bash", "-lc", "cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/omarchy/image-selector; while IFS= read -r dir; do [[ -n $dir && -d $dir ]] && find -L \"$dir\" -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' \\) -print0; done <<< " + shellQuote(root.imageDirs) + " | sort -z | while IFS= read -r -d '' image; do hash=$(md5sum \"$image\" | cut -d ' ' -f 1); thumb=\"$cache_dir/$hash.jpg\"; [[ -f $thumb ]] || thumb=$image; printf '%s\\t%s\\n' \"$image\" \"$thumb\"; done"]
+    command: ["bash", "-lc", "cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zanken/image-selector; while IFS= read -r dir; do [[ -n $dir && -d $dir ]] && find -L \"$dir\" -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' \\) -print0; done <<< " + shellQuote(root.imageDirs) + " | sort -z | while IFS= read -r -d '' image; do hash=$(md5sum \"$image\" | cut -d ' ' -f 1); thumb=\"$cache_dir/$hash.jpg\"; [[ -f $thumb ]] || thumb=$image; printf '%s\\t%s\\n' \"$image\" \"$thumb\"; done"]
     stdout: SplitParser {
       onRead: function(data) {
         loadImagesProc.output += data + "\n"
@@ -509,6 +506,14 @@ ShellRoot {
 
         Component.onCompleted: forceActiveFocus()
 
+        Text {
+          anchors.centerIn: parent
+          visible: root.imagesLoaded && root.imageArray.length === 0
+          text: root.activeTab === 0 ? "No wallpapers found" : "No videos found"
+          color: root.foreground
+          font.pixelSize: 22
+        }
+
         Repeater {
           model: root.imageArray.length
 
@@ -524,7 +529,7 @@ ShellRoot {
             readonly property bool matched: root.itemMatches(index)
             readonly property int relativeIndex: root.filteredPosition(index) - root.selectedFilteredPosition()
             readonly property bool selected: matched && index === root.selectedIndex
-            readonly property bool nearby: matched && Math.abs(relativeIndex) <= 16
+            readonly property bool nearby: matched && Math.abs(relativeIndex) <= 5
 
             visible: nearby
             x: selected ? carousel.previewX : (relativeIndex < 0 ? carousel.previewX + relativeIndex * carousel.itemStep : carousel.previewX + root.expandedWidth + root.sliceSpacing + (relativeIndex - 1) * carousel.itemStep)
@@ -533,74 +538,30 @@ ShellRoot {
             y: selected ? 0 : (root.expandedHeight - root.sliceHeight) / 2
             z: selected ? 100 : 50 - Math.min(Math.abs(relativeIndex), 40)
 
-            readonly property real skAbs: Math.abs(root.skewOffset)
-            readonly property real topLeft: root.skewOffset >= 0 ? skAbs : 0
-            readonly property real topRight: root.skewOffset >= 0 ? width : width - skAbs
-            readonly property real bottomRight: root.skewOffset >= 0 ? width - skAbs : width
-            readonly property real bottomLeft: root.skewOffset >= 0 ? 0 : skAbs
-
-            Item {
-              id: maskShape
+            Rectangle {
               anchors.fill: parent
-              visible: false
-              layer.enabled: true
-
-              Shape {
-                anchors.fill: parent
-                antialiasing: true
-                preferredRendererType: Shape.CurveRenderer
-                ShapePath {
-                  fillColor: "white"
-                  strokeColor: "transparent"
-                  startX: item.topLeft; startY: 0
-                  PathLine { x: item.topRight; y: 0 }
-                  PathLine { x: item.bottomRight; y: item.height }
-                  PathLine { x: item.bottomLeft; y: item.height }
-                  PathLine { x: item.topLeft; y: 0 }
-                }
-              }
-            }
-
-            Item {
-              anchors.fill: parent
-              layer.enabled: true
-              layer.smooth: true
-              layer.effect: MultiEffect {
-                maskEnabled: true
-                maskSource: maskShape
-                maskThresholdMin: 0.3
-                maskSpreadAtMin: 0.3
-              }
+              color: root.background
+              border.color: item.selected ? root.accent : root.withAlpha(root.foreground, 0.28)
+              border.width: item.selected ? 3 : 1
+              radius: 4
+              clip: true
 
               Image {
-                id: image
                 anchors.fill: parent
+                anchors.margins: item.selected ? 3 : 1
                 source: item.nearby ? root.fileUrl(item.thumbnailPath) : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true
                 smooth: true
+                sourceSize.width: item.selected ? root.expandedWidth : root.sliceWidth
+                sourceSize.height: item.selected ? root.expandedHeight : root.sliceHeight
               }
 
               Rectangle {
                 anchors.fill: parent
+                anchors.margins: item.selected ? 3 : 1
                 color: root.withAlpha(root.background, item.selected ? 0 : 0.42)
-              }
-            }
-
-            Shape {
-              anchors.fill: parent
-              antialiasing: true
-              preferredRendererType: Shape.CurveRenderer
-              ShapePath {
-                fillColor: "transparent"
-                strokeColor: item.selected ? root.accent : root.withAlpha(root.foreground, 0.28)
-                strokeWidth: item.selected ? 3 : 1
-                startX: item.topLeft; startY: 0
-                PathLine { x: item.topRight; y: 0 }
-                PathLine { x: item.bottomRight; y: item.height }
-                PathLine { x: item.bottomLeft; y: item.height }
-                PathLine { x: item.topLeft; y: 0 }
               }
             }
 

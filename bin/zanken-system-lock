@@ -11,7 +11,16 @@ LOCK_QML="$HOME/.local/share/qylock/quickshell-lockscreen/lock_shell.qml"
 # Fresh installs need a working lock even without the optional qylock checkout.
 if [[ ! -f $LOCK_SCRIPT || ! -f $LOCK_QML ]]; then
   if command -v swaylock >/dev/null; then
-    exec swaylock --daemonize --color 16161e
+    background=$(readlink -f "$HOME/.config/zanken/current/background" 2>/dev/null)
+    lock_args=(--daemonize --indicator-idle-visible --color 16161e)
+    if [[ -f $background ]]; then
+      case "${background,,}" in
+        *.jpg|*.jpeg|*.png)
+          lock_args+=(--image "$background" --scaling fill)
+          ;;
+      esac
+    fi
+    exec swaylock "${lock_args[@]}"
   fi
   echo 'No lock screen available: install swaylock or restore qylock.' >&2
   exit 1

@@ -183,7 +183,7 @@ generate_thumbnail() {
 
 thumbnail_for() {
   local image="$1"
-  local signature hash thumbnail
+  local signature hash thumbnail extension
 
   signature=$(stat -Lc '%s:%Y' "$image") || return
   hash=$(awk -F '\t' -v path="$image" -v sig="$signature" '$1 == path && $2 == sig { print $3; exit }' "$index_file" 2>/dev/null)
@@ -194,15 +194,17 @@ thumbnail_for() {
   fi
 
   thumbnail="$cache_dir/$hash.jpg"
+  extension=${image##*.}
 
   if [[ ! -f $thumbnail ]]; then
-    if [[ $lazy_thumbnails == true && $cache_only != true ]]; then
+    if [[ $lazy_thumbnails == true && $cache_only != true &&
+          ${extension,,} != "mp4" && ${extension,,} != "webm" &&
+          ${extension,,} != "mkv" && ${extension,,} != "avi" &&
+          ${extension,,} != "mov" ]]; then
       rows_cacheable=false
-
-      if [[ $prepare_only != true ]]; then
-        generate_thumbnail "$image" "$thumbnail" >/dev/null 2>&1 &
-      fi
-
+      # The picker must not launch a converter for every uncached wallpaper.
+      # Qt loads only nearby images and downscales them at decode time.
+      # Videos still need a frame thumbnail because Qt Image cannot load them.
       printf '%s' "$image"
       return
     fi
@@ -286,7 +288,7 @@ ensure_selector() {
 
   if [[ ! -S $socket_path ]]; then
     quickshell kill -p "$selector_qml" >/dev/null 2>&1 || true
-    quickshell -d -p "$selector_qml" >/dev/null
+    QSG_RENDER_LOOP=basic quickshell -d -p "$selector_qml" >/dev/null
 
     for ((i = 0; i < 100; i++)); do
       if [[ -S $socket_path ]]; then

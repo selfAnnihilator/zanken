@@ -33,11 +33,18 @@ class DesktopTakeoverTests(unittest.TestCase):
       command = Path(directory) / 'swaylock'
       command.write_text('#!/bin/bash\nprintf "%s\\n" "$@"\n')
       command.chmod(0o755)
+      background = Path(directory) / 'wallpaper.png'
+      background.write_bytes(b'fixture')
+      selected = Path(directory) / '.config/zanken/current/background'
+      selected.parent.mkdir(parents=True)
+      selected.symlink_to(background)
       result = subprocess.run(['bash', str(ROOT / 'bin/zanken-system-lock')],
         env={**os.environ, 'HOME': directory, 'PATH': directory + ':' + os.environ['PATH']},
         capture_output=True, text=True)
       self.assertEqual(result.returncode, 0, result.stderr)
       self.assertIn('--daemonize', result.stdout)
+      self.assertIn('--indicator-idle-visible', result.stdout)
+      self.assertIn(str(background), result.stdout)
 
   def run_shell(self, home, body):
     return subprocess.run(['bash', '-eEc',

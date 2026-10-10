@@ -203,26 +203,10 @@ Item {
         blockLoading: true
     }
 
-    FileView {
-        id: clipStore
-        path: root.clipStorePath
-        blockLoading: true
-    }
+    ClipboardHistory { id: clipboardHistory }
 
     readonly property string notifStorePath: StandardPaths.writableLocation(StandardPaths.CacheLocation) + "/qs-notifications.json"
-    readonly property string clipStorePath:  StandardPaths.writableLocation(StandardPaths.CacheLocation) + "/qs-clipboard.json"
-    property var clipHistory: []
-
-    Connections {
-        target: Quickshell
-        function onClipboardTextChanged() {
-            const t = Quickshell.clipboardText;
-            if (!t || t.trim().length === 0) return;
-            const filtered = root.clipHistory.filter(function(c) { return c.content !== t; });
-            root.clipHistory = [{content: t, time: Date.now()}].concat(filtered).slice(0, 50);
-            clipStore.setText(JSON.stringify(root.clipHistory));
-        }
-    }
+    readonly property var clipHistory: clipboardHistory.entries
     property var cardItems: []
     readonly property int notificationCount: root.cardItems.length
     property var toastItems: []
@@ -366,13 +350,11 @@ Item {
     }
 
     function clearClipHistory() {
-        root.clipHistory = [];
-        clipStore.setText("[]");
+        clipboardHistory.clear();
     }
 
     function removeClipItem(index) {
-        root.clipHistory = root.clipHistory.filter(function(c, i) { return i !== index; });
-        clipStore.setText(JSON.stringify(root.clipHistory));
+        clipboardHistory.remove(index);
     }
 
     property bool idleInhibit:      false
@@ -2160,13 +2142,6 @@ Item {
             }
         } catch(e) {}
         if (savedIdle === "1") root.idleInhibit = true;
-        try {
-            const text = clipStore.text();
-            if (text && text.length > 0) {
-                const saved = JSON.parse(text);
-                if (Array.isArray(saved)) root.clipHistory = saved;
-            }
-        } catch(e) {}
     }
 
     // ---------- Omarchy update probe ----------

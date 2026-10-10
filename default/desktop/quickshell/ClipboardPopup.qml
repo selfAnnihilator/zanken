@@ -89,6 +89,8 @@ CardWindow {
 
     // Copy-ack feedback
     property string copiedContent: ""
+    property var pendingCopy: null
+    property bool copyFailed: false
     Timer {
         id: copyAckReset
         interval: 1200
@@ -96,13 +98,48 @@ CardWindow {
     }
 
     function copyText(t) {
-        Quickshell.clipboardText = t;
-        clipPopup.copiedContent = t;
-        copyAckReset.restart();
+      clipPopup.pendingCopy = t;
+      clipPopup.copiedContent = "";
+      clipPopup.copyFailed = false;
+      startNextTextCopy();
+    }
+
+    function startNextTextCopy() {
+      if (textCopier.running || clipPopup.pendingCopy === null) return;
+      textCopier.content = clipPopup.pendingCopy;
+      clipPopup.pendingCopy = null;
+      textCopier.stdinEnabled = true;
+      textCopier.running = true;
+    }
+
+    // wl-copy sets the regular clipboard without requiring keyboard focus.
+    // Send text on stdin so large entries and shell characters stay intact.
+    Process {
+      id: textCopier
+      property string content: ""
+      command: ["wl-copy", "--type", "text/plain;charset=utf-8"]
+      onStarted: {
+        write(content);
+        stdinEnabled = false;
+      }
+      onExited: (code, status) => {
+        if (code === 0 && status === 0) {
+          if (clipPopup.pendingCopy === null) {
+            clipPopup.copiedContent = content;
+            copyAckReset.restart();
+            clipPopup.root.clipboardVisible = false;
+          }
+        } else {
+          clipPopup.copyFailed = true;
+          console.warn("Clipboard history: could not copy selected entry");
+        }
+        Qt.callLater(clipPopup.startNextTextCopy);
+      }
     }
 
     onRevealedChanged: {
         if (revealed) {
+            copyFailed = false;
             clipSearch = "";
             searchInput.text = "";
             fileTypeProbe.running = false;
@@ -335,6 +372,7 @@ CardWindow {
 
                                 Text {
                                     text: {
+                                        if (!modelData.time) return "RECOVERED";
                                         const d = new Date(modelData.time);
                                         return d.toLocaleTimeString(Qt.locale(), "HH:mm");
                                     }
@@ -548,7 +586,7 @@ CardWindow {
 
             Text {
                 anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
-                text: "ESC CLOSE"
+                text: clipPopup.copyFailed ? "COPY FAILED - TRY AGAIN" : "ESC CLOSE"
                 color: clipPopup.root.inkDeep; font.family: clipPopup.root.mono; font.pixelSize: 10
                 font.letterSpacing: 2; opacity: 0.7
             }

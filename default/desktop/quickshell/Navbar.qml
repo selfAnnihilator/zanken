@@ -2554,8 +2554,8 @@ Item {
     // the bus. We don't bind to a single "active" one — instead the hidden
     // Repeater below subscribes to each player's signals, and on any track
     // or playback change we recompute which player to surface in the bar.
-    // Preference: a playing player wins; otherwise the most-recently-seen
-    // paused one with non-empty metadata; otherwise nothing.
+    // Prefer the registered Kaze service in every playback state. Without
+    // Kaze, preserve the existing player ranking and browser exclusions.
     property MprisPlayer musicPlayer: null
     property string musicTitle: ""
     property string musicArtist: ""
@@ -2569,23 +2569,41 @@ Item {
 
     function refreshMusic() {
         const players = Mpris.players ? Mpris.players.values : [];
-        let best = null;
-        let bestRank = -1;
+        let kazePlayer = null;
         for (let i = 0; i < players.length; i++) {
             const p = players[i];
             if (!p) continue;
-            const entry = (p.desktopEntry || "").toLowerCase();
-            if (root._browserEntries.indexOf(entry) !== -1) continue;
-            const hasTitle = !!(p.trackTitle && p.trackTitle.length > 0);
-            // 2 = playing with title, 1 = paused with title, 0 = anything else.
-            // Ties broken by list order, which roughly tracks bus registration.
-            let rank = 0;
-            if (hasTitle && p.isPlaying) rank = 2;
-            else if (hasTitle) rank = 1;
-            if (rank > bestRank) { best = p; bestRank = rank; }
+            // Match the service we own, not a title/identity or a similar name.
+            if (p.dbusName === "org.mpris.MediaPlayer2.kaze") {
+                kazePlayer = p;
+                break;
+            }
         }
+
+        let best = null;
+        if (kazePlayer) {
+            // While Kaze is open, Kaze remains preferred whether Playing, Paused, or Stopped.
+            best = kazePlayer;
+        } else {
+            // Normal existing player selection fallback when Kaze is closed.
+            let bestRank = -1;
+            for (let i = 0; i < players.length; i++) {
+                const p = players[i];
+                if (!p) continue;
+                const entry = (p.desktopEntry || "").toLowerCase();
+                if (root._browserEntries.indexOf(entry) !== -1) continue;
+                const hasTitle = !!(p.trackTitle && p.trackTitle.length > 0);
+                // 2 = playing with title, 1 = paused with title, 0 = anything else.
+                // Ties broken by list order, which roughly tracks bus registration.
+                let rank = 0;
+                if (hasTitle && p.isPlaying) rank = 2;
+                else if (hasTitle) rank = 1;
+                if (rank > bestRank) { best = p; bestRank = rank; }
+            }
+        }
+
         root.musicPlayer  = best;
-        root.musicTitle   = best ? (best.trackTitle  || "") : "";
+        root.musicTitle   = best ? (best.trackTitle  || (best === kazePlayer ? "Kaze" : "")) : "";
         root.musicArtist  = best ? (best.trackArtist || "") : "";
         root.musicPlaying = best ? !!best.isPlaying : false;
     }
@@ -2602,10 +2620,30 @@ Item {
     function musicStop() {
         if (root.musicPlayer) root.musicPlayer.stop();
     }
+    IpcHandler {
+        target: "music"
+        function title(): string   { return root.musicTitle; }
+        function artist(): string  { return root.musicArtist; }
+        function playing(): bool   { return root.musicPlaying; }
+        function player(): string  { return root.musicPlayer ? (root.musicPlayer.desktopEntry || root.musicPlayer.identity || "unknown") : "none"; }
+        function toggle(): void    { root.musicToggle(); }
+        function next(): void      { root.musicNext(); }
+        function prev(): void      { root.musicPrev(); }
+        function stop(): void      { root.musicStop(); }
+        function open(): void      { root.openMusic(); }
+    }
+
     function openMusic() {
         root.closeAllCards();
         if (root.musicAnchorItem) root.anchorPopupTo(root.musicAnchorItem);
         root.musicVisible = true;
+    }
+
+    Connections {
+        target: Mpris.players
+        // Defer until the model has completed additions/removals, including a
+        // crashed player. No timer or polling is needed.
+        function onValuesChanged() { Qt.callLater(root.refreshMusic); }
     }
 
     Item {
@@ -2616,11 +2654,12 @@ Item {
                 required property MprisPlayer modelData
                 Connections {
                     target: modelData
+                    function onTrackChanged()         { root.refreshMusic(); }
                     function onPostTrackChanged()     { root.refreshMusic(); }
                     function onPlaybackStateChanged() { root.refreshMusic(); }
                 }
                 Component.onCompleted:   root.refreshMusic()
-                Component.onDestruction: root.refreshMusic()
+                Component.onDestruction: Qt.callLater(root.refreshMusic)
             }
         }
     }

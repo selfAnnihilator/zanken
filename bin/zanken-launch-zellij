@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# zanken:summary=Attach to or restore a named Zellij workspace
+# zanken:args=[session]
+
+set -euo pipefail
+
+if ! zanken-cmd-present zellij; then
+  echo "Zellij is not installed. Install it with: zanken-pkg-add zellij" >&2
+  exit 1
+fi
+
+# Avoid nesting multiplexers when this is called from an existing Zellij pane.
+if [[ -n ${ZELLIJ:-} ]]; then
+  exit 0
+fi
+
+session_name=${1:-main}
+# A final-tab close may still be clearing the old resurrection snapshot.
+# Wait for that operation before deciding whether to attach or create.
+umask 077
+exec 9>"${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zanken-zellij-session-$session_name.lock"
+flock --shared 9
+exec 9>&-
+exec zellij attach --create "$session_name"

@@ -1,0 +1,240 @@
+// Locked mode keeps application keys free. Alt+G opens Zellij's native guide.
+// Ctrl+Space (or Ctrl+B) retains the familiar tmux-style prefix commands.
+default_mode "locked"
+default_shell "fish"
+default_layout "zanken"
+theme "catppuccin-macchiato"
+session_name "main"
+attach_to_session true
+on_force_close "detach"
+auto_layout false
+pane_frames false
+pane_frame_style "none"
+mouse_mode true
+copy_command "wl-copy"
+copy_on_select true
+scroll_buffer_size 50000
+session_serialization true
+pane_viewport_serialization true
+scrollback_lines_to_serialize 50000
+serialization_interval 1
+support_kitty_keyboard_protocol true
+support_kitty_graphics_protocol true
+show_startup_tips false
+show_release_notes false
+web_server false
+web_sharing "off"
+
+// The zjstatus top bar is configured in layouts/zanken.kdl.
+// Show the native two-line guide only while using Zellij controls.
+plugins {
+  status-bar location="file:~/.config/zellij/plugins/status-bar.wasm" {
+    hide_when_locked true
+    overlay true
+    search_titles true
+  }
+}
+load_plugins {
+  "zellij:link"
+  status-bar
+}
+
+// Extend the built-in guided modes instead of replacing them.
+keybinds {
+  unbind "Ctrl g"
+  shared {
+    bind "Ctrl Alt x" {
+      MessagePlugin "status-bar" { name "zanken-close-focus"; }
+      SwitchToMode "locked"
+    }
+    bind "Alt z" { ToggleFocusFullscreen; }
+    // Group menus intercept input only after leaving command mode.
+    bind "Alt p" { TogglePaneInGroup; SwitchToMode "locked"; }
+    bind "Alt Shift p" { ToggleGroupMarking; SwitchToMode "locked"; }
+  }
+  shared_except "locked" {
+    bind "Alt g" { SwitchToMode "locked"; }
+  }
+  locked {
+    bind "Alt g" { SwitchToMode "normal"; }
+    bind "Ctrl Space" "Ctrl b" { SwitchToMode "tmux"; }
+  }
+  // These shortcuts also work while waiting for a prefix command.
+  shared_among "locked" "tmux" {
+    bind "Ctrl Shift h" { MoveFocus "left"; SwitchToMode "locked"; }
+    bind "Ctrl Shift j" { MoveFocus "down"; SwitchToMode "locked"; }
+    bind "Ctrl Shift k" { MoveFocus "up"; SwitchToMode "locked"; }
+    bind "Ctrl Shift l" { MoveFocus "right"; SwitchToMode "locked"; }
+    bind "Alt Enter" { NewPane "down"; SwitchToMode "locked"; }
+    bind "Alt Shift Enter" { NewPane "right"; SwitchToMode "locked"; }
+    bind "Alt Esc" { CloseFocus; SwitchToMode "locked"; }
+    bind "Ctrl Alt Shift Left" { Resize "Increase left"; }
+    bind "Ctrl Alt Shift Down" { Resize "Increase down"; }
+    bind "Ctrl Alt Shift Up" { Resize "Increase up"; }
+    bind "Ctrl Alt Shift Right" { Resize "Increase right"; }
+    bind "Alt 1" { GoToTab 1; SwitchToMode "locked"; }
+    bind "Alt 2" { GoToTab 2; SwitchToMode "locked"; }
+    bind "Alt 3" { GoToTab 3; SwitchToMode "locked"; }
+    bind "Alt 4" { GoToTab 4; SwitchToMode "locked"; }
+    bind "Alt 5" { GoToTab 5; SwitchToMode "locked"; }
+    bind "Alt 6" { GoToTab 6; SwitchToMode "locked"; }
+    bind "Alt 7" { GoToTab 7; SwitchToMode "locked"; }
+    bind "Alt 8" { GoToTab 8; SwitchToMode "locked"; }
+    bind "Alt 9" { GoToTab 9; SwitchToMode "locked"; }
+    bind "Alt Left" { GoToPreviousTab; SwitchToMode "locked"; }
+    bind "Alt Right" { GoToNextTab; SwitchToMode "locked"; }
+    bind "Alt Shift Left" { MoveTab "left"; SwitchToMode "locked"; }
+    bind "Alt Shift Right" { MoveTab "right"; SwitchToMode "locked"; }
+    bind "Alt Up" {
+      Run "zanken-cmd-zellij-session" "previous" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+    bind "Alt Down" {
+      Run "zanken-cmd-zellij-session" "next" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+  }
+  // With a locked default, Normal is a command mode and drops unbound input.
+  // Native actions must return to Locked so shells and plugin hints accept keys.
+  shared_among "normal" "pane" "tab" "resize" "move" "scroll" "search" "session" {
+    bind "Enter" "Esc" { SwitchToMode "locked"; }
+  }
+  pane {
+    bind "n" { NewPane; SwitchToMode "locked"; }
+    bind "d" { NewPane "down"; SwitchToMode "locked"; }
+    bind "r" { NewPane "right"; SwitchToMode "locked"; }
+    bind "s" { NewPane "stacked"; SwitchToMode "locked"; }
+    bind "x" { CloseFocus; SwitchToMode "locked"; }
+    bind "f" { ToggleFocusFullscreen; SwitchToMode "locked"; }
+    bind "Shift f" { ToggleFocusNoUiFullscreen; SwitchToMode "locked"; }
+    bind "z" { TogglePaneFrames; SwitchToMode "locked"; }
+    bind "w" { ToggleFloatingPanes; SwitchToMode "locked"; }
+    bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "locked"; }
+    bind "i" { TogglePanePinned; SwitchToMode "locked"; }
+  }
+  tab {
+    bind "n" { NewTab { layout "zanken"; }; SwitchToMode "locked"; }
+    bind "x" { CloseTab; SwitchToMode "locked"; }
+    bind "s" { ToggleActiveSyncTab; SwitchToMode "locked"; }
+    bind "b" { BreakPane; SwitchToMode "locked"; }
+    bind "]" { BreakPaneRight; SwitchToMode "locked"; }
+    bind "[" { BreakPaneLeft; SwitchToMode "locked"; }
+    bind "1" { GoToTab 1; SwitchToMode "locked"; }
+    bind "2" { GoToTab 2; SwitchToMode "locked"; }
+    bind "3" { GoToTab 3; SwitchToMode "locked"; }
+    bind "4" { GoToTab 4; SwitchToMode "locked"; }
+    bind "5" { GoToTab 5; SwitchToMode "locked"; }
+    bind "6" { GoToTab 6; SwitchToMode "locked"; }
+    bind "7" { GoToTab 7; SwitchToMode "locked"; }
+    bind "8" { GoToTab 8; SwitchToMode "locked"; }
+    bind "9" { GoToTab 9; SwitchToMode "locked"; }
+  }
+  scroll {
+    bind "e" { EditScrollback; SwitchToMode "locked"; }
+    bind "Ctrl c" { ScrollToBottom; SwitchToMode "locked"; }
+    bind "c" { CopyLastCommandOutput; SwitchToMode "locked"; }
+  }
+  search {
+    bind "Ctrl c" { ScrollToBottom; SwitchToMode "locked"; }
+  }
+  renamepane {
+    bind "Ctrl c" "Enter" { SwitchToMode "locked"; }
+  }
+  renametab {
+    bind "Ctrl c" "Enter" { SwitchToMode "locked"; }
+  }
+  session {
+    bind "]" { FocusHostSession; SwitchToMode "locked"; }
+    bind "[" { FocusGuestSession; SwitchToMode "locked"; }
+    bind "f" { ToggleHostFullscreen; SwitchToMode "locked"; }
+    bind "w" {
+      LaunchOrFocusPlugin "zellij:session-manager" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+    bind "c" {
+      LaunchOrFocusPlugin "file:~/.config/zellij/plugins/configuration.wasm" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+    bind "p" {
+      LaunchOrFocusPlugin "file:~/.config/zellij/plugins/plugin-manager.wasm" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+    bind "a" {
+      LaunchOrFocusPlugin "file:~/.config/zellij/plugins/about.wasm" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+    bind "s" {
+      LaunchOrFocusPlugin "file:~/.config/zellij/plugins/share.wasm" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+    bind "h" { MoveFocus "left"; }
+    bind "l" { MoveFocus "right"; }
+    bind "v" {
+      LaunchOrFocusPlugin "file:~/.config/zellij/plugins/layout-manager.wasm" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+  }
+  tmux clear-defaults=true {
+    bind "Ctrl Space" { Write 0; SwitchToMode "locked"; }
+    bind "Ctrl b" { Write 2; SwitchToMode "locked"; }
+    bind "h" { NewPane "down"; SwitchToMode "locked"; }
+    bind "v" { NewPane "right"; SwitchToMode "locked"; }
+    bind "x" {
+      MessagePlugin "status-bar" { name "zanken-close-focus"; }
+      SwitchToMode "locked"
+    }
+    bind "z" { ToggleFocusFullscreen; SwitchToMode "locked"; }
+    bind "c" { NewTab { layout "zanken"; }; SwitchToMode "locked"; }
+    bind "n" { GoToNextTab; SwitchToMode "locked"; }
+    bind "p" { GoToPreviousTab; SwitchToMode "locked"; }
+    bind "Tab" { ToggleTab; SwitchToMode "locked"; }
+    bind "r" { SwitchToMode "renametab"; TabNameInput 0; }
+    bind "d" { SwitchToMode "locked"; Detach; }
+    bind "[" { SwitchToMode "scroll"; }
+    bind "{" { MovePane "left"; SwitchToMode "locked"; }
+    bind "}" { MovePane "right"; SwitchToMode "locked"; }
+    bind "w" "s" {
+      LaunchOrFocusPlugin "zellij:session-manager" { floating true; move_to_focused_tab true; }
+      SwitchToMode "locked"
+    }
+    bind "C" {
+      Run "zanken-cmd-zellij-session" "new" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+    bind "R" {
+      Run "zanken-cmd-zellij-session" "rename" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+    bind "k" "K" {
+      Run "zanken-cmd-zellij-session" "kill" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+    bind "P" {
+      Run "zanken-cmd-zellij-session" "previous" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+    bind "N" {
+      Run "zanken-cmd-zellij-session" "next" { floating true; close_on_exit true; }
+      SwitchToMode "locked"
+    }
+    bind "?" {
+      Run "bash" "-c" "exec less \"${ZANKEN_PATH:-$HOME/zanken}/config/zellij/KEYBINDINGS.md\"" {
+        floating true
+        close_on_exit true
+      }
+      SwitchToMode "locked"
+    }
+    // Zellij reloads this config automatically when it changes.
+    bind "q" "Esc" "Enter" { SwitchToMode "locked"; }
+  }
+  // Plain Vim focus keys stay in the unlocked guide for repeated navigation.
+  normal {
+    bind "h" { MoveFocus "left"; }
+    bind "j" { MoveFocus "down"; }
+    bind "k" { MoveFocus "up"; }
+    bind "l" { MoveFocus "right"; }
+    bind "Alt n" { NewPane; SwitchToMode "locked"; }
+    bind "Alt f" { ToggleFloatingPanes; SwitchToMode "locked"; }
+    bind "Ctrl Space" { SwitchToMode "tmux"; }
+  }
+}

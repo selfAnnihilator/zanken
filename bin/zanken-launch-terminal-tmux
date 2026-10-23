@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# zanken:summary=Launch or attach to the Work tmux session in a terminal
+# zanken:summary=Open the Zellij workspace through the legacy tmux launcher route
 
-exec zanken-launch-terminal bash -c "tmux attach || tmux new -s Work"
+exec zanken-launch-terminal-zellij "$@"

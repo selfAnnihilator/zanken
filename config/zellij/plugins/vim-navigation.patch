@@ -1,0 +1,369 @@
+--- a/default-plugins/about/src/main.rs
++++ b/default-plugins/about/src/main.rs
+@@ -2,6 +2,9 @@
+ mod keybindings;
+ mod pages;
+ mod tips;
++#[allow(dead_code)]
++#[path = "../../../zanken-vim-navigation.rs"]
++mod vim_navigation;
+ use zellij_tile::prelude::*;
+ 
+ use pages::Page;
+@@ -70,6 +73,12 @@
+ 
+ impl ZellijPlugin for App {
+     fn load(&mut self, configuration: BTreeMap<String, String>) {
++        request_permission(&[
++            PermissionType::ReadApplicationState,
++            PermissionType::ChangeApplicationState,
++            PermissionType::Reconfigure,
++            PermissionType::RunCommands,
++        ]);
+         self.is_release_notes = configuration
+             .get("is_release_notes")
+             .map(|v| v == "true")
+@@ -79,6 +88,7 @@
+             .map(|v| v == "true")
+             .unwrap_or(false);
+         subscribe(&[
++            EventType::PermissionRequestResult,
+             EventType::Key,
+             EventType::Mouse,
+             EventType::ModeUpdate,
+@@ -160,6 +170,13 @@
+                     should_render = true;
+                 }
+             },
++            Event::PermissionRequestResult(PermissionStatus::Granted) => {
++                self.change_own_title();
++                self.query_link_executable();
++                *self.zellij_version.borrow_mut() = get_zellij_version();
++                self.refresh_active_page();
++                should_render = true;
++            },
+             Event::RunCommandResult(exit_code, _stdout, _stderr, context) => {
+                 let is_xdg_open = context.get("xdg_open_cli").is_some();
+                 let is_open = context.get("open_cli").is_some();
+@@ -186,11 +203,15 @@
+         should_render
+     }
+     fn render(&mut self, rows: usize, cols: usize) {
++        let footer_row = rows.saturating_sub(1);
++        let rows = rows.saturating_sub(2);
+         if let Some(error) = &self.error {
+             self.render_error(rows, cols, error.to_owned())
+         } else {
+             self.active_page.render(rows, cols, &self.error);
+         }
++
++        vim_navigation::footer(footer_row, cols, "jk: navigate/scroll | Enter: open | Esc: back");
+     }
+ }
+ 
+@@ -333,6 +354,7 @@
+         should_render
+     }
+     pub fn handle_key(&mut self, key: KeyWithModifier) -> bool {
++        let key = vim_navigation::arrows(key);
+         let mut should_render = false;
+         if key.bare_key == BareKey::Up && key.has_no_modifiers() && self.is_startup_tip {
+             self.previous_tip();
+--- a/default-plugins/configuration/src/main.rs
++++ b/default-plugins/configuration/src/main.rs
+@@ -2,6 +2,9 @@
+ mod presets_screen;
+ mod rebind_leaders_screen;
+ mod ui_components;
++#[allow(dead_code)]
++#[path = "../../../zanken-vim-navigation.rs"]
++mod vim_navigation;
+ 
+ use zellij_tile::prelude::*;
+ 
+@@ -91,11 +94,17 @@
+ 
+ impl ZellijPlugin for State {
+     fn load(&mut self, configuration: BTreeMap<String, String>) {
++        request_permission(&[
++            PermissionType::ReadApplicationState,
++            PermissionType::ChangeApplicationState,
++            PermissionType::Reconfigure,
++        ]);
+         self.is_setup_wizard = configuration
+             .get("is_setup_wizard")
+             .map(|v| v == "true")
+             .unwrap_or(false);
+         subscribe(&[
++            EventType::PermissionRequestResult,
+             EventType::Key,
+             EventType::FailedToWriteConfigToDisk,
+             EventType::ModeUpdate,
+@@ -123,6 +132,10 @@
+                 }
+                 self.latest_mode_info = Some(mode_info.clone());
+                 self.current_screen.update_mode_info(mode_info.clone());
++                should_render = true;
++            },
++            Event::PermissionRequestResult(PermissionStatus::Granted) => {
++                rename_plugin_pane(get_plugin_ids().plugin_id, "Configuration");
+                 should_render = true;
+             },
+             Event::Key(key) => {
+@@ -169,6 +182,8 @@
+         should_render
+     }
+     fn render(&mut self, rows: usize, cols: usize) {
++        let footer_row = rows.saturating_sub(1);
++        let rows = rows.saturating_sub(2);
+         let notification = self.notification.clone();
+         if self.is_in_main_screen() {
+             top_tab_menu(cols, &self.current_screen, &self.colors);
+@@ -195,6 +210,12 @@
+                 }
+             },
+         };
++
++        vim_navigation::footer(
++            footer_row,
++            cols,
++            "jk: select | h/l: leader columns | Space: edit/toggle | Tab: screen | fields: literal",
++        );
+     }
+ }
+ 
+--- a/default-plugins/configuration/src/presets_screen.rs
++++ b/default-plugins/configuration/src/presets_screen.rs
+@@ -65,6 +65,14 @@
+                     return rebind_leaders_screen.handle_key(key);
+                 },
+             }
++        }
++        let mut key = key;
++        if key.has_no_modifiers() {
++            key.bare_key = match key.bare_key {
++                BareKey::Char('j') => BareKey::Down,
++                BareKey::Char('k') => BareKey::Up,
++                other => other,
++            };
+         }
+         let mut should_render = false;
+         if self.notification.is_some() {
+@@ -136,6 +144,14 @@
+                 },
+             }
+         }
++        let mut key = key;
++        if key.has_no_modifiers() {
++            key.bare_key = match key.bare_key {
++                BareKey::Char('j') => BareKey::Down,
++                BareKey::Char('k') => BareKey::Up,
++                other => other,
++            };
++        }
+         let mut should_render = false;
+         if self.notification.is_some() {
+             self.notification = None;
+--- a/default-plugins/configuration/src/rebind_leaders_screen.rs
++++ b/default-plugins/configuration/src/rebind_leaders_screen.rs
+@@ -683,6 +683,11 @@
+         }
+     }
+     pub fn handle_key(&mut self, key: KeyWithModifier) -> bool {
++        let key = if self.rebinding_main_leader {
++            key
++        } else {
++            crate::vim_navigation::arrows(key)
++        };
+         if let Some(notification) = self.notification.take() {
+             drop(notification);
+             true
+--- a/default-plugins/layout-manager/src/main.rs
++++ b/default-plugins/layout-manager/src/main.rs
+@@ -2,6 +2,9 @@
+ mod screens;
+ mod text_input;
+ mod ui;
++#[allow(dead_code)]
++#[path = "../../../zanken-vim-navigation.rs"]
++mod vim_navigation;
+ 
+ use errors::format_kdl_error;
+ use screens::{KeyResponse, OptimisticUpdate, Screen};
+@@ -216,6 +219,12 @@
+ 
+ impl ZellijPlugin for State {
+     fn load(&mut self, _configuration: BTreeMap<String, String>) {
++        request_permission(&[
++            PermissionType::ReadApplicationState,
++            PermissionType::ChangeApplicationState,
++            PermissionType::OpenFiles,
++            PermissionType::WriteToClipboard,
++        ]);
+         subscribe(&[
+             EventType::PastedText,
+             EventType::SessionUpdate,
+@@ -230,6 +239,10 @@
+         let mut should_render = false;
+ 
+         match event {
++            Event::PermissionRequestResult(PermissionStatus::Granted) => {
++                rename_plugin_pane(get_plugin_ids().plugin_id, "Layout Manager");
++                should_render = true;
++            },
+             Event::PastedText(text) => {
+                 if let Screen::ImportLayout(ref mut import_screen) = self.screen {
+                     import_screen.handle_pasted_text(text);
+@@ -279,6 +292,8 @@
+     }
+ 
+     fn render(&mut self, rows: usize, cols: usize) {
++        let footer_row = rows.saturating_sub(1);
++        let rows = rows.saturating_sub(2);
+         match &mut self.screen {
+             Screen::LayoutList(layout_list_screen) => {
+                 layout_list_screen.render(&self.display_layouts, rows, cols)
+@@ -291,5 +306,11 @@
+             Screen::Error(ref error_screen) => error_screen.render(rows, cols),
+             Screen::ErrorDetail(ref error_detail_screen) => error_detail_screen.render(rows, cols),
+         }
+-    }
+-}
++
++        vim_navigation::footer(
++            footer_row,
++            cols,
++            "Manage: j/k select | Enter opens layout in a NEW TAB | / search | fields: type normally",
++        );
++    }
++}
+--- a/default-plugins/layout-manager/src/screens/layout_list/mod.rs
++++ b/default-plugins/layout-manager/src/screens/layout_list/mod.rs
+@@ -56,6 +56,14 @@
+         if self.search_state.is_typing() {
+             self.handle_typing_filter_mode(key, display_layouts)
+         } else {
++            let mut key = key;
++            if key.has_no_modifiers() {
++                key.bare_key = match key.bare_key {
++                    BareKey::Char('j') => BareKey::Down,
++                    BareKey::Char('k') => BareKey::Up,
++                    other => other,
++                };
++            }
+             match key.bare_key {
+                 BareKey::Char('/') if key.has_no_modifiers() => {
+                     self.search_state.start_typing();
+--- a/default-plugins/share/src/main.rs
++++ b/default-plugins/share/src/main.rs
+@@ -2,6 +2,9 @@
+ mod token_management_screen;
+ mod token_screen;
+ mod ui_components;
++#[allow(dead_code)]
++#[path = "../../../zanken-vim-navigation.rs"]
++mod vim_navigation;
+ 
+ use std::net::IpAddr;
+ use zellij_tile::prelude::*;
+@@ -26,15 +29,30 @@
+ 
+ impl ZellijPlugin for App {
+     fn load(&mut self, _configuration: BTreeMap<String, String>) {
+-        self.initialize();
++        request_permission(&[
++            PermissionType::ReadApplicationState,
++            PermissionType::ChangeApplicationState,
++            PermissionType::StartWebServer,
++            PermissionType::RunCommands,
++        ]);
++        self.subscribe_to_events();
+     }
+ 
+     fn update(&mut self, event: Event) -> bool {
+-        if !self.web_server.capability && !matches!(event, Event::ModeUpdate(_)) {
++        if !self.web_server.capability
++            && !matches!(
++                event,
++                Event::ModeUpdate(_) | Event::PermissionRequestResult(_)
++            )
++        {
+             return false;
+         }
+ 
+         match event {
++            Event::PermissionRequestResult(PermissionStatus::Granted) => {
++                self.initialize();
++                true
++            },
+             Event::Timer(_) => self.handle_timer(),
+             Event::ModeUpdate(mode_info) => self.handle_mode_update(mode_info),
+             Event::WebServerStatus(status) => self.handle_web_server_status(status),
+@@ -49,6 +67,8 @@
+     }
+ 
+     fn render(&mut self, rows: usize, cols: usize) {
++        let footer_row = rows.saturating_sub(1);
++        let rows = rows.saturating_sub(2);
+         if !self.web_server.capability {
+             self.render_no_capability_message(rows, cols);
+             return;
+@@ -60,6 +80,12 @@
+             Screen::Token(token) => self.render_token_screen(rows, cols, token),
+             Screen::ManageTokens => self.render_manage_tokens_screen(rows, cols),
+         }
++
++        vim_navigation::footer(
++            footer_row,
++            cols,
++            "jk: select in token list | Esc: back | name fields: type normally",
++        );
+     }
+ }
+ 
+@@ -74,6 +100,7 @@
+ 
+     fn subscribe_to_events(&self) {
+         subscribe(&[
++            EventType::PermissionRequestResult,
+             EventType::Key,
+             EventType::ModeUpdate,
+             EventType::WebServerStatus,
+@@ -212,6 +239,7 @@
+     }
+ 
+     fn handle_token_screen_keys(&mut self, key: KeyWithModifier) -> bool {
++        let key = vim_navigation::arrows(key);
+         match key.bare_key {
+             BareKey::Esc if key.has_no_modifiers() => {
+                 self.change_to_previous_screen();
+@@ -226,6 +254,7 @@
+             return true;
+         }
+ 
++        let key = vim_navigation::arrows(key);
+         match key.bare_key {
+             BareKey::Esc if key.has_no_modifiers() => self.handle_escape_key(),
+             BareKey::Down if key.has_no_modifiers() => self.tokens.navigate_down(),
+--- /dev/null
++++ b/zanken-vim-navigation.rs
+@@ -0,0 +1,19 @@
++use zellij_tile::prelude::*;
++
++pub fn arrows(mut key: KeyWithModifier) -> KeyWithModifier {
++    if key.has_no_modifiers() {
++        key.bare_key = match key.bare_key {
++            BareKey::Char('h') => BareKey::Left,
++            BareKey::Char('j') => BareKey::Down,
++            BareKey::Char('k') => BareKey::Up,
++            BareKey::Char('l') => BareKey::Right,
++            other => other,
++        };
++    }
++    key
++}
++
++pub fn footer(row: usize, cols: usize, hint: &str) {
++    let text: String = hint.chars().take(cols).collect();
++    print_text_with_coordinates(Text::new(text).color_all(2), 0, row, Some(cols), None);
++}

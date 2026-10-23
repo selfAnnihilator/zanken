@@ -141,7 +141,7 @@ binds {
     // Terminal
     Mod+Return { spawn "foot"; }
     Mod+T { spawn "foot"; }
-    Mod+Alt+Return { spawn "foot" "-e" "tmux" "new-session" "-A" "-s" "main"; }
+    Mod+Alt+Return { spawn "foot" "-e" "zanken-launch-zellij"; }
 
     // Browser / file manager / editor
     Mod+Shift+Return { spawn "zanken-launch-browser"; }

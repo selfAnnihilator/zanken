@@ -1,0 +1,18 @@
+--- a/src/widgets/tabs.rs
++++ b/src/widgets/tabs.rs
+@@ -315,6 +315,15 @@
+                 content = content.replace("{name}", tab_name);
+             }
+ 
++            // Keep session tab names intact while displaying compact numbered glyphs.
++            if content.contains("{index_icon}") {
++                let index = if self.tab_zero_based_index { tab.position } else { tab.position + 1 };
++                let glyphs = ["󰎦", "󰎩", "󰎬", "󰎮", "󰎰", "󰎵", "󰎸", "󰎻", "󰎾"];
++                let icon = index.checked_sub(1).and_then(|i| glyphs.get(i))
++                    .map(|glyph| (*glyph).to_owned()).unwrap_or_else(|| index.to_string());
++                content = content.replace("{index_icon}", &icon);
++            }
++
+             if content.contains("{index}") {
+                 let index = match self.tab_zero_based_index {
+                     true => tab.position,

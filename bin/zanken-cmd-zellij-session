@@ -1,0 +1,246 @@
+#!/bin/bash
+
+# zanken:summary=Manage Zellij sessions or permanently close the current tab
+# zanken:args=[new|rename|previous|next|reset|close-tab|kill]
+
+set -euo pipefail
+
+session_attached() {
+  timeout 2 zellij --session "$1" action list-clients 2>/dev/null |
+    awk 'NR == 1 && $1 == "CLIENT_ID" { header = 1 }
+         NR > 1 && header && $1 ~ /^[0-9]+$/ { attached = 1 }
+         END { exit !attached }'
+}
+
+session_running() {
+  zellij list-sessions --no-formatting 2>/dev/null |
+    awk -v target="$1" '!/\(EXITED - attach to resurrect\)$/ {
+      sub(/ \[Created.*$/, "")
+      if ($0 == target) running = 1
+    } END { exit !running }'
+}
+
+wait_for_attachment() {
+  local attempt
+  for (( attempt = 0; attempt < 80; attempt++ )); do
+    if session_attached "$1"; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "Timed out waiting to attach to session: $1" >&2
+  return 1
+}
+
+stop_and_forget() {
+  local attempt status
+  zellij kill-session -- "$1"
+  # Delete only after shutdown; force-delete can race the server's final save.
+  for (( attempt = 0; attempt < 80; attempt++ )); do
+    if ! session_running "$1"; then
+      if zellij delete-session -- "$1"; then
+        return 0
+      else
+        status=$?
+        # An unsaved bridge may not have resurrection data yet.
+        (( status == 2 )) && return 0
+        return "$status"
+      fi
+    fi
+    sleep 0.1
+  done
+  echo "Timed out stopping session: $1" >&2
+  return 1
+}
+
+if [[ ${1:-} == "_close-focus" ]]; then
+  (( $# == 4 )) || exit 2
+  closing_session=$2
+  closing_pane=$3
+  closing_tab=$4
+  [[ -n $closing_session && $closing_pane =~ ^(terminal|plugin)_[0-9]+$ && $closing_tab =~ ^[0-9]+$ ]] || exit 2
+  unset ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID
+  close_runtime=${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}
+  umask 077
+  exec 9>"$close_runtime/zanken-zellij-session-$closing_session.lock"
+  flock --nonblock 9 || exit 0
+  # A held close key must not acquire each newly focused pane in succession.
+  # Extend the quiet period for every request, including ignored repeats.
+  close_stamp="$close_runtime/zanken-zellij-close-focus-$closing_session.last"
+  close_now=${EPOCHREALTIME/./}
+  close_previous=0
+  if [[ -f $close_stamp ]]; then
+    read -r close_previous < "$close_stamp" || true
+    [[ $close_previous =~ ^[0-9]+$ ]] || close_previous=0
+  fi
+  printf '%s\n' "$close_now" > "$close_stamp"
+  if (( close_now >= close_previous && close_now - close_previous < 750000 )); then
+    exit 0
+  fi
+  close_log=$(mktemp "$close_runtime/zanken-close-tab.XXXXXXXX")
+  session_helper=$(realpath -- "${BASH_SOURCE[0]}")
+  setsid --fork "$session_helper" _close-focus-worker "$closing_session" "$closing_pane" "$closing_tab" "$close_log" \
+    </dev/null >"$close_log" 2>&1
+  exit 0
+fi
+
+if [[ ${1:-} == "_close-focus-worker" ]]; then
+  (( $# == 5 )) || exit 2
+  closing_session=$2
+  closing_pane=$3
+  closing_tab=$4
+  close_log=$5
+  [[ -n $closing_session && $closing_pane =~ ^(terminal|plugin)_[0-9]+$ && $closing_tab =~ ^[0-9]+$ ]] || exit 2
+  panes=$(zellij --session "$closing_session" action list-panes --all --json)
+  if ! jq -e --argjson tab "$closing_tab" --argjson id "${closing_pane#*_}" --arg kind "${closing_pane%%_*}" \
+    'any(.[]; .tab_id == $tab and .id == $id and .is_plugin == ($kind == "plugin") and (.is_suppressed | not))' <<<"$panes" >/dev/null; then
+    rm -f -- "$close_log"
+    exit 0
+  fi
+  pane_count=$(jq --argjson tab "$closing_tab" '[.[] | select(.tab_id == $tab and .is_selectable and (.is_suppressed | not))] | length' <<<"$panes")
+  if (( pane_count > 1 )); then
+    zellij --session "$closing_session" action close-pane --pane-id "$closing_pane"
+    zellij --session "$closing_session" action save-session
+    rm -f -- "$close_log"
+    exit 0
+  fi
+  exec "${BASH_SOURCE[0]}" _close-tab-worker "$closing_session" "$closing_tab" "$close_log"
+fi
+
+if [[ ${1:-} == "_close-tab-worker" ]]; then
+  (( $# == 4 )) || exit 2
+  closing_session=$2
+  closing_tab=$3
+  close_log=$4
+  [[ -n $closing_session && $closing_tab =~ ^[0-9]+$ ]] || exit 2
+  unset ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID
+  tabs=$(zellij --session "$closing_session" action list-tabs --all --json)
+  if ! jq -e --argjson id "$closing_tab" 'any(.[]; .tab_id == $id)' <<<"$tabs" >/dev/null; then
+    rm -f -- "$close_log"
+    exit 0
+  fi
+  if (( $(jq 'length' <<<"$tabs") == 1 )); then
+    # Closing the final tab normally leaves its last layout resurrectable.
+    stop_and_forget "$closing_session"
+  else
+    zellij --session "$closing_session" action close-tab --tab-id "$closing_tab"
+    # Persist the remaining tabs before a quick detach or shutdown can restore
+    # the previous snapshot. The worker survives its originating tab closing.
+    zellij --session "$closing_session" action save-session
+  fi
+  rm -f -- "$close_log"
+  exit 0
+fi
+
+if [[ ${1:-} == "_kill-worker" ]]; then
+  (( $# == 3 )) || exit 2
+  closing_session=$2
+  kill_log=$3
+  [[ -n $closing_session ]] || exit 2
+  unset ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID
+  stop_and_forget "$closing_session"
+  rm -f -- "$kill_log"
+  exit 0
+fi
+
+if [[ ${1:-} == "_reset-worker" ]]; then
+  (( $# == 4 )) || exit 2
+  previous_session=$2
+  bridge_session=$3
+  reset_log=$4
+  [[ -n $previous_session && $bridge_session == zanken-reset.* ]] || exit 2
+  unset ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID
+  # The client waits safely in a temporary session while the old one is removed.
+  # This worker has its own process group so closing the old panes cannot kill it.
+  wait_for_attachment "$bridge_session"
+  stop_and_forget "$previous_session"
+  reset_payload=$(jq -cn --arg session "$previous_session" --arg cwd "$HOME" '{session: $session, cwd: $cwd}')
+  # A new client's last-active ID is unset until its first keystroke. Ask the
+  # bridge's guide to switch its own client rather than addressing a CLI client.
+  for (( attempt = 0; attempt < 80; attempt++ )); do
+    if session_attached "$previous_session"; then
+      break
+    fi
+    zellij --session "$bridge_session" action pipe --name zanken-reset-return -- "$reset_payload"
+    sleep 0.1
+  done
+  wait_for_attachment "$previous_session"
+  stop_and_forget "$bridge_session"
+  rm -f -- "$reset_log"
+  exit 0
+fi
+
+if [[ -z ${ZELLIJ_SESSION_NAME:-} ]]; then
+  echo "Run this command inside Zellij." >&2
+  exit 1
+fi
+
+case ${1:-} in
+  new|rename)
+    if [[ $1 == "new" ]]; then
+      session_name=$(gum input --header "New session" --placeholder "Session name") || exit 0
+    else
+      session_name=$(gum input --header "Rename session" --value "$ZELLIJ_SESSION_NAME") || exit 0
+    fi
+    [[ -n $session_name ]] || exit 0
+    if [[ $1 == "new" ]]; then
+      zellij action switch-session "$session_name" --cwd "$PWD"
+    else
+      zellij action rename-session "$session_name"
+    fi
+    ;;
+  previous|next)
+    # Only cycle live sessions; resurrectable sessions remain in the picker.
+    mapfile -t sessions < <(zellij list-sessions --no-formatting | sed -n '/EXITED/!s/ \[Created.*//p')
+    (( ${#sessions[@]} > 1 )) || exit 0
+    for index in "${!sessions[@]}"; do
+      if [[ ${sessions[index]} == "$ZELLIJ_SESSION_NAME" ]]; then
+        if [[ $1 == "previous" ]]; then
+          index=$(( (index + ${#sessions[@]} - 1) % ${#sessions[@]} ))
+        else
+          index=$(( (index + 1) % ${#sessions[@]} ))
+        fi
+        exec zellij action switch-session "${sessions[index]}"
+      fi
+    done
+    ;;
+  kill)
+    kill_runtime=${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}
+    umask 077
+    exec 9>"$kill_runtime/zanken-zellij-session-$ZELLIJ_SESSION_NAME.lock"
+    flock --nonblock 9 || exit 0
+    kill_log=$(mktemp "$kill_runtime/zanken-kill.XXXXXXXX")
+    session_helper=$(realpath -- "${BASH_SOURCE[0]}")
+    # Survive the session and terminal exiting so saved-state deletion finishes.
+    setsid --fork "$session_helper" _kill-worker "$ZELLIJ_SESSION_NAME" "$kill_log" \
+      </dev/null >"$kill_log" 2>&1
+    ;;
+  close-tab)
+    closing_tab=$(zellij action current-tab-info --json | jq -er '.tab_id')
+    close_runtime=${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}
+    umask 077
+    exec 9>"$close_runtime/zanken-zellij-session-$ZELLIJ_SESSION_NAME.lock"
+    flock --nonblock 9 || exit 0
+    close_log=$(mktemp "$close_runtime/zanken-close-tab.XXXXXXXX")
+    session_helper=$(realpath -- "${BASH_SOURCE[0]}")
+    setsid --fork "$session_helper" _close-tab-worker "$ZELLIJ_SESSION_NAME" "$closing_tab" "$close_log" \
+      </dev/null >"$close_log" 2>&1
+    ;;
+  reset)
+    [[ $ZELLIJ_SESSION_NAME == zanken-reset.* ]] && exit 0
+    reset_runtime=${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}
+    umask 077
+    exec 9>"$reset_runtime/zanken-zellij-session-$ZELLIJ_SESSION_NAME.lock"
+    flock --nonblock 9 || exit 0
+    reset_log=$(mktemp "$reset_runtime/zanken-reset.XXXXXXXX")
+    bridge_session=${reset_log##*/}
+    session_helper=$(realpath -- "${BASH_SOURCE[0]}")
+    setsid --fork "$session_helper" _reset-worker "$ZELLIJ_SESSION_NAME" "$bridge_session" "$reset_log" \
+      </dev/null >"$reset_log" 2>&1
+    zellij action switch-session "$bridge_session" --layout zanken --cwd "$HOME"
+    ;;
+  *)
+    echo "Usage: zanken-cmd-zellij-session [new|rename|previous|next|reset|close-tab|kill]" >&2
+    exit 2
+    ;;
+esac

@@ -1,0 +1,52 @@
+// xtrasmal-style numbered tabs below; the on-demand native guide overlays the top.
+layout {
+  default_tab_template {
+    children
+    pane size=2 borderless=true {
+      plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
+        format_left "{mode}{tabs}"
+        format_center ""
+        format_right "{datetime}"
+        format_space "#[bg=#242436] "
+        format_hide_on_overlength "true"
+        format_precedence "crl"
+        border_enabled "true"
+        border_char " "
+        border_format "#[bg=default]{char}"
+        border_position "top"
+        mode_normal "#[bg=#242436,fg=#f9e2af,bold]  "
+        mode_locked "#[bg=#242436,fg=#f38ba8,bold] 󰚌 "
+        mode_resize "#[bg=#242436,fg=#f38ba8,bold] RESIZE "
+        mode_pane "#[bg=#242436,fg=#89b4fa,bold] PANE "
+        mode_tab "#[bg=#242436,fg=#b4befe,bold] TAB "
+        mode_scroll "#[bg=#242436,fg=#f9e2af,bold] SCROLL "
+        mode_enter_search "#[bg=#242436,fg=#8aadf4,bold] ENT-SEARCH "
+        mode_search "#[bg=#242436,fg=#8aadf4,bold] SEARCH "
+        mode_rename_tab "#[bg=#242436,fg=#b4befe,bold] RENAME-TAB "
+        mode_rename_pane "#[bg=#242436,fg=#89b4fa,bold] RENAME-PANE "
+        mode_session "#[bg=#242436,fg=#74c7ec,bold] SESSION "
+        mode_move "#[bg=#242436,fg=#f5c2e7,bold] MOVE "
+        mode_prompt "#[bg=#242436,fg=#8aadf4,bold] PROMPT "
+        mode_tmux "#[bg=#242436,fg=#f5a97f,bold] TMUX "
+        tab_normal "#[bg=#242436,fg=#9399b2,bold] {index} "
+        tab_normal_fullscreen "#[bg=#242436,fg=#9399b2,bold] {index} "
+        tab_normal_sync "#[bg=#242436,fg=#9399b2,bold] {index} "
+        tab_active "#[bg=#242436,fg=#8aadf4,bold] {index} #[bg=#242436,fg=#f9e2af]{floating_indicator}"
+        tab_active_fullscreen "#[bg=#242436,fg=#f9e2af,bold] {index} {fullscreen_indicator}"
+        tab_active_sync "#[bg=#242436,fg=#a6da95,bold] {index} {sync_indicator}"
+        tab_separator "#[bg=#242436,fg=#8bd5ca,bold] ⋮ "
+        tab_sync_indicator " "
+        tab_fullscreen_indicator " "
+        tab_floating_indicator ""
+        tab_rename "#[bg=#242436,fg=#8aadf4,bold]{index} {name}"
+        datetime "#[bg=#242436,fg=#a6adc8,bold] {format} "
+        datetime_format "%A, %d %b %Y %H:%M"
+        datetime_timezone "Asia/Kolkata"
+        hide_frame_for_single_pane "false"
+      }
+    }
+  }
+  tab {
+    pane
+  }
+}

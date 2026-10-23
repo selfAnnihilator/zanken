@@ -1,0 +1,664 @@
+--- a/default-plugins/status-bar/src/first_line.rs
++++ b/default-plugins/status-bar/src/first_line.rs
+@@ -156,7 +156,7 @@
+         KeyMode::Selected => palette.selected,
+         KeyMode::Disabled => palette.disabled,
+     };
+-    let start_separator = if !has_common_modifiers && first_tile {
++    let start_separator = if separator == "⋮" || (!has_common_modifiers && first_tile) {
+         ""
+     } else {
+         separator
+@@ -208,7 +208,7 @@
+         KeyMode::Selected => palette.selected,
+         KeyMode::Disabled => palette.disabled,
+     };
+-    let start_separator = if !has_common_modifiers && first_tile {
++    let start_separator = if separator == "⋮" || (!has_common_modifiers && first_tile) {
+         ""
+     } else {
+         separator
+@@ -277,7 +277,7 @@
+         KeyMode::Selected => palette.selected,
+         KeyMode::Disabled => palette.disabled,
+     };
+-    let start_separator = if !has_common_modifiers && first_tile {
++    let start_separator = if separator == "⋮" || (!has_common_modifiers && first_tile) {
+         ""
+     } else {
+         separator
+@@ -344,7 +344,7 @@
+     line_part
+ }
+ 
+-fn swap_layout_keycode(mode_info: &ModeInfo) -> LinePart {
++fn swap_layout_keycode(mode_info: &ModeInfo, separator: &str) -> LinePart {
+     let mode_keybinds = mode_info.get_mode_keybinds();
+     let prev_next_keys = action_key_group(
+         &mode_keybinds,
+@@ -353,7 +353,7 @@
+     let prev_next_keys_indicator = style_key_with_modifier(
+         &prev_next_keys,
+         &mode_info.style.colors,
+-        Some(mode_info.style.colors.text_unselected.background),
++        if separator == "⋮" { None } else { Some(mode_info.style.colors.text_unselected.background) },
+     );
+     let keycode = ANSIStrings(&prev_next_keys_indicator);
+     let len = unstyled_len(&keycode);
+@@ -373,7 +373,7 @@
+         Some(swap_layout_name) => {
+             let mut swap_layout_name = format!(" {} ", swap_layout_name);
+             swap_layout_name.make_ascii_uppercase();
+-            let keycode = swap_layout_keycode(mode_info);
++            let keycode = swap_layout_keycode(mode_info, separator);
+             let swap_layout_name_len = swap_layout_name.len() + 3; // 2 for the arrow separators, one for the screen end buffer
+                                                                    //
+             macro_rules! style_swap_layout_indicator {
+@@ -607,13 +607,21 @@
+ }
+ 
+ pub fn first_line(
+-    help: &ModeInfo,
+-    tab_info: Option<&TabInfo>,
+-    max_len: usize,
+-    separator: &str,
++    help: &ModeInfo, tab_info: Option<&TabInfo>, max_len: usize, separator: &str,
+ ) -> LinePart {
+     let supports_arrow_fonts = !help.capabilities.arrow_fonts;
+-    let colored_elements = color_elements(help.style.colors, !supports_arrow_fonts, false);
++    first_line_styled(help, tab_info, max_len, separator,
++        color_elements(help.style.colors, !supports_arrow_fonts, false))
++}
++
++pub fn reference_first_line(help: &ModeInfo, tab_info: Option<&TabInfo>, max_len: usize) -> LinePart {
++    first_line_styled(help, tab_info, max_len, "⋮", crate::reference_color_elements())
++}
++
++fn first_line_styled(
++    help: &ModeInfo, tab_info: Option<&TabInfo>, max_len: usize, separator: &str,
++    colored_elements: ColoredElements,
++) -> LinePart {
+     let binds = &help.get_mode_keybinds();
+     // Unselect all by default
+     let mut default_keys = vec![
+--- a/default-plugins/status-bar/src/main.rs
++++ b/default-plugins/status-bar/src/main.rs
+@@ -34,6 +34,15 @@
+ 
+ #[derive(Default)]
+ struct State {
++    permissions_granted: bool,
++    hide_when_locked: bool,
++    overlay: bool,
++    reference_style: bool,
++    overlay_hidden: bool,
++    overlay_named: bool,
++    overlay_target: Option<(usize, usize, usize, usize)>,
++    search_titles: bool,
++    search_titles_visible: bool,
+     tabs: Vec<TabInfo>,
+     tip_name: String,
+     mode_info: ModeInfo,
+@@ -88,6 +97,25 @@
+     pub char_right_separator: Style,
+     pub styled_text: Style,
+     pub suffix_separator: Style,
++}
++
++// Foreground-only colors shared with the reference tab bar.
++fn reference_color_elements() -> ColoredElements {
++    let grey = Style::new().fg(ansi_term::Color::RGB(108, 112, 134));
++    let text = Style::new().fg(ansi_term::Color::RGB(147, 153, 178));
++    let blue = Style::new().fg(ansi_term::Color::RGB(138, 173, 244)).bold();
++    let cyan = Style::new().fg(ansi_term::Color::RGB(139, 213, 202));
++    let segment = |label, key| SegmentStyle {
++        prefix_separator: cyan, char_left_separator: grey, char_shortcut: key,
++        char_right_separator: grey, styled_text: label, suffix_separator: cyan,
++    };
++    ColoredElements {
++        selected: segment(blue, blue),
++        unselected: segment(text, blue),
++        unselected_alternate: segment(text, blue),
++        disabled: segment(grey, grey),
++        superkey_prefix: text, superkey_suffix_separator: cyan,
++    }
+ }
+ 
+ // I really hate this, but I can't come up with a good solution for this,
+@@ -231,6 +259,26 @@
+ 
+ impl ZellijPlugin for State {
+     fn load(&mut self, configuration: BTreeMap<String, String>) {
++        request_permission(&[
++            PermissionType::ReadApplicationState,
++            PermissionType::ChangeApplicationState,
++            PermissionType::ReadCliPipes,
++            PermissionType::RunCommands,
++        ]);
++        self.hide_when_locked = configuration
++            .get("hide_when_locked")
++            .map(|value| value == "true")
++            .unwrap_or(false);
++        self.overlay = configuration.get("overlay").map(|value| value == "true").unwrap_or(false);
++        // Preserve the alias configuration used by running MessagePlugin bindings.
++        self.reference_style = configuration.get("reference_style").map(|v| v == "true").unwrap_or(self.overlay);
++        if self.overlay {
++            // Background plugins may be restored before the client's first
++            // ModeUpdate. Match this workspace's locked startup in that interval.
++            self.mode_info.mode = InputMode::Locked;
++        }
++        self.mode_info.session_name = std::env::var("ZELLIJ_SESSION_NAME").ok();
++        self.search_titles = configuration.get("search_titles").map(|value| value == "true").unwrap_or(false);
+         // TODO: Should be able to choose whether to use the cache through config.
+         self.tip_name = get_cached_tip_name();
+         self.classic_ui = configuration
+@@ -239,6 +287,7 @@
+             .unwrap_or(false);
+         set_selectable(false);
+         subscribe(&[
++            EventType::PermissionRequestResult,
+             EventType::ModeUpdate,
+             EventType::TabUpdate,
+             EventType::PaneUpdate,
+@@ -253,6 +302,11 @@
+     fn update(&mut self, event: Event) -> bool {
+         let mut should_render = false;
+         match event {
++            Event::PermissionRequestResult(PermissionStatus::Granted) => {
++                self.permissions_granted = true;
++                set_selectable(false);
++                should_render = true;
++            },
+             Event::InitialKeybinds(keybinds) => {
+                 self.cached_keybinds = keybinds;
+                 if !self.cached_keybinds.is_empty() {
+@@ -261,6 +315,9 @@
+                 should_render = true;
+             },
+             Event::ModeUpdate(mut mode_info) => {
++                if mode_info.session_name.is_none() {
++                    mode_info.session_name = self.mode_info.session_name.clone();
++                }
+                 if mode_info.keybinds.is_empty() && !self.cached_keybinds.is_empty() {
+                     mode_info.keybinds = self.cached_keybinds.clone();
+                 } else if !mode_info.keybinds.is_empty() {
+@@ -277,6 +334,31 @@
+                     should_render = true;
+                 }
+                 self.tabs = tabs;
++            },
++            Event::PaneUpdate(panes) if self.hide_when_locked && self.permissions_granted => {
++                let own_id = get_plugin_ids().plugin_id;
++                if panes.panes.values().flatten().any(|pane| pane.is_plugin && pane.id < own_id &&
++                    pane.title.contains("Zellij key guide")) {
++                    // Old session templates can still contain a tiled guide.
++                    // Keep the single background guide and release the duplicate's rows.
++                    close_self();
++                    return false;
++                }
++                if self.overlay {
++                    for tab_panes in panes.panes.values() {
++                        // Wait for application panes before changing a pending
++                        // tab's UI, or closing its only initialized pane can end it.
++                        if tab_panes.iter().any(|pane| !pane.is_plugin && !pane.is_suppressed) {
++                            for pane in tab_panes {
++                                if pane.is_plugin && pane.id > own_id && pane.plugin_url.as_deref().map(|url|
++                                    url == "status-bar" || url == "zellij:status-bar" || url.ends_with("/status-bar.wasm")
++                                ).unwrap_or(false) {
++                                    close_plugin_pane(pane.id);
++                                }
++                            }
++                        }
++                    }
++                }
+             },
+             Event::CopyToClipboard(copy_destination) => {
+                 match self.text_copy_destination {
+@@ -328,10 +410,130 @@
+             },
+             _ => {},
+         };
++        if self.permissions_granted {
++            if self.overlay && !self.overlay_named {
++                self.overlay_named = true;
++                rename_plugin_pane(get_plugin_ids().plugin_id, "Zellij key guide");
++            }
++            let searching = matches!(self.mode_info.mode, InputMode::EnterSearch | InputMode::Search);
++            if self.search_titles && searching != self.search_titles_visible {
++                self.search_titles_visible = searching;
++                set_pane_frame_style(if searching { PaneFrameStyle::Full } else { PaneFrameStyle::None });
++            }
++            if self.overlay {
++                if self.mode_info.mode == InputMode::Locked {
++                    if !self.overlay_hidden {
++                        self.overlay_hidden = true;
++                        self.overlay_target = None;
++                        hide_self();
++                    }
++                } else if let Some(tab) = self.tabs.iter().find(|tab| tab.active) {
++                    let target = (tab.tab_id, tab.display_area_columns, tab.display_area_rows, usize::from(searching));
++                    if self.overlay_target != Some(target) {
++                        self.overlay_target = Some(target);
++                        let pane = PaneId::Plugin(get_plugin_ids().plugin_id);
++                        if self.overlay_hidden {
++                            self.overlay_hidden = false;
++                            show_pane_with_id(pane, true, false);
++                        }
++                        break_panes_to_tab_with_id(&[pane], target.0, false);
++                        change_floating_panes_coordinates(vec![(pane, FloatingPaneCoordinates::new(
++                            Some("0".to_owned()), Some(target.3.to_string()),
++                            Some("100%".to_owned()), Some(if self.reference_style { "1" } else { "2" }.to_owned()), Some(true), Some(true),
++                        ).unwrap())]);
++                        set_selectable(false);
++                    }
++                }
++            }
++        }
+         should_render
+     }
+ 
++    fn pipe(&mut self, message: PipeMessage) -> bool {
++        if self.permissions_granted && message.name == "zanken-close-focus" {
++            if let (Some(session), Ok((tab_id, pane_id))) = (
++                self.mode_info.session_name.as_deref(), get_focused_pane_info(),
++            ) {
++                run_command(&["zanken-cmd-zellij-session", "_close-focus", session,
++                    &pane_id.to_string(), &tab_id.to_string()], BTreeMap::new());
++            }
++            return false;
++        }
++        // Only a transient reset bridge may return its attached client to a
++        // freshly recreated session. No session name is persisted in the guide.
++        if self.permissions_granted && message.name == "zanken-reset-return"
++            && self.mode_info.session_name.as_deref()
++                .map(|name| name.starts_with("zanken-reset.")).unwrap_or(false)
++        {
++            if let Some(payload) = message.payload.as_deref()
++                .and_then(|text| serde_json::from_str::<serde_json::Value>(text).ok())
++            {
++                if let (Some(name), Some(cwd)) = (
++                    payload.get("session").and_then(|value| value.as_str()),
++                    payload.get("cwd").and_then(|value| value.as_str()),
++                ) {
++                    if !name.trim().is_empty() && !cwd.is_empty() {
++                        switch_session_with_layout(Some(name),
++                            LayoutInfo::File("zanken".to_owned(), Default::default()),
++                            Some(std::path::PathBuf::from(cwd)));
++                    }
++                }
++            }
++            return false;
++        }
++        // An explicit, transient maintenance message replaces only a guide pane.
++        // No target IDs are stored in configuration or resurrected layouts.
++        if self.permissions_granted && message.name == "zanken-replace-guide" {
++            if let Some((new_id, old_id)) = message.payload.as_deref().and_then(|p| p.split_once(':')) {
++                if let (Ok(new_id), Ok(old_id)) = (new_id.parse::<u32>(), old_id.parse::<u32>()) {
++                    if new_id == get_plugin_ids().plugin_id && old_id != new_id {
++                        if let Some(old) = get_pane_info(PaneId::Plugin(old_id)) {
++                            if old.is_plugin && (old.title.contains("status-bar") || old.title.contains("Zellij key guide")) {
++                                replace_pane_with_existing_pane(PaneId::Plugin(old_id), PaneId::Plugin(new_id), false);
++                            }
++                        }
++                    }
++                }
++            }
++        }
++        false
++    }
++
+     fn render(&mut self, rows: usize, cols: usize) {
++        if self.hide_when_locked && self.mode_info.mode == InputMode::Locked {
++            self.new_pane_ribbon_range = None;
++            self.floating_ribbon_range = None;
++            self.new_pane_ribbon_hovered = false;
++            self.floating_ribbon_hovered = false;
++            // Clear both rows and restore the terminal background without
++            // removing the guide pane or resizing running applications.
++            print!("\u{1b}[0m\u{1b}[2J");
++            return;
++        }
++        if self.reference_style {
++            self.new_pane_ribbon_range = None;
++            self.floating_ribbon_range = None;
++            let mut mode_info = self.mode_info.clone();
++            mode_info.style.colors.text_unselected.base = PaletteColor::Rgb((147, 153, 178));
++            mode_info.style.colors.text_unselected.emphasis_0 = PaletteColor::Rgb((249, 226, 175));
++            mode_info.style.colors.text_unselected.emphasis_2 = PaletteColor::Rgb((138, 173, 244));
++            // One contextual row: the unlocked menu is replaced by the active
++            // mode's actions. Normal never evaluates or displays rotating tips.
++            let line = if mode_info.mode == InputMode::Normal {
++                first_line::reference_first_line(&mode_info,
++                    self.tabs.iter().find(|tab| tab.active), cols).part
++            } else {
++                self.second_line_with_info(cols, &mode_info).part
++            };
++            let background = "\u{1b}[48;2;36;36;54m";
++            let line = line
++                .replace(" / ", &format!(" {} ", Style::new().fg(ansi_term::Color::RGB(139, 213, 202)).paint("⋮")))
++                .replace("\u{1b}[0m", &format!("\u{1b}[0m{}", background))
++                .replace("\u{1b}[m", &format!("\u{1b}[m{}", background))
++                .replace("\u{1b}[49m", background);
++            print!("\u{1b}[0m{}\u{1b}[2J\u{1b}[H{}{}\u{1b}[0K\u{1b}[0m", background, line, background);
++            return;
++        }
+         let supports_arrow_fonts = !self.mode_info.capabilities.arrow_fonts;
+         let separator = if supports_arrow_fonts {
+             ARROW_SEPARATOR
+@@ -412,41 +614,44 @@
+ 
+ impl State {
+     fn second_line(&self, cols: usize) -> LinePart {
++        self.second_line_with_info(cols, &self.mode_info)
++    }
++    fn second_line_with_info(&self, cols: usize, mode_info: &ModeInfo) -> LinePart {
+         let active_tab = self.tabs.iter().find(|t| t.active);
+ 
+-        if self.mode_info.session_dimmed.unwrap_or(false) {
+-            return descended_into_nested_session_hint(&self.mode_info, cols);
+-        }
+-        if self.mode_info.session_ascended.unwrap_or(false) {
+-            return ascended_to_host_session_hint(&self.mode_info, cols);
++        if mode_info.session_dimmed.unwrap_or(false) {
++            return descended_into_nested_session_hint(mode_info, cols);
++        }
++        if mode_info.session_ascended.unwrap_or(false) {
++            return ascended_to_host_session_hint(mode_info, cols);
+         }
+         if let Some(copy_destination) = self.text_copy_destination {
+             text_copied_hint(copy_destination)
+         } else if self.display_system_clipboard_failure {
+-            system_clipboard_error(&self.mode_info.style.colors)
++            system_clipboard_error(&mode_info.style.colors)
+         } else if let Some(active_tab) = active_tab {
+             if active_tab.is_fullscreen_active {
+-                match self.mode_info.mode {
++                match mode_info.mode {
+                     InputMode::Normal => fullscreen_panes_to_hide(
+-                        &self.mode_info.style.colors,
++                        &mode_info.style.colors,
+                         active_tab.panes_to_hide,
+                     ),
+                     InputMode::Locked => locked_fullscreen_panes_to_hide(
+-                        &self.mode_info.style.colors,
++                        &mode_info.style.colors,
+                         active_tab.panes_to_hide,
+                     ),
+-                    _ => keybinds(&self.mode_info, &self.tip_name, cols),
++                    _ => keybinds(mode_info, &self.tip_name, cols),
+                 }
+             } else if active_tab.are_floating_panes_visible {
+-                match self.mode_info.mode {
+-                    InputMode::Normal => floating_panes_are_visible(&self.mode_info),
++                match mode_info.mode {
++                    InputMode::Normal => floating_panes_are_visible(mode_info),
+                     InputMode::Locked => {
+-                        locked_floating_panes_are_visible(&self.mode_info.style.colors)
++                        locked_floating_panes_are_visible(&mode_info.style.colors)
+                     },
+-                    _ => keybinds(&self.mode_info, &self.tip_name, cols),
++                    _ => keybinds(mode_info, &self.tip_name, cols),
+                 }
+             } else {
+-                keybinds(&self.mode_info, &self.tip_name, cols)
++                keybinds(mode_info, &self.tip_name, cols)
+             }
+         } else {
+             LinePart::default()
+@@ -484,7 +689,12 @@
+             let matching = acvec
+                 .iter()
+                 .zip(action)
+-                .filter(|(a, b)| a.shallow_eq(b))
++                .filter(|(a, b)| {
++                    a.shallow_eq(b) || (action.len() > 1 && matches!((a, b), (
++                        Action::SwitchToMode { input_mode: InputMode::Locked },
++                        Action::SwitchToMode { input_mode: InputMode::Normal }
++                    )))
++                })
+                 .count();
+ 
+             if matching == acvec.len() && matching == action.len() {
+@@ -995,3 +1205,42 @@
+         assert_eq!(ret, "Alt + <ENTER|SPACE|TAB>".to_string())
+     }
+ }
++
++// Match the configured menu, including local WASM extensions, without depending
++// on which input mode follows the launch action.
++fn menu_hint_key(keymap: &[(KeyWithModifier, Vec<Action>)], name: &str) -> Vec<KeyWithModifier> {
++    keymap.iter().filter_map(|(key, actions)| {
++        actions.iter().any(|action| {
++            match action {
++                Action::LaunchPlugin { plugin, .. } | Action::LaunchOrFocusPlugin { plugin, .. } => {
++                    let location = plugin.location_string();
++                    location == name || location == format!("zellij:{}", name)
++                        || location.ends_with(&format!("/{}.wasm", name))
++                },
++                _ => false,
++            }
++        }).then(|| key.clone())
++    }).collect()
++}
++
++// Prefix hints follow the configured helper actions instead of fixed key names.
++fn helper_hint_key(keymap: &[(KeyWithModifier, Vec<Action>)], name: &str) -> Vec<KeyWithModifier> {
++    keymap.iter().filter_map(|(key, actions)| {
++        actions.iter().any(|action| match action {
++            Action::KeybindPipe { name: message, .. } if name == "close" => {
++                message.as_deref() == Some("zanken-close-focus")
++                    // Zellij omits pipe metadata from ModeInfo. In this
++                    // workspace only the unmodified prefix x is its close pipe.
++                    || (message.is_none() && key.key_modifiers.is_empty()
++                        && key.bare_key == BareKey::Char('x'))
++            },
++            Action::Run { command, .. }
++            | Action::NewFloatingPane { command: Some(command), .. }
++            | Action::NewTiledPane { command: Some(command), .. } => {
++                command.command.file_name().and_then(|value| value.to_str()) == Some("zanken-cmd-zellij-session")
++                    && command.args.first().map(String::as_str) == Some(name)
++            },
++            _ => false,
++        }).then(|| key.clone())
++    }).collect()
++}
+--- a/default-plugins/status-bar/src/one_line_ui.rs
++++ b/default-plugins/status-bar/src/one_line_ui.rs
+@@ -1788,6 +1788,8 @@
+             action_key(&km, &[A::SearchToggleOption{option: SOpt::WholeWord}])),
+     ]} else if mi.mode == IM::Session { vec![
+         (s("Detach"), s("Detach"), action_key(&km, &[Action::Detach])),
++        (s("Move focus"), s("Move"), action_key_group(&km, &[
++            &[A::MoveFocus{direction: Dir::Left}], &[A::MoveFocus{direction: Dir::Right}]])),
+         (s("Session Manager"), s("Manager"), session_manager_key(&km)),
+         (s("Share"), s("Share"), share_key(&km)),
+         (s("Configure"), s("Config"), configuration_key(&km)),
+@@ -1876,117 +1878,27 @@
+ }
+ 
+ fn session_manager_key(keymap: &[(KeyWithModifier, Vec<Action>)]) -> Vec<KeyWithModifier> {
+-    let mut matching = keymap.iter().find_map(|(key, acvec)| {
+-        let has_match = acvec
+-            .iter()
+-            .find(|a| a.launches_plugin("session-manager"))
+-            .is_some();
+-        if has_match {
+-            Some(key.clone())
+-        } else {
+-            None
+-        }
+-    });
+-    if let Some(matching) = matching.take() {
+-        vec![matching]
+-    } else {
+-        vec![]
+-    }
++    crate::menu_hint_key(keymap, "session-manager")
+ }
+ 
+ fn share_key(keymap: &[(KeyWithModifier, Vec<Action>)]) -> Vec<KeyWithModifier> {
+-    let mut matching = keymap.iter().find_map(|(key, acvec)| {
+-        let has_match = acvec
+-            .iter()
+-            .find(|a| a.launches_plugin("zellij:share"))
+-            .is_some();
+-        if has_match {
+-            Some(key.clone())
+-        } else {
+-            None
+-        }
+-    });
+-    if let Some(matching) = matching.take() {
+-        vec![matching]
+-    } else {
+-        vec![]
+-    }
++    crate::menu_hint_key(keymap, "share")
+ }
+ 
+ fn plugin_manager_key(keymap: &[(KeyWithModifier, Vec<Action>)]) -> Vec<KeyWithModifier> {
+-    let mut matching = keymap.iter().find_map(|(key, acvec)| {
+-        let has_match = acvec
+-            .iter()
+-            .find(|a| a.launches_plugin("plugin-manager"))
+-            .is_some();
+-        if has_match {
+-            Some(key.clone())
+-        } else {
+-            None
+-        }
+-    });
+-    if let Some(matching) = matching.take() {
+-        vec![matching]
+-    } else {
+-        vec![]
+-    }
++    crate::menu_hint_key(keymap, "plugin-manager")
+ }
+ 
+ fn layout_manager_key(keymap: &[(KeyWithModifier, Vec<Action>)]) -> Vec<KeyWithModifier> {
+-    let mut matching = keymap.iter().find_map(|(key, acvec)| {
+-        let has_match = acvec
+-            .iter()
+-            .find(|a| a.launches_plugin("zellij:layout-manager"))
+-            .is_some();
+-        if has_match {
+-            Some(key.clone())
+-        } else {
+-            None
+-        }
+-    });
+-    if let Some(matching) = matching.take() {
+-        vec![matching]
+-    } else {
+-        vec![]
+-    }
++    crate::menu_hint_key(keymap, "layout-manager")
+ }
+ 
+ fn about_key(keymap: &[(KeyWithModifier, Vec<Action>)]) -> Vec<KeyWithModifier> {
+-    let mut matching = keymap.iter().find_map(|(key, acvec)| {
+-        let has_match = acvec
+-            .iter()
+-            .find(|a| a.launches_plugin("zellij:about"))
+-            .is_some();
+-        if has_match {
+-            Some(key.clone())
+-        } else {
+-            None
+-        }
+-    });
+-    if let Some(matching) = matching.take() {
+-        vec![matching]
+-    } else {
+-        vec![]
+-    }
++    crate::menu_hint_key(keymap, "about")
+ }
+ 
+ fn configuration_key(keymap: &[(KeyWithModifier, Vec<Action>)]) -> Vec<KeyWithModifier> {
+-    let mut matching = keymap.iter().find_map(|(key, acvec)| {
+-        let has_match = acvec
+-            .iter()
+-            .find(|a| a.launches_plugin("configuration"))
+-            .is_some();
+-        if has_match {
+-            Some(key.clone())
+-        } else {
+-            None
+-        }
+-    });
+-    if let Some(matching) = matching.take() {
+-        vec![matching]
+-    } else {
+-        vec![]
+-    }
++    crate::menu_hint_key(keymap, "configuration")
+ }
+ 
+ fn style_key_with_modifier(
+--- a/default-plugins/status-bar/src/second_line.rs
++++ b/default-plugins/status-bar/src/second_line.rs
+@@ -117,7 +117,8 @@
+ 
+     // Find a keybinding to get back to "Normal" input mode. In this case we prefer '\n' over other
+     // choices. Do it here before we dedupe the keymap below!
+-    let to_normal_keys = action_key(&old_keymap, &[TO_NORMAL]);
++    let mut to_normal_keys = action_key(&old_keymap, &[TO_NORMAL]);
++    to_normal_keys.extend(action_key(&old_keymap, &[A::SwitchToMode { input_mode: IM::Locked }]));
+     let to_normal_key = if to_normal_keys.contains(&KeyWithModifier::new(BareKey::Enter)) {
+         vec![KeyWithModifier::new(BareKey::Enter)]
+     } else {
+@@ -254,9 +255,20 @@
+             action_key(&km, &[A::SearchToggleOption{option: SOpt::WholeWord}])),
+     ]} else if mi.mode == IM::Session { vec![
+         (s("Detach"), s("Detach"), action_key(&km, &[Action::Detach])),
+-        (s("Session Manager"), s("Manager"), action_key(&km, &[A::LaunchOrFocusPlugin{plugin: Default::default(), should_float: true, move_to_focused_tab: true, should_open_in_place: false, close_replaced_pane: false, skip_cache: false, tab_id: None}, TO_NORMAL])), // not entirely accurate
++        (s("Move focus"), s("Move"), action_key_group(&km, &[
++            &[A::MoveFocus{direction: Dir::Left}], &[A::MoveFocus{direction: Dir::Right}]])),
++        (s("Session Manager"), s("Sessions"), crate::menu_hint_key(&km, "session-manager")),
++        (s("Configure"), s("Config"), crate::menu_hint_key(&km, "configuration")),
++        (s("Layout Manager"), s("Layouts"), crate::menu_hint_key(&km, "layout-manager")),
++        (s("Plugin Manager"), s("Plugins"), crate::menu_hint_key(&km, "plugin-manager")),
++        (s("About"), s("About"), crate::menu_hint_key(&km, "about")),
++        (s("Share"), s("Share"), crate::menu_hint_key(&km, "share")),
+         (s("Select pane"), s("Select"), to_normal_key),
+     ]} else if mi.mode == IM::Tmux { vec![
++        (s("Close pane/tab"), s("Close"), crate::helper_hint_key(&km, "close")),
++        (s("Detach"), s("Detach"), action_key(&km, &[TO_NORMAL, A::Detach])),
++        (s("Kill session"), s("Kill"), crate::helper_hint_key(&km, "kill")),
++        (s("Session Manager"), s("Sessions"), crate::menu_hint_key(&km, "session-manager")),
+         (s("Move focus"), s("Move"), action_key_group(&km, &[
+             &[A::MoveFocus{direction: Dir::Left}], &[A::MoveFocus{direction: Dir::Down}],
+             &[A::MoveFocus{direction: Dir::Up}], &[A::MoveFocus{direction: Dir::Right}]])),
+--- a/default-plugins/status-bar/src/tip/data/quicknav.rs
++++ b/default-plugins/status-bar/src/tip/data/quicknav.rs
+@@ -62,7 +62,7 @@
+ 
+ fn add_keybinds<'a>(help: &'a ModeInfo) -> Keygroups<'a> {
+     let normal_keymap = help.get_mode_keybinds();
+-    let new_pane_keys = action_key(
++    let mut new_pane_keys = action_key(
+         &normal_keymap,
+         &[Action::NewPane {
+             direction: None,
+@@ -70,6 +70,19 @@
+             start_suppressed: false,
+         }],
+     );
++    // A shortcut may create the pane and then return input to the application.
++    // The shared hint matcher also recognizes a configured Locked return here.
++    new_pane_keys.extend(action_key(
++        &normal_keymap,
++        &[
++            Action::NewPane {
++                direction: None,
++                pane_name: None,
++                start_suppressed: false,
++            },
++            Action::SwitchToMode { input_mode: InputMode::Normal },
++        ],
++    ));
+     let new_pane = if new_pane_keys.is_empty() {
+         vec![Style::new().bold().paint("UNBOUND")]
+     } else {

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# zanken:summary=Open a terminal attached to the main Zellij workspace
+
+exec zanken-launch-terminal zanken-launch-zellij "$@"

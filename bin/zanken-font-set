@@ -23,7 +23,7 @@ if [[ -n $font_name ]]; then
     fi
 
     if [[ -f ~/.config/foot/foot.ini ]]; then
-      sed -i "s/^font=.*/font=$font_name:size=9/g" ~/.config/foot/foot.ini
+      sed -i "s/^font=.*/font=$font_name:size=11/g" ~/.config/foot/foot.ini
     fi
 
     sed -i "s/font-family: .*/font-family: '$font_name';/g" ~/.config/swayosd/style.css

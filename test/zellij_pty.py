@@ -36,7 +36,7 @@ class Workspace:
       self.screen.report_device_status = lambda *args, **kwargs: None
       self.screen.report_device_attributes = lambda *args, **kwargs: None
       self.stream = pyte.Stream(self.screen)
-    for name in ("config", "cache", "data", "runtime", "sockets", "layouts", "files"):
+    for name in ("config", "cache", "data", "state", "runtime", "sockets", "layouts", "files"):
       (self.root / name).mkdir(mode=0o700)
     shutil.copytree(self.source / "layouts", self.root / "layouts", dirs_exist_ok=True)
     shutil.copytree(self.source / "plugins", self.root / "config/zellij/plugins", dirs_exist_ok=True)
@@ -48,9 +48,12 @@ class Workspace:
     self.env = os.environ.copy()
     self.env.pop("ZELLIJ", None)
     self.env.pop("ZELLIJ_SESSION_NAME", None)
+    # Session-launch tests must never focus a real desktop terminal window.
+    self.env.pop("NIRI_SOCKET", None)
     self.env.update(
       XDG_CONFIG_HOME=str(self.root / "config"), XDG_CACHE_HOME=str(self.root / "cache"),
-      XDG_DATA_HOME=str(self.root / "data"), XDG_RUNTIME_DIR=str(self.root / "runtime"),
+      XDG_DATA_HOME=str(self.root / "data"), XDG_STATE_HOME=str(self.root / "state"),
+      XDG_RUNTIME_DIR=str(self.root / "runtime"),
       ZELLIJ_SOCKET_DIR=str(self.root / "sockets"), ZELLIJ_CONFIG_DIR=str(self.root),
       ZELLIJ_CONFIG_FILE=str(self.config), TERM="xterm-256color", EDITOR="nvim", VISUAL="nvim",
       PATH=str(self.source.parents[1] / "bin") + ":" + os.environ["PATH"],

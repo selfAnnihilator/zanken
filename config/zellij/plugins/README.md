@@ -124,6 +124,17 @@ The session helper ignores repeated close requests until there has been a
 Prefix k/K kills the current session and removes its saved state through a
 detached helper, allowing the launcher terminal to close. It does not use a
 reset bridge or reopen a replacement session.
+The helper also removes that session from the persistent launcher history.
+Super+Enter selects a surviving live session even when history is empty/stale,
+preferring the most recently focused matching Foot window. It focuses that
+window instead of creating a second view. Detached sessions are attached in a
+new terminal; saved remembered sessions can resurrect when no live sessions
+remain. Otherwise it starts a fresh main workspace. Super+Alt+Enter always
+starts a separate fresh session. History updates reconcile all live sessions,
+including ones opened through the built-in picker.
+The desktop wrapper launches Foot explicitly with `~/.config/foot/foot.ini` and
+the current terminal directory. Do not route it through generic terminal
+selection: `xdg-terminal-exec` may select Alacritty and change the appearance.
 
 The optional `zanken-cmd-zellij-session reset` command uses a transient `zanken-reset.*` bridge to keep the
 same terminal client open while the session helper stops and deletes the old

@@ -1,9 +1,132 @@
 #!/bin/bash
 
 # zanken:summary=Manage Zellij sessions or permanently close the current tab
-# zanken:args=[new|rename|previous|next|reset|close-tab|kill]
+# zanken:args=[new|rename|previous|next|reset|close-tab|kill|last|remember NAME|window NAME]
 
 set -euo pipefail
+
+update_session_history() {
+  local operation=$1 target=$2 state_dir state_file name
+  local -a history=() remaining=() live_sessions=()
+  [[ -n $target && $target != *$'\n'* ]] || return 2
+  state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/zanken"
+  umask 077
+  mkdir -p -- "$state_dir"
+  exec 8>"$state_dir/zellij-session-history.lock"
+  flock 8
+  if [[ -f $state_dir/zellij-session-history ]]; then
+    mapfile -t history < "$state_dir/zellij-session-history"
+  else
+    if [[ -f $state_dir/zellij-last-session ]]; then
+      mapfile -t history < "$state_dir/zellij-last-session"
+    fi
+  fi
+  # Reconcile on every update: sessions can be opened or renamed through the
+  # built-in picker, without passing through this launcher's history.
+  mapfile -t live_sessions < <(zellij list-sessions --no-formatting --reverse 2>/dev/null |
+    sed -n '/EXITED/!s/ \[Created.*//p')
+  history+=("${live_sessions[@]}")
+  [[ $operation == "remember" ]] && remaining+=("$target")
+  for name in "${history[@]}"; do
+    [[ -n $name && $name != "$target" && $name != zanken-reset.* ]] || continue
+    if ! printf '%s\n' "${remaining[@]}" | grep -Fxq -- "$name"; then
+      remaining+=("$name")
+    fi
+  done
+  state_file=$(mktemp "$state_dir/.zellij-session-history.XXXXXXXX")
+  if (( ${#remaining[@]} )); then
+    printf '%s\n' "${remaining[@]}" > "$state_file"
+  fi
+  mv -f -- "$state_file" "$state_dir/zellij-session-history"
+  if (( ${#remaining[@]} == 0 )); then
+    rm -f -- "$state_dir/zellij-last-session"
+    exec 8>&-
+    return
+  fi
+  state_file=$(mktemp "$state_dir/.zellij-last-session.XXXXXXXX")
+  printf '%s\n' "${remaining[0]}" > "$state_file"
+  mv -f -- "$state_file" "$state_dir/zellij-last-session"
+  exec 8>&-
+}
+
+remember_session() {
+  update_session_history remember "$1"
+}
+
+niri_session_windows() {
+  [[ -n ${NIRI_SOCKET:-} ]] || return 0
+  zanken-cmd-present niri || return 0
+  niri msg --json windows 2>/dev/null || true
+}
+
+session_window() {
+  niri_session_windows | jq -r --arg session "$1" '
+    [.[] | select(.app_id == "foot" and (.title | startswith($session + " | ")))]
+    | max_by([.focus_timestamp.secs // 0, .focus_timestamp.nanos // 0])
+    | .id // empty' 2>/dev/null || true
+}
+
+last_session() {
+  local state_dir listing name recent
+  local -a history=() live=() known=()
+  state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/zanken"
+  if [[ -f $state_dir/zellij-session-history ]]; then
+    mapfile -t history < "$state_dir/zellij-session-history"
+  elif [[ -f $state_dir/zellij-last-session ]]; then
+    mapfile -t history < "$state_dir/zellij-last-session"
+  fi
+  listing=$(zellij list-sessions --no-formatting --reverse 2>/dev/null || true)
+  mapfile -t live < <(sed -n '/EXITED/!s/ \[Created.*//p' <<< "$listing" | sed '/^zanken-reset\./d')
+  mapfile -t known < <(sed -n 's/ \[Created.*//p' <<< "$listing" | sed '/^zanken-reset\./d')
+  if (( ${#live[@]} )); then
+    # Desktop focus is more current than launcher history when a user switches
+    # between already-open windows. Only match names reported live by Zellij.
+    recent=$(niri_session_windows | jq -r --argjson sessions "$(printf '%s\n' "${live[@]}" | jq -Rsc 'split("\n")[:-1]')" '
+      [.[] | select(.app_id == "foot") | . as $window
+       | $sessions[] as $session
+       | select($window.title | startswith($session + " | "))
+       | {session: $session, focus: [$window.focus_timestamp.secs // 0, $window.focus_timestamp.nanos // 0]}]
+      | max_by(.focus) | .session // empty' 2>/dev/null || true)
+    if [[ -n $recent ]]; then
+      printf '%s\n' "$recent"
+      return
+    fi
+    for name in "${history[@]}"; do
+      if printf '%s\n' "${live[@]}" | grep -Fxq -- "$name"; then
+        printf '%s\n' "$name"
+        return
+      fi
+    done
+    printf '%s\n' "${live[0]}"
+    return
+  fi
+  # After reboot, allow an actually saved remembered session to resurrect.
+  # Ignore stale names instead of silently creating an unrelated workspace.
+  for name in "${history[@]}"; do
+    if printf '%s\n' "${known[@]}" | grep -Fxq -- "$name"; then
+      printf '%s\n' "$name"
+      return
+    fi
+  done
+}
+
+# These launcher operations also work outside a session.
+case ${1:-} in
+  remember)
+    (( $# == 2 )) || exit 2
+    remember_session "$2"
+    exit
+    ;;
+  last)
+    last_session
+    exit
+    ;;
+  window)
+    (( $# == 2 )) || exit 2
+    session_window "$2"
+    exit
+    ;;
+esac
 
 session_attached() {
   timeout 2 zellij --session "$1" action list-clients 2>/dev/null |
@@ -122,6 +245,7 @@ if [[ ${1:-} == "_close-tab-worker" ]]; then
   if (( $(jq 'length' <<<"$tabs") == 1 )); then
     # Closing the final tab normally leaves its last layout resurrectable.
     stop_and_forget "$closing_session"
+    update_session_history forget "$closing_session"
   else
     zellij --session "$closing_session" action close-tab --tab-id "$closing_tab"
     # Persist the remaining tabs before a quick detach or shutdown can restore
@@ -139,6 +263,7 @@ if [[ ${1:-} == "_kill-worker" ]]; then
   [[ -n $closing_session ]] || exit 2
   unset ZELLIJ ZELLIJ_SESSION_NAME ZELLIJ_PANE_ID
   stop_and_forget "$closing_session"
+  update_session_history forget "$closing_session"
   rm -f -- "$kill_log"
   exit 0
 fi
@@ -188,6 +313,7 @@ case ${1:-} in
     else
       zellij action rename-session "$session_name"
     fi
+    remember_session "$session_name"
     ;;
   previous|next)
     # Only cycle live sessions; resurrectable sessions remain in the picker.
@@ -200,7 +326,9 @@ case ${1:-} in
         else
           index=$(( (index + 1) % ${#sessions[@]} ))
         fi
-        exec zellij action switch-session "${sessions[index]}"
+        zellij action switch-session "${sessions[index]}"
+        remember_session "${sessions[index]}"
+        exit
       fi
     done
     ;;
@@ -240,7 +368,7 @@ case ${1:-} in
     zellij action switch-session "$bridge_session" --layout zanken --cwd "$HOME"
     ;;
   *)
-    echo "Usage: zanken-cmd-zellij-session [new|rename|previous|next|reset|close-tab|kill]" >&2
+    echo "Usage: zanken-cmd-zellij-session [new|rename|previous|next|reset|close-tab|kill|last|remember NAME|window NAME]" >&2
     exit 2
     ;;
 esac

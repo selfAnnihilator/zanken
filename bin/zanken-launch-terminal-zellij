@@ -1,5 +1,22 @@
 #!/bin/bash
 
-# zanken:summary=Open a terminal attached to the main Zellij workspace
+# zanken:summary=Open a terminal with the last Zellij workspace or a fresh session
+# zanken:args=[--new|session]
 
-exec zanken-launch-terminal zanken-launch-zellij "$@"
+set -euo pipefail
+
+if (( $# == 0 )); then
+  session_name=$(zanken-cmd-zellij-session last)
+  if [[ -n $session_name ]]; then
+    window_id=$(zanken-cmd-zellij-session window "$session_name")
+    if [[ -n $window_id ]] && niri msg action focus-window --id "$window_id" >/dev/null 2>&1; then
+      zanken-cmd-zellij-session remember "$session_name"
+      exit 0
+    fi
+  fi
+fi
+
+# Match the existing Niri Foot windows, including their active theme. The generic
+# xdg-terminal-exec route can choose a different installed terminal emulator.
+exec setsid uwsm-app -- foot --config="$HOME/.config/foot/foot.ini" \
+  --working-directory="$(zanken-cmd-terminal-cwd)" -e zanken-launch-zellij "$@"

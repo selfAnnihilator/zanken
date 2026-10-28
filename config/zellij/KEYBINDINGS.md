@@ -61,11 +61,13 @@ Alt+Up / Down        Previous/next live session
 Prefix k (lowercase; uppercase K also works) stops all programs in the current
 session, deletes its saved resurrection state and closes the launcher terminal
 window. It does not create a replacement session. Other sessions are preserved.
-Reopening the terminal creates a fresh workspace.
+Super+Enter then reopens the previous remembered session. If none remains, it
+creates a fresh default main workspace.
 
 Prefix x closes only the active pane while other panes exist in its tab. When
 it is the only pane, it closes the tab. The final close ends the session and
-clears its saved resurrection state; reopening starts a fresh shell. Ctrl+Alt+X
+clears its saved resurrection state; Super+Enter returns to the previous
+remembered session, or starts a fresh main workspace if none remains. Ctrl+Alt+X
 has the same behavior. Prefix d detaches instead, preserving the tabs and
 running programs for your next attach.
 
@@ -90,9 +92,24 @@ The configuration reloads automatically when saved.
 
 ## Reopening and reboot recovery
 
-Super+Alt+Enter opens the main workspace; `t` or `zanken-launch-zellij` does
-the same from a shell. `zellij` also attaches to main by default.
+Super+Enter focuses the most recently used live workspace's existing Foot
+window. If it has no window, it opens a terminal attached to that workspace.
+Missing or stale history still falls back to a surviving live session.
+Super+Alt+Enter always opens a fresh, separate session.
+`t` or `zanken-launch-zellij` resumes the last workspace from a shell;
+`zanken-launch-zellij --new` starts a fresh one. Plain `zellij` still attaches
+to main by default. Super+T remains available for a plain terminal.
 Other named sessions: `zanken-launch-zellij SESSION`.
+Session history is stored under `$XDG_STATE_HOME/zanken/` (normally
+`~/.local/state/zanken/zellij-session-history`). Killing a session removes it
+from that history; an empty history makes Super+Enter start a fresh main session.
+The built-in session picker can still select other sessions. Live sessions are
+reconciled with history, and existing desktop window focus determines recency.
+When no live sessions remain, a saved remembered session can be restored after
+reboot; otherwise the launcher starts a fresh main workspace.
+
+Several windows can be attached to the same session. Prefix k kills the session
+and closes all of those views. Super+Q/Super+W closes just a window and detaches.
 
 Closing the terminal detaches. After a reboot, reattaching restores saved tabs,
 panes, directories, discovered commands, and up to 50,000 scrollback lines per

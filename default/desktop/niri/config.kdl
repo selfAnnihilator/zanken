@@ -139,9 +139,9 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Terminal
-    Mod+Return { spawn "foot"; }
+    Mod+Return { spawn "zanken-launch-terminal-zellij"; }
     Mod+T { spawn "foot"; }
-    Mod+Alt+Return { spawn "foot" "-e" "zanken-launch-zellij"; }
+    Mod+Alt+Return { spawn "zanken-launch-terminal-zellij" "--new"; }
 
     // Browser / file manager / editor
     Mod+Shift+Return { spawn "zanken-launch-browser"; }

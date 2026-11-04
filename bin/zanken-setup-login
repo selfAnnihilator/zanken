@@ -8,3 +8,5 @@ python3 -B "$source_dir/lib/zanken/boot.py" preflight "$source_dir"
 zanken-pkg-add sddm qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg plymouth
 sudo python3 -B "$source_dir/lib/zanken/login.py" apply "$source_dir"
 ZANKEN_PATH=$source_dir bash "$source_dir/install/config/install-plymouth-zanken.sh"
+echo
+echo 'Login screen and boot animation are installed. Reboot to see them: sudo reboot'

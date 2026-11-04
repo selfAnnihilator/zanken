@@ -2,3 +2,6 @@
 themes/*/backgrounds/
 archlinux-latest/
 site/
+.release-vm/
+__pycache__/
+graphify-out/

@@ -1,163 +1,53 @@
-# Directs user to Zanken Discord
-QR_CODE='
-█▀▀▀▀▀█ ▄ ▄ ▀▄▄▄█ █▀▀▀▀▀█
-█ ███ █ ▄▄▄▄▀▄▀▄▀ █ ███ █
-█ ▀▀▀ █ ▄█  ▄█▄▄▀ █ ▀▀▀ █
-▀▀▀▀▀▀▀ ▀▄█ █ █ █ ▀▀▀▀▀▀▀
-▀▀█▀▀▄▀▀▀▀▄█▀▀█  ▀ █ ▀ █
-█▄█ ▄▄▀▄▄ ▀ ▄ ▀█▄▄▄▄ ▀ ▀█
-▄ ▄▀█ ▀▄▀▀▀▄ ▄█▀▄█▀▄▀▄▀█▀
-█ ▄▄█▄▀▄█ ▄▄▄  ▀ ▄▀██▀ ▀█
-▀ ▀   ▀ █ ▀▄  ▀▀█▀▀▀█▄▀
-█▀▀▀▀▀█ ▀█  ▄▀▀ █ ▀ █▄▀██
-█ ███ █ █▀▄▄▀ █▀███▀█▄██▄
-█ ▀▀▀ █ ██  ▀ █▄█ ▄▄▄█▀ █
-▀▀▀▀▀▀▀ ▀ ▀ ▀▀▀  ▀ ▀▀▀▀▀▀'
-
-# Track if we're already handling an error to prevent double-trapping
+# Error and terminal ownership belong to the original installer process only.
+INSTALLER_UI_PID=$BASHPID
 ERROR_HANDLING=false
-
-# Cursor is usually hidden while we install
-show_cursor() {
-  printf "\033[?25h"
+INSTALLER_TTY_STATE=$(stty -g </dev/tty 2>/dev/null || true)
+installer_restore_terminal() {
+  if [[ -n $INSTALLER_TTY_STATE ]]; then
+    stty "$INSTALLER_TTY_STATE" </dev/tty 2>/dev/null || true
+  fi
 }
-
-# Display truncated log lines from the install log
+show_cursor() { printf '\033[0m\033[?25h'; }
+save_original_outputs() { exec 3>&1 4>&2; }
+restore_outputs() { exec 1>&3 2>&4; }
 show_log_tail() {
-  if [[ -f $ZANKEN_INSTALL_LOG_FILE ]]; then
-    local log_lines=$((TERM_HEIGHT - LOGO_HEIGHT - 35))
-    local max_line_width=$((LOGO_WIDTH - 4))
-
-    tail -n $log_lines "$ZANKEN_INSTALL_LOG_FILE" | while IFS= read -r line; do
-      if ((${#line} > max_line_width)); then
-        local truncated_line="${line:0:$max_line_width}..."
-      else
-        local truncated_line="$line"
-      fi
-
-      gum style "$truncated_line"
-    done
-
-    echo
-  fi
+  [[ -f $ZANKEN_INSTALL_LOG_FILE ]] || return 0
+  # Strip complete ANSI sequences, then remaining control bytes.
+  tail -n 15 "$ZANKEN_INSTALL_LOG_FILE" |
+    LC_ALL=C sed -E $'s/\033\\[[0-?]*[ -/]*[@-~]//g' |
+    LC_ALL=C tr -d '\000-\010\013-\037\177'
 }
-
-# Display the failed command or script name
-show_failed_script_or_command() {
-  if [[ -n ${CURRENT_SCRIPT:-} ]]; then
-    gum style "Failed script: $CURRENT_SCRIPT"
-  else
-    # Truncate long command lines to fit the display
-    local cmd="$BASH_COMMAND"
-    local max_cmd_width=$((LOGO_WIDTH - 4))
-
-    if ((${#cmd} > max_cmd_width)); then
-      cmd="${cmd:0:$max_cmd_width}..."
-    fi
-
-    gum style "$cmd"
-  fi
-}
-
-# Save original stdout and stderr for trap to use
-save_original_outputs() {
-  exec 3>&1 4>&2
-}
-
-# Restore stdout and stderr to original (saved in FD 3 and 4)
-# This ensures output goes to screen, not log file
-restore_outputs() {
-  if [[ -e /proc/self/fd/3 ]] && [[ -e /proc/self/fd/4 ]]; then
-    exec 1>&3 2>&4
-  fi
-}
-
-# Error handler
 catch_errors() {
-  # Prevent recursive error handling
-  if [[ $ERROR_HANDLING == "true" ]]; then
-    return
-  else
-    ERROR_HANDLING=true
-  fi
-
-  # Store exit code immediately before it gets overwritten
-  local exit_code=$?
-
+  local exit_code=${1:-$?}
+  [[ $BASHPID == "$INSTALLER_UI_PID" ]] || return "$exit_code"
+  [[ $ERROR_HANDLING == "false" ]] || return "$exit_code"
+  ERROR_HANDLING=true
+  trap - ERR INT TERM
+  set +e
   stop_log_output
   restore_outputs
-
-  clear_logo
+  installer_restore_terminal
   show_cursor
-
-  gum style --foreground 1 --padding "1 0 1 $PADDING_LEFT" "Zanken installation stopped!"
+  printf '\r\nInstallation stopped (status %s).\r\n' "$exit_code"
+  printf 'Failed stage: %s\r\n\r\n' "${CURRENT_SCRIPT:-unknown}"
   show_log_tail
-
-  gum style "This command halted with exit code $exit_code:"
-  show_failed_script_or_command
-
-  gum style "$QR_CODE"
-  echo
-  gum style "Get help from the community via QR code or at https://discord.gg/tXFUdasqhY"
-
-  # Offer options menu
-  while true; do
-    options=()
-
-    # If online install, show retry first
-    if [[ -n ${ZANKEN_ONLINE_INSTALL:-} ]]; then
-      options+=("Retry installation")
-    fi
-
-    # Add upload option if internet is available
-    if ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
-      options+=("Upload log for support")
-    fi
-
-    # Add remaining options
-    options+=("View full log")
-    options+=("Exit")
-
-    choice=$(gum choose "${options[@]}" --header "What would you like to do?" --height 6 --padding "1 $PADDING_LEFT")
-
-    case "$choice" in
-    "Retry installation")
-      bash "$ZANKEN_PATH/install.sh"
-      break
-      ;;
-    "View full log")
-      if command -v less &>/dev/null; then
-        less "$ZANKEN_INSTALL_LOG_FILE"
-      else
-        tail "$ZANKEN_INSTALL_LOG_FILE"
-      fi
-      ;;
-    "Upload log for support")
-      zanken-upload-log
-      ;;
-    "Exit" | "")
-      exit 1
-      ;;
-    esac
-  done
+  printf '\r\nFull log: %s\r\n' "$ZANKEN_INSTALL_LOG_FILE"
+  printf 'The installer has exited. Inspect the log before retrying.\r\n'
+  exit "$exit_code"
 }
-
-# Exit handler - ensures cleanup happens on any exit
 exit_handler() {
   local exit_code=$?
-
-  # Only run if we're exiting with an error and haven't already handled it
-  if (( exit_code != 0 )) && [[ $ERROR_HANDLING != "true" ]]; then
-    catch_errors
+  [[ $BASHPID == "$INSTALLER_UI_PID" ]] || return "$exit_code"
+  if (( exit_code != 0 )) && [[ $ERROR_HANDLING == "false" ]]; then
+    catch_errors "$exit_code"
   else
     stop_log_output
+    installer_restore_terminal
     show_cursor
   fi
 }
-
-# Set up traps
-trap catch_errors ERR INT TERM
+trap 'catch_errors "$?"' ERR
+trap 'catch_errors 130' INT
+trap 'catch_errors 143' TERM
 trap exit_handler EXIT
-
-# Save original outputs in case we trap
 save_original_outputs

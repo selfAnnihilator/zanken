@@ -40,4 +40,5 @@ zanken-cmd-zellij-session remember "$session_name"
 if [[ $fresh == "true" ]]; then
   exec zellij --session "$session_name"
 fi
+zanken-cmd-zellij-session repair "$session_name" || true
 exec zellij attach --create "$session_name"

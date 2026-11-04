@@ -1,22 +1,35 @@
 #!/bin/bash
 
-# zanken:summary=Open a terminal with the last Zellij workspace or a fresh session
+# zanken:summary=Focus a Zellij workspace or open it in a terminal
 # zanken:args=[--new|session]
 
 set -euo pipefail
 
+(( $# <= 1 )) || { echo "Usage: zanken-launch-terminal-zellij [--new|session]" >&2; exit 2; }
+
+session_name=""
 if (( $# == 0 )); then
   session_name=$(zanken-cmd-zellij-session last)
-  if [[ -n $session_name ]]; then
-    window_id=$(zanken-cmd-zellij-session window "$session_name")
-    if [[ -n $window_id ]] && niri msg action focus-window --id "$window_id" >/dev/null 2>&1; then
-      zanken-cmd-zellij-session remember "$session_name"
-      exit 0
-    fi
+elif [[ $1 != "--new" ]]; then
+  session_name=$1
+fi
+
+if [[ -n $session_name ]]; then
+  window_id=$(zanken-cmd-zellij-session window "$session_name")
+  if [[ -n $window_id ]] && niri msg action focus-window --id "$window_id" >/dev/null 2>&1; then
+    zanken-cmd-zellij-session remember "$session_name"
+    exit 0
   fi
+  # Pin the selected session rather than resolving "last" again in the terminal.
+  set -- "$session_name"
 fi
 
 # Match the existing Niri Foot windows, including their active theme. The generic
 # xdg-terminal-exec route can choose a different installed terminal emulator.
-exec setsid uwsm-app -- foot --config="$HOME/.config/foot/foot.ini" \
-  --working-directory="$(zanken-cmd-terminal-cwd)" -e zanken-launch-zellij "$@"
+foot_args=(--config="$HOME/.config/foot/foot.ini" --working-directory="$(zanken-cmd-terminal-cwd)")
+if [[ -n $session_name ]]; then
+  # An attached application may not emit a title until its next prompt.
+  # Give window discovery a session identity immediately on attachment.
+  foot_args+=(--title="$session_name | Zellij")
+fi
+exec setsid uwsm-app -- foot "${foot_args[@]}" -e zanken-launch-zellij "$@"

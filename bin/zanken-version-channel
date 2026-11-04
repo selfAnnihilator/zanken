@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# zanken:summary=Print the active Zanken git release channel
+# zanken:summary=Print the installed release mode or unmanaged
 
-branch=$(git -C "$ZANKEN_PATH" branch --show-current 2>/dev/null || true)
+set -euo pipefail
 
-case "$branch" in
-main) echo "stable" ;;
-rc) echo "rc" ;;
-dev) echo "dev" ;;
-*) echo "unknown" ;;
-esac
+COMMAND_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+exec "$COMMAND_DIR/zanken-release" mode --plain "$@"

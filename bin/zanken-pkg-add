@@ -9,6 +9,8 @@ pacman_packages=()
 aur_packages=()
 
 for pkg in "$@"; do
+  # --needed is too late to prevent AUR provider/conflict resolution.
+  pacman -T "$pkg" &>/dev/null && continue
   if pacman -Si "$pkg" &>/dev/null; then
     pacman_packages+=("$pkg")
   else
@@ -26,7 +28,7 @@ fi
 
 for pkg in "$@"; do
   # Secondary check to handle states where pacman doesn't actually register an error
-  if ! pacman -Q "$pkg" &>/dev/null; then
+  if ! pacman -T "$pkg" &>/dev/null; then
     echo -e "\033[31mError: Package '$pkg' did not install\033[0m" >&2
     exit 1
   fi

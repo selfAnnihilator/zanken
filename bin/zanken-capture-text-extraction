@@ -9,4 +9,4 @@ SELECTION=$(slurp 2>/dev/null)
 TEXT=$(grim -g "$SELECTION" - | tesseract stdin stdout --oem 1 --psm 6 -l "${OMARCHY_OCR_LANGS:-eng}" --dpi 300 -c preserve_interword_spaces=1 2>/dev/null) || exit 1
 [[ -z $TEXT ]] && exit 1
 printf "%s" "$TEXT" | wl-copy
-notify-send "󰴑    Copied text from selection to clipboard"
+zanken-notification-send "󰴑    Copied text from selection to clipboard"

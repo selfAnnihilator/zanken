@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # zanken:summary=Manage Zellij sessions or permanently close the current tab
-# zanken:args=[new|rename|previous|next|reset|close-tab|kill|last|remember NAME|window NAME]
+# zanken:args=[new|rename|previous|next|reset|close-tab|kill|last|list|snapshot-all|repair NAME|active NAME|remember NAME|window NAME]
 
 set -euo pipefail
 
@@ -66,6 +66,126 @@ session_window() {
     | .id // empty' 2>/dev/null || true
 }
 
+list_sessions() {
+  local listing windows
+  listing=$(zellij list-sessions --no-formatting --reverse 2>/dev/null || true)
+  windows=$(niri_session_windows)
+  jq -n --arg listing "$listing" --argjson windows "${windows:-[]}" '
+    $listing | split("\n")
+    | map(capture("^(?<name>.+) \\[Created[^\\]]*\\](?<suffix>.*)$")
+      | select(.name | startswith("zanken-reset.") | not)
+      | . as $session
+      | ([$windows[] | select(.app_id == "foot"
+          and ((.title // "") | startswith($session.name + " | ")))]
+        | max_by([.focus_timestamp.secs // 0, .focus_timestamp.nanos // 0])
+        | .id // null) as $window
+      | {name: .name, window_id: $window,
+         saved: (.suffix | test("\\(EXITED - attach to resurrect\\)$"))})'
+}
+
+session_running() {
+  zellij list-sessions --no-formatting 2>/dev/null |
+    awk -v target="$1" '!/\(EXITED - attach to resurrect\)$/ {
+      sub(/ \[Created.*$/, "")
+      if ($0 == target) running = 1
+    } END { exit !running }'
+}
+
+layout_file() {
+  printf '%s\n' "${XDG_CACHE_HOME:-$HOME/.cache}/zellij/contract_version_1/session_info/$1/session-layout.kdl"
+}
+
+snapshot_dir() {
+  printf '%s\n' "${XDG_STATE_HOME:-$HOME/.local/state}/zanken/zellij-snapshots/$1"
+}
+
+# Zellij re-serializes continuously. At shutdown the shells die first, so the
+# final layout can hold tabs with only the status-bar plugin and no terminal
+# pane. Resurrecting that layout makes the client exit at once.
+layout_has_terminal() {
+  [[ -f $1 ]] || return 1
+  # Inspect whole serialized pane blocks: floating plugins put geometry before
+  # "plugin location", and split containers are not terminals themselves.
+  awk '
+    {
+      line = $0
+      # Ignore braces/comment markers inside quoted plugin format strings.
+      gsub(/"([^"\\]|\\.)*"/, "\"\"", line)
+      sub(/\/\/.*/, "", line)
+      if (line ~ /^[[:space:]]*new_tab_template([[:space:]]|$)/) exit
+      if (line ~ /^[[:space:]]*pane([[:space:]]|$)/) {
+        for (parent in panes) children[parent] = 1
+        if (line ~ /\{/) {
+          panes[depth + 1] = 1
+          if (line ~ /[{;][[:space:]]*plugin([[:space:]]|$)/) plugins[depth + 1] = 1
+        } else {
+          count++
+        }
+      }
+      if (line ~ /^[[:space:]]*plugin([[:space:]]|$)/ && (depth in panes)) plugins[depth] = 1
+      for (i = 1; i <= length(line); i++) {
+        char = substr(line, i, 1)
+        if (char == "{") depth++
+        if (char == "}") {
+          if (depth in panes) {
+            if (!plugins[depth] && !children[depth]) count++
+            delete panes[depth]
+            delete plugins[depth]
+            delete children[depth]
+          }
+          depth--
+        }
+      }
+    }
+    END { exit !(count > 0) }
+  ' "$1"
+}
+
+valid_session_name() {
+  [[ -n $1 && $1 != */* && $1 != *$'\n'* && $1 != . && $1 != .. ]]
+}
+
+snapshot_session() {
+  local layout dir tmp
+  valid_session_name "$1" || return 0
+  layout=$(layout_file "$1")
+  layout_has_terminal "$layout" || return 0
+  dir=$(snapshot_dir "$1")
+  umask 077
+  mkdir -p -- "$dir"
+  tmp=$(mktemp "$dir/.session-layout.XXXXXXXX")
+  cp -- "$layout" "$tmp"
+  mv -f -- "$tmp" "$dir/session-layout.kdl"
+}
+
+snapshot_all() {
+  local name
+  while IFS= read -r name; do
+    [[ -n $name && $name != zanken-reset.* ]] || continue
+    snapshot_session "$name"
+  done < <(zellij list-sessions --no-formatting 2>/dev/null |
+    sed -n '/EXITED/!s/ \[Created.*//p')
+}
+
+# Make an exited session safe to resurrect: restore its last good layout, or
+# drop the empty one so attach --create starts a fresh session under that name.
+repair_session() {
+  local layout dir
+  valid_session_name "$1" || return 0
+  session_running "$1" && return 0
+  layout=$(layout_file "$1")
+  [[ -f $layout ]] || return 0
+  layout_has_terminal "$layout" && return 0
+  dir=$(snapshot_dir "$1")
+  if layout_has_terminal "$dir/session-layout.kdl"; then
+    cp -- "$dir/session-layout.kdl" "$layout"
+    echo "Restored last good layout for session: $1" >&2
+  else
+    zellij delete-session --force -- "$1" >/dev/null 2>&1 || rm -rf -- "${layout%/*}"
+    echo "Dropped empty saved layout for session: $1" >&2
+  fi
+}
+
 last_session() {
   local state_dir listing name recent
   local -a history=() live=() known=()
@@ -121,9 +241,29 @@ case ${1:-} in
     last_session
     exit
     ;;
+  list)
+    (( $# == 1 )) || exit 2
+    list_sessions
+    exit
+    ;;
   window)
     (( $# == 2 )) || exit 2
     session_window "$2"
+    exit
+    ;;
+  active)
+    # Called from shell hooks: mark a live session as most recently used.
+    (( $# == 2 )) || exit 2
+    session_running "$2" && remember_session "$2"
+    exit 0
+    ;;
+  snapshot-all)
+    snapshot_all
+    exit
+    ;;
+  repair)
+    (( $# == 2 )) || exit 2
+    repair_session "$2"
     exit
     ;;
 esac
@@ -133,14 +273,6 @@ session_attached() {
     awk 'NR == 1 && $1 == "CLIENT_ID" { header = 1 }
          NR > 1 && header && $1 ~ /^[0-9]+$/ { attached = 1 }
          END { exit !attached }'
-}
-
-session_running() {
-  zellij list-sessions --no-formatting 2>/dev/null |
-    awk -v target="$1" '!/\(EXITED - attach to resurrect\)$/ {
-      sub(/ \[Created.*$/, "")
-      if ($0 == target) running = 1
-    } END { exit !running }'
 }
 
 wait_for_attachment() {
@@ -162,11 +294,15 @@ stop_and_forget() {
   for (( attempt = 0; attempt < 80; attempt++ )); do
     if ! session_running "$1"; then
       if zellij delete-session -- "$1"; then
+        rm -rf -- "$(snapshot_dir "$1")"
         return 0
       else
         status=$?
         # An unsaved bridge may not have resurrection data yet.
-        (( status == 2 )) && return 0
+        if (( status == 2 )); then
+          rm -rf -- "$(snapshot_dir "$1")"
+          return 0
+        fi
         return "$status"
       fi
     fi
@@ -368,7 +504,7 @@ case ${1:-} in
     zellij action switch-session "$bridge_session" --layout zanken --cwd "$HOME"
     ;;
   *)
-    echo "Usage: zanken-cmd-zellij-session [new|rename|previous|next|reset|close-tab|kill|last|remember NAME|window NAME]" >&2
+    echo "Usage: zanken-cmd-zellij-session [new|rename|previous|next|reset|close-tab|kill|last|snapshot-all|repair NAME|active NAME|remember NAME|window NAME]" >&2
     exit 2
     ;;
 esac

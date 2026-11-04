@@ -23,10 +23,7 @@ input {
 spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
 spawn-sh-at-startup "wl-paste --watch cliphist store"
 spawn-at-startup "hypridle"
-// Qt's threaded scene-graph loop can crash in Mesa while a transient
-// notification surface is being presented. Keep GPU rendering, but perform
-// scene-graph rendering on Quickshell's main thread.
-spawn-sh-at-startup "QSG_RENDER_LOOP=basic qs -n -d -c zanken"
+spawn-at-startup "qs" "-n" "-d" "-c" "zanken"
 spawn-at-startup "elephant"
 spawn-at-startup "zanken-wallpaper-start"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
@@ -41,8 +38,8 @@ hotkey-overlay {
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 cursor {
-    xcursor-theme "Hornet"
-    xcursor-size 24
+    xcursor-theme "Brushbuddy"
+    xcursor-size 40
 }
 
 prefer-no-csd
@@ -142,6 +139,7 @@ binds {
     Mod+Return { spawn "zanken-launch-terminal-zellij"; }
     Mod+T { spawn "foot"; }
     Mod+Alt+Return { spawn "zanken-launch-terminal-zellij" "--new"; }
+    Mod+S { spawn "zanken-menu-zellij"; }
 
     // Browser / file manager / editor
     Mod+Shift+Return { spawn "zanken-launch-browser"; }
@@ -281,10 +279,10 @@ binds {
     Mod+Alt+F { maximize-window-to-edges; }
     Mod+Ctrl+F { expand-column-to-available-width; }
 
-    // Universal clipboard — Shift+Insert for terminals, Ctrl+V for browsers/GUI
-    Mod+C { spawn "wtype" "-M" "ctrl" "-k" "Insert" "-m" "ctrl"; }
-    Mod+V { spawn "zanken-paste"; }
-    Mod+X { spawn "wtype" "-M" "ctrl" "-k" "x" "-m" "ctrl"; }
+    // Universal clipboard — emit the focused application's native shortcut
+    Mod+C { spawn "zanken-clipboard-key" "copy"; }
+    Mod+V { spawn "zanken-clipboard-key" "paste"; }
+    Mod+X { spawn "zanken-clipboard-key" "cut"; }
 
     Mod+Shift+C { center-column; }
     Mod+Ctrl+C  { center-visible-columns; }

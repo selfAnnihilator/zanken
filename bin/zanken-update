@@ -1,22 +1,9 @@
 #!/bin/bash
-# zanken:summary=Update the Zanken repository
+# zanken:summary=Update the installed Zanken desktop release
 # zanken:group=update
+# zanken:args=[--fetch]
 
 set -euo pipefail
 
-ZANKEN_PATH=${ZANKEN_PATH:-$HOME/zanken}
-
-git -C "$ZANKEN_PATH" pull --ff-only
-zanken-config-desktop sync
-
-if [[ -n ${WAYLAND_DISPLAY:-} ]]; then
-  zanken-restart-quickshell
-  sleep 1
-
-  if ! pgrep -f 'qs.*-c.*zanken' >/dev/null; then
-    zanken-config-desktop rollback
-    zanken-restart-quickshell
-    echo "Quickshell failed after the update; restored the previous desktop configuration" >&2
-    exit 1
-  fi
-fi
+COMMAND_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+exec "$COMMAND_DIR/zanken-release" update "$@"

@@ -3,6 +3,9 @@
 # Keep the inherited OMARCHY_PATH variable as a compatibility alias while
 # third-party and user scripts finish moving to Zanken names.
 export ZANKEN_PATH=$HOME/zanken
+if [[ -d ${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source ]]; then
+  export ZANKEN_PATH="${XDG_DATA_HOME:-$HOME/.local/share}/zanken/current-release/source"
+fi
 export OMARCHY_PATH=$ZANKEN_PATH
 export PATH=$ZANKEN_PATH/bin:$PATH:$HOME/.local/bin
 

@@ -2,5 +2,9 @@
 
 # zanken:summary=Launch the Zanken bluetooth controls TUI (provided by bluetui).
 
+if ! systemctl is-active --quiet bluetooth; then
+  zanken-notification-send "Bluetooth unavailable" "Enable Bluetooth through your distribution's service settings first."
+  exit 1
+fi
 rfkill unblock bluetooth
 exec zanken-launch-or-focus-tui bluetui

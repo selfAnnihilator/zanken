@@ -1,10 +1,15 @@
 abort() {
-  echo -e "\e[31mOmarchy install requires: $1\e[0m"
+  echo -e "\e[31mZanken full install requires: $1\e[0m"
   echo
   gum confirm "Proceed anyway on your own accord and without assistance?" || exit 1
 }
 
 # Must be an Arch distro
+if [[ -e $HOME/.config/niri/config.kdl || -L $HOME/.config/niri/config.kdl ]]; then
+  echo 'Existing Niri configuration found. Use boot.sh --replace-niri, not the full OS installer.' >&2
+  exit 1
+fi
+
 if [[ ! -f /etc/arch-release ]]; then
   abort "Vanilla Arch"
 fi

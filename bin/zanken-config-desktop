@@ -17,6 +17,15 @@ NIRI_CONFIG="$CONFIG_HOME/niri/config.kdl"
 QUICKSHELL_CONFIG="$CONFIG_HOME/quickshell/zanken"
 SETTINGS_FILE="$CONFIG_HOME/zanken/settings.json"
 
+# Once adopted, commands and config must move as one release generation.
+if [[ -L $DATA_HOME/zanken/current-release && ${1:-sync} != "--help" && ${1:-sync} != "-h" ]]; then
+  if [[ ${1:-sync} == "rollback" ]]; then
+    exec "$(dirname -- "${BASH_SOURCE[0]}")/zanken-release" rollback
+  fi
+  echo "Desktop configuration is release-managed; use zanken release switch or update." >&2
+  exit 1
+fi
+
 usage() {
   cat <<'USAGE'
 Usage: zanken config desktop [sync|adopt|rollback]

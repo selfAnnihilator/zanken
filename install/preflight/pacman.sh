@@ -14,10 +14,6 @@ if [[ -n ${ZANKEN_ONLINE_INSTALL:-} ]]; then
     rm -rf "$yay_build_dir"
   fi
 
-  # Configure pacman
-  sudo cp -f "$ZANKEN_PATH/default/pacman/pacman-${ZANKEN_MIRROR:-stable}.conf" /etc/pacman.conf
-  sudo cp -f "$ZANKEN_PATH/default/pacman/mirrorlist-${ZANKEN_MIRROR:-stable}" /etc/pacman.d/mirrorlist
-
-  sudo pacman -Sy
+  # Release modes do not select package mirrors. Use the host's Arch repositories.
   sudo pacman -Syu --noconfirm
 fi

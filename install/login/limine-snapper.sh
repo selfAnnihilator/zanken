@@ -1,4 +1,7 @@
 if command -v limine &>/dev/null; then
+  source "$ZANKEN_INSTALL/helpers/limine-packages.sh"
+  prepare_limine_packages || exit 1
+
   sudo tee /etc/mkinitcpio.conf.d/omarchy_hooks.conf <<EOF >/dev/null
 HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block encrypt filesystems fsck btrfs-overlayfs)
 EOF
@@ -10,22 +13,23 @@ EOF
   [[ -d /sys/firmware/efi ]] && EFI=true
 
   # Find config location
-  if [[ -f /boot/EFI/arch-limine/limine.conf ]]; then
+  if sudo test -f /boot/EFI/arch-limine/limine.conf; then
     limine_config="/boot/EFI/arch-limine/limine.conf"
-  elif [[ -f /boot/EFI/BOOT/limine.conf ]]; then
+  elif sudo test -f /boot/EFI/BOOT/limine.conf; then
     limine_config="/boot/EFI/BOOT/limine.conf"
-  elif [[ -f /boot/EFI/limine/limine.conf ]]; then
+  elif sudo test -f /boot/EFI/limine/limine.conf; then
     limine_config="/boot/EFI/limine/limine.conf"
-  elif [[ -f /boot/limine/limine.conf ]]; then
+  elif sudo test -f /boot/limine/limine.conf; then
     limine_config="/boot/limine/limine.conf"
-  elif [[ -f /boot/limine.conf ]]; then
+  elif sudo test -f /boot/limine.conf; then
     limine_config="/boot/limine.conf"
   else
     echo "Error: Limine config not found" >&2
     exit 1
   fi
 
-  CMDLINE=$(grep "^[[:space:]]*cmdline:" "$limine_config" | head -1 | sed 's/^[[:space:]]*cmdline:[[:space:]]*//')
+  # The ESP may intentionally be root-only (vfat fmask/dmask=0077).
+  CMDLINE=$(sudo grep -m 1 "^[[:space:]]*cmdline:" "$limine_config" | sed 's/^[[:space:]]*cmdline:[[:space:]]*//')
 
   # Write /etc/default/limine *before* installing limine-mkinitcpio-hook, whose
   # post-transaction deploy hook runs limine-install and reads this file. Without
@@ -46,14 +50,16 @@ EOF
 
   # Remove the original config file if it's not /boot/limine.conf, so the deploy
   # hook doesn't see conflicting configs on the same ESP.
-  if [[ $limine_config != "/boot/limine.conf" ]] && [[ -f $limine_config ]]; then
+  if [[ $limine_config != "/boot/limine.conf" ]] && sudo test -f "$limine_config"; then
     sudo rm "$limine_config"
   fi
 
   # We overwrite the whole thing knowing the limine-update will add the entries for us
   sudo cp "$ZANKEN_PATH/default/limine/limine.conf" /boot/limine.conf
 
-  sudo pacman -S --noconfirm --needed limine-snapper-sync limine-mkinitcpio-hook
+  if (( ${#limine_package_args[@]} > 0 )); then
+    sudo pacman --noconfirm "${limine_package_args[@]}" || exit 1
+  fi
 
   # Only snapshot root — /home is user data; rolling it back loses user work
   if ! sudo snapper list-configs 2>/dev/null | grep -q "root"; then
@@ -85,11 +91,11 @@ echo "mkinitcpio hooks re-enabled"
 # boot entries into /boot/limine.conf. Only fall back to limine-update if those
 # hooks didn't run for some reason — running it unconditionally rebuilds every
 # UKI a second time.
-if ! grep -q "^/+" /boot/limine.conf; then
+if ! sudo grep -q "^/+" /boot/limine.conf; then
   sudo limine-update
 fi
 
-if ! grep -q "^/+" /boot/limine.conf; then
+if ! sudo grep -q "^/+" /boot/limine.conf; then
   echo "Error: failed to add boot entries to /boot/limine.conf" >&2
   exit 1
 fi

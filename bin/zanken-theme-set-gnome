@@ -14,5 +14,6 @@ fi
 
 # Deploy GTK4 theme CSS so file manager and other GTK4 apps pick up theme colors
 if [ -f "$THEME_DIR/gtk4.css" ]; then
+    mkdir -p "$HOME/.config/gtk-4.0"
     cp "$THEME_DIR/gtk4.css" "$HOME/.config/gtk-4.0/zanken-theme.css"
 fi

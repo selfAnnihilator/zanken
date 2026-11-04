@@ -13,6 +13,8 @@ bolt
 brightnessctl
 btop
 chromium
+qutebrowser
+zen-browser-bin
 clang
 claude-code
 cliamp
@@ -107,11 +109,15 @@ satty
 sddm
 signal-desktop
 slurp
-spotify
 socat
 starship
 sushi
 swaybg
+swaylock
+mpvpaper
+wl-clip-persist
+cliphist
+elephant
 swayosd
 system-config-printer
 tesseract
@@ -119,6 +125,7 @@ tesseract-data-eng
 tldr
 tree-sitter-cli
 tmux
+zellij
 ttf-ia-writer
 ttf-jetbrains-mono-nerd
 typora
@@ -142,5 +149,5 @@ xdg-terminal-exec
 xmlstarlet
 xournalpp
 yaru-icon-theme
-yay
+# Yay is bootstrapped only when its command is absent; preserve yay/yay-bin.
 zoxide

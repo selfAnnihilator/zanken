@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zanken:summary=Emit clipboard copy/paste/cut shortcuts via ydotool with terminal-aware handling
+# zanken:summary=Emit the focused application's native copy/paste/cut shortcut
 # zanken:group=cmd
 # zanken:name=clipboard-key
 # zanken:args=<copy|paste|cut>
@@ -40,7 +40,7 @@ case "$ACTION" in
   paste)
     case "$APP_ID" in
       foot*|kitty|com.mitchellh.ghostty|org.wezfurlong.wezterm|Alacritty|alacritty)
-        ydotool key 42:1 110:1 110:0 42:0
+        ydotool key 29:1 42:1 47:1 47:0 42:0 29:0
         ;;
       *)
         ydotool key 29:1 47:1 47:0 29:0

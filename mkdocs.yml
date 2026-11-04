@@ -61,7 +61,10 @@ nav:
   - Configuration: configuration.md
   - Keybinds: keybinds.md
   - Themes: themes/index.md
-  - Development: development.md
+  - Development:
+    - Documentation: development.md
+    - Release model: releases.md
+    - Architecture TODO: architecture-todo.md
   - Commands:
     - Overview: commands/index.md
     - Audio & Media: commands/audio.md

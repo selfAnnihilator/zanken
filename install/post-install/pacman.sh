@@ -1,6 +1,6 @@
 # Configure pacman
-sudo cp -f "$ZANKEN_PATH/default/pacman/pacman-${ZANKEN_MIRROR:-stable}.conf" /etc/pacman.conf
-sudo cp -f "$ZANKEN_PATH/default/pacman/mirrorlist-${ZANKEN_MIRROR:-stable}" /etc/pacman.d/mirrorlist
+# A release mode selects Zanken source, not package infrastructure. Preserve
+# the official repository/mirror configuration prepared during preflight.
 
 if lspci -nn | grep -q "106b:180[12]"; then
   # The arch-mact2 mirror ships signed databases (arch-mact2.db.sig), but the

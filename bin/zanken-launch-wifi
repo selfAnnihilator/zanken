@@ -2,5 +2,11 @@
 
 # zanken:summary=Launch the Zanken wifi controls (provided by the Impala TUI).
 
-rfkill unblock wifi
-zanken-launch-or-focus-tui impala
+if systemctl is-active --quiet NetworkManager; then
+  exec zanken-launch-or-focus-tui nmtui
+elif systemctl is-active --quiet iwd; then
+  exec zanken-launch-or-focus-tui impala
+else
+  zanken-notification-send "Wi-Fi unavailable" "Start your configured NetworkManager or iwd service first."
+  exit 1
+fi

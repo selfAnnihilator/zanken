@@ -1,21 +1,10 @@
 #!/bin/bash
 
-# zanken:summary=Set the Zanken git release channel
-# zanken:args=<stable|rc|edge|dev>
-# zanken:requires-sudo=true
+# zanken:summary=Switch the installed Zanken desktop release mode
+# zanken:args=<stable|dev> [--fetch] [--version VERSION] [--adopt] [--allow-downgrade]
+# zanken:examples=zanken channel set dev --fetch | zanken channel set stable --fetch
 
-if (($# == 0)); then
-  echo "Usage: zanken-channel-set [stable|rc|edge|dev]"
-  exit 1
-else
-  channel="$1"
-fi
+set -euo pipefail
 
-case "$channel" in
-"stable") zanken-branch-set "main" ;;
-"rc") zanken-branch-set "rc" ;;
-"edge" | "dev") zanken-branch-set "dev" ;;
-*) echo "Unknown channel: $channel"; exit 1; ;;
-esac
-
-zanken-update -y
+COMMAND_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+exec "$COMMAND_DIR/zanken-release" switch "$@"

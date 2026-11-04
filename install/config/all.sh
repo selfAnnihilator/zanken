@@ -2,6 +2,7 @@ run_logged $ZANKEN_INSTALL/config/config.sh
 run_logged $ZANKEN_INSTALL/config/desktop.sh
 run_logged $ZANKEN_INSTALL/config/theme.sh
 run_logged $ZANKEN_INSTALL/config/cursor-hornet.sh
+run_logged $ZANKEN_INSTALL/config/desktop-assets.sh
 run_logged $ZANKEN_INSTALL/config/branding.sh
 run_logged $ZANKEN_INSTALL/config/git.sh
 run_logged $ZANKEN_INSTALL/config/gpg.sh

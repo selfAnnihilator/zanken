@@ -1,6 +1,8 @@
 # Copy over Zanken configs
 mkdir -p ~/.config
-cp -R "$ZANKEN_PATH"/config/* ~/.config/
+cp -Rn "$ZANKEN_PATH"/config/* ~/.config/
 
 # Use default bashrc from Zanken
-cp "$ZANKEN_PATH/default/bashrc" ~/.bashrc
+if [[ ! -e ~/.bashrc ]]; then
+  cp "$ZANKEN_PATH/default/bashrc" ~/.bashrc
+fi

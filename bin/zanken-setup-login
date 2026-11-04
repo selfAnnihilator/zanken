@@ -1,8 +1,10 @@
 #!/bin/bash
-# zanken:summary=Install the Pixel Sakura password login screen for the next boot
+# zanken:summary=Install the Pixel Sakura login screen and boot animation for the next boot
 # zanken:args=
 set -euo pipefail
 source_dir=$(cd -- "$(dirname -- "$(readlink -f -- "$0")")/.." && pwd)
 python3 -B "$source_dir/lib/zanken/login.py" preflight "$source_dir"
-zanken-pkg-add sddm qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg
+python3 -B "$source_dir/lib/zanken/boot.py" preflight "$source_dir"
+zanken-pkg-add sddm qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg plymouth
 sudo python3 -B "$source_dir/lib/zanken/login.py" apply "$source_dir"
+ZANKEN_PATH=$source_dir bash "$source_dir/install/config/install-plymouth-zanken.sh"

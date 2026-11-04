@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# zanken:summary=Collect read-only login screen and boot animation diagnostics
+# zanken:group=debug
+# zanken:name=login
+# zanken:args=
+# zanken:examples=zanken debug login
+
+section() { printf '\n== %s ==\n' "$1"; }
+run() { printf '$ %s\n' "$*"; "$@" 2>&1 || true; }
+
+section 'Boot target and display manager'
+run systemctl get-default
+run systemctl is-enabled sddm
+run readlink -f /etc/systemd/system/display-manager.service
+run systemctl status sddm --no-pager
+
+section 'SDDM journal (this boot)'
+journalctl -b -u sddm --no-pager 2>&1 | tail -80
+
+section 'Greeter and compositor journal (this boot)'
+journalctl -b _COMM=niri _COMM=sddm-greeter-qt6 --no-pager 2>&1 | tail -80
+
+section 'SDDM configuration'
+for file in /etc/sddm.conf /etc/sddm.conf.d/*.conf; do
+  [[ -f $file ]] || continue
+  printf -- '--- %s\n' "$file"
+  cat "$file"
+done
+
+section 'Getty overrides'
+run ls -la /etc/systemd/system/getty@tty1.service.d/
+
+section 'Kernel command line and bootloader'
+run cat /proc/cmdline
+for file in /etc/default/limine /boot/limine.conf /etc/default/grub /etc/kernel/cmdline; do
+  if [[ -e $file ]]; then echo "present: $file"; else echo "absent:  $file"; fi
+done
+if command -v bootctl >/dev/null; then
+  bootctl is-installed >/dev/null 2>&1 && echo 'systemd-boot: installed' || echo 'systemd-boot: not installed'
+fi
+
+section 'Plymouth'
+run plymouth-set-default-theme
+run grep -h '^HOOKS' /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d/*.conf
+
+section 'Packages'
+run pacman -Q sddm plymouth qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg niri
+
+section 'Environment'
+run systemd-detect-virt
+run ls -l /dev/dri

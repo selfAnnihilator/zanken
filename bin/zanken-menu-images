@@ -126,6 +126,10 @@ cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zanken/image-selector
 index_file="$cache_dir/index.tsv"
 rows=""
 mkdir -p "$cache_dir"
+# Missing thumbnails are queued and built by one low-priority worker. Spawning a
+# converter per image decodes every 4K+ original at once and stalls small machines.
+queue_file=$(mktemp "$cache_dir/queue.XXXXXX")
+trap 'rm -f "$selection_file" "$done_file" "$queue_file"' EXIT
 
 cache_key=$(printf '%s' "$image_dirs_env" | md5sum | cut -d ' ' -f 1)
 rows_cache_file="$cache_dir/$cache_key.rows"
@@ -161,7 +165,7 @@ generate_thumbnail() {
           -q:v 2 "$tmp" -y >/dev/null 2>&1
         ;;
       *)
-        magick "${image}[0]" -auto-orient -resize '1536x864^' -gravity center -extent '1536x864' -strip -quality 82 "$tmp"
+        nice -n 19 magick -limit thread 2 -define jpeg:size=1920x1080 "${image}[0]" -auto-orient -thumbnail '960x540^' -gravity center -extent '960x540' -strip -quality 82 "$tmp"
         ;;
     esac
 
@@ -200,7 +204,7 @@ thumbnail_for() {
       rows_cacheable=false
 
       if [[ $prepare_only != true ]]; then
-        generate_thumbnail "$image" "$thumbnail" >/dev/null 2>&1 &
+        printf '%s\t%s\n' "$image" "$thumbnail" >>"$queue_file"
       fi
 
       printf '%s' "$image"
@@ -273,6 +277,18 @@ fi
 
 video_rows_payload=${video_rows//$'\t'/$'\f'}
 video_rows_payload=${video_rows_payload//$'\n'/$'\v'}
+
+if [[ $lazy_thumbnails == true && $cache_only != true && $prepare_only != true && -s $queue_file ]]; then
+  worker_queue=$(mktemp "$cache_dir/worker.XXXXXX")
+  cp "$queue_file" "$worker_queue"
+  (
+    while IFS=$'\t' read -r queued_image queued_thumbnail; do
+      generate_thumbnail "$queued_image" "$queued_thumbnail"
+    done <"$worker_queue"
+    rm -f "$worker_queue"
+  ) >/dev/null 2>&1 &
+  disown
+fi
 
 if [[ $cache_only == true || $prepare_only == true ]]; then
   exit 0

@@ -576,6 +576,9 @@ ShellRoot {
                 id: image
                 anchors.fill: parent
                 source: item.nearby ? root.fileUrl(item.thumbnailPath) : ""
+                // Cap decode size: a lazy fallback can be a full-size original.
+                sourceSize.width: 960
+                sourceSize.height: 540
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true

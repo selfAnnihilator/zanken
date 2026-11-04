@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# zanken:summary=Inspect, switch, update and recover Zanken desktop releases
+# zanken:args=<validate|status|version|mode|list|resolve|bundle|switch|update|check|rollback|recover> [options]
+# zanken:examples=zanken release validate | zanken release status | zanken release resolve stable --fetch
+
+set -euo pipefail
+
+RELEASE_ROOT=$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/.." && pwd)
+exec python3 -B "$RELEASE_ROOT/lib/zanken/release.py" --repo "${ZANKEN_REPOSITORY:-${ZANKEN_PATH:-$RELEASE_ROOT}}" "$@"

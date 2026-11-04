@@ -11,25 +11,28 @@
 | Local settings | `~/.config/zanken/settings.json` |
 | Foot terminal | `~/.config/foot/foot.ini` |
 | Fish shell | `~/.config/fish/config.fish` |
+| Zellij workspace | `~/.config/zellij/config.kdl` and `~/.config/zellij/layouts/zanken.kdl` |
 | Qutebrowser | `~/.config/qutebrowser/config.py` |
-| Zanken scripts | `~/zanken/bin/` |
+| Zanken scripts | `~/.local/share/zanken/current-release/source/bin/` after adoption |
 | User scripts | `~/.config/zanken/bin/` |
 | Current theme | `~/.config/zanken/current/` |
 
-Zanken owns the portable Niri and Quickshell defaults. They are synced from the
-Zanken checkout into the managed desktop directory during installation and
-updates. Your local settings and Niri override stay outside that directory and
-are never replaced.
+Zanken owns the portable Niri and Quickshell defaults. Release activation moves
+matching commands and desktop configuration together; `~/.local/share/zanken/desktop`
+points into the active generation. Local settings and the Niri override stay
+outside that directory. See the [release model](releases.md) for adoption and rollback.
 
 ## PATH architecture
 
 Scripts are resolved in this order:
 
 1. `~/.config/zanken/bin/` — your personal overrides (highest priority)
-2. `~/zanken/bin/` — base zanken scripts (308 scripts)
-3. `~/.local/share/zanken/bin/` — install cache (fallback)
+2. `~/.local/share/zanken/current-release/source/bin/` — active release commands
+3. `~/zanken/bin/` — development checkout or an installation not yet adopted
 
 Add personal scripts or override base scripts by placing them in `~/.config/zanken/bin/`.
+Normal `zanken` invocations follow the active generation. Developers can explicitly
+inspect source CLI behavior with `ZANKEN_SOURCE_MODE=1`.
 
 ## Zanken current directory
 
@@ -43,6 +46,58 @@ current/
 ```
 
 These are updated automatically when you run `zanken-theme-set <theme>`.
+
+## Terminal workspace
+
+`Super+Alt+Enter` opens Foot attached to the `main` Zellij session. The `t`
+shell shortcut and `zanken-launch-zellij [session]` also attach or resurrect a
+workspace. Plain `zellij` attaches to `main` using the configured session name.
+Ordinary `Super+Enter` and `Super+T` still open a plain terminal.
+
+Zellij uses the previous tmux pane, tab, and detach keys, including
+`Ctrl+Shift+H/J/K/L` for focus and `Ctrl+Space` or `Ctrl+B` as prefix.
+See the [key reference](../config/zellij/KEYBINDINGS.md) or press prefix then `?`.
+Start locked, with frequent shortcuts available directly. `Alt+G` opens the
+native Zellij guide: `Ctrl+P` for pane controls, `Ctrl+T` for tabs, `Ctrl+N` for
+resizing, and `Ctrl+O` for sessions. The bottom status bar shows contextual hints.
+The top bar uses the pinned zjstatus plugin with the modified wiraki/hmajid2301
+style: orange active tabs, blue inactive tabs, mode labels and a session badge. Its settings are in `layouts/zanken.kdl`;
+the native two-line guide appears after `Alt+G` or the compatibility prefix and
+disappears when returning to locked mode. The guide overlays the bottom two rows
+when opened and reserves no terminal space while hidden. Pane borders and titles are disabled,
+and the top bar has the preset's two-row spacing.
+`Alt+G` locks again. Native pane/tab actions and popups return to locked mode so
+application input and the popup's own shortcuts work immediately. Enter/Escape
+also leaves a guide mode for locked mode. Unlocked normal mode is a command mode.
+The tmux-style prefix lives in its own compatibility mode,
+so it does not replace the native guided controls. Configuration reloads automatically.
+
+`Ctrl+Space`, release, then lowercase `k` resets the whole current session;
+`Ctrl+B` and uppercase `K` work too. This stops its programs, deletes the saved
+resurrection state and opens one fresh shell in your home directory under the
+same session name. Other sessions are preserved.
+
+`Ctrl+Alt+X` closes the active pane when the tab has multiple panes, otherwise
+closes that tab. Closing the final tab also deletes the saved session state.
+During Zellij search, a temporary pane frame displays the query and search
+options; leaving search restores borderless panes.
+
+Prefix `x` permanently closes the current tab and all its panes. Remaining tabs
+are saved immediately. Closing the final tab ends the session and deletes its
+saved layout, so the next launch starts fresh. Prefix `d` detaches and keeps
+the session and its programs available for reattaching. The launcher waits for
+any final-tab cleanup before opening the session again.
+
+The isolated input regression is `python3 test/zanken-zellij-input-test.py`.
+It uses a PTY and temporary configuration/layout directories to test native mode
+exits and the popup controls without taking desktop focus or changing saved layouts.
+
+Session serialization saves the layout, commands, working directories, viewport,
+and up to 50,000 scrollback lines per pane once per second. After a reboot,
+reattaching restores the workspace with ordinary commands waiting for Enter;
+detected editor files can reopen automatically. Application
+memory and unsaved editor buffers are not restored by Zellij. Existing tmux
+sessions remain available separately.
 
 ## Weather location
 
@@ -118,6 +173,48 @@ Restart the bar after edits:
 zanken-restart-quickshell
 ```
 
+## Wi-Fi card
+
+The Wi-Fi card follows NetworkManager changes while it is open. Connecting,
+disconnecting and radio changes update the connected row without reopening it.
+Cached signal and connection details refresh every three seconds; nearby
+discovery scans run every fifteen seconds while the card is open. The refresh
+button requests an additional scan.
+
+Saved networks use their actual SSIDs, even when their connection profiles have
+been renamed. The card tracks Wi-Fi independently of a wired or USB uplink.
+
+Run the isolated regression check without changing real network connections:
+
+```bash
+dbus-run-session -- python3 test/check_wifi_live.py
+```
+
+## Hardware power-mode keys
+
+Some laptops change their firmware mode with Fn+Q while `powerprofilesctl get`
+continues to report the previous profile. The optional
+`zanken-powerprofiles-sync.service` follows firmware changes and updates the power
+service, including its CPU policy and the battery panel. It preserves manual
+panel selections and leaves custom firmware profiles alone.
+
+For a development checkout at `~/zanken`, enable it with:
+
+```bash
+mkdir -p ~/.config/systemd/user
+install -m 0644 ~/zanken/config/systemd/user/zanken-powerprofiles-sync.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now zanken-powerprofiles-sync.service
+```
+
+The service requires Python 3, `powerprofilesctl`, and
+`/sys/firmware/acpi/platform_profile`. Keep the checkout available at `~/zanken`;
+the unit runs its helper directly. Disable it with
+`systemctl --user disable --now zanken-powerprofiles-sync.service`.
+It does not select profiles based on charging state. To keep the selected mode
+when plugging or unplugging, separately disable Zanken's charger-event policy
+with `sudo systemctl mask zanken-power-profile.service`.
+
 ## Notifications
 
 Quickshell owns the Zanken notification server. The notification panel keeps
@@ -134,3 +231,38 @@ the sender's capabilities intact:
 
 Notifications restored from a previous shell session are intentionally
 display-only because their originating sender action is no longer available.
+
+## Optional VPN status on the network icon
+
+Configure `~/.config/zanken/vpn-status.json` to attach a local VPN controller:
+
+```json
+{
+  "statusCommand": ["/absolute/path/controller", "--bar-status"],
+  "verifyCommand": ["/absolute/path/controller", "--status-json"],
+  "openCommand": ["/absolute/path/controller"]
+}
+```
+
+Commands are argv arrays. The status command returns JSON containing `state`
+and optional `uplink_kind` (`wifi`, `eth`, `usb`, `none`). Supported states are
+`connected`, `disconnected`, `paused`, `checking`, `unverified`, `unprotected`,
+and `unavailable`. The controller must report `connected` only after verifying
+its protection. Status runs every two seconds; an optional separate verifier
+runs every twenty seconds and should update the controller's proof cache.
+
+A green lock marks verified protection, a pause badge marks blocked internet,
+and a warning marks uncertain or incomplete protection. Stale/failed local
+status removes the lock. Hover for status; right-click to open VPN controls.
+Left-click still opens the network menu. Missing configuration disables this
+integration. Keep provider output free of credentials and unnecessary addresses.
+
+The background-apps dropdown includes a VPN entry while its monitor is active.
+Left-click opens controls. To support its right-click **Close completely** action,
+add `closeCommand` (an argv array) and `backgroundStatePath` (an absolute path to a
+controller-owned session JSON file). The close command should stop the VPN and
+its guard, restore ordinary internet, and close its controls before atomically
+writing `{"closed": true}`. The bar then hides the entry and stops its status and
+verification processes and timers. Opening the controller should write
+`{"closed": false}` to resume monitoring; it can leave connecting to the user.
+On cleanup failure, leave the closed marker unset so recovery remains accessible.

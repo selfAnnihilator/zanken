@@ -1,0 +1,76 @@
+name: Prepare signed release draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing signed stable tag version, for example 4.0.0
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      ALLOWED_SIGNERS: ${{ vars.ZANKEN_RELEASE_ALLOWED_SIGNERS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify publisher and export exact source
+        run: |
+          [[ "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ -n "$ALLOWED_SIGNERS" ]]
+          mkdir -p "$HOME/.config/zanken"
+          printf '%s\n' "$ALLOWED_SIGNERS" > "$HOME/.config/zanken/release-allowed-signers"
+          git merge-base --is-ancestor "refs/tags/zanken-v$RELEASE_VERSION^{commit}" origin/main
+          bin/zanken-release bundle stable --version "$RELEASE_VERSION" --output artifact
+          mkdir candidate
+          tar -xf artifact/source.tar -C candidate
+      - name: Test candidate release behavior
+        working-directory: candidate
+        run: |
+          bin/zanken-release validate
+          python3 -B -m unittest discover -s test -p 'test_*.py' -v
+          bin/zanken commands --check
+          bin/zanken-dev-generate-command-docs --check
+      - name: Verify candidate documentation
+        working-directory: candidate
+        run: |
+          pip install mkdocs-material
+          mkdocs build --strict --clean
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-release-source
+          path: artifact/
+
+  draft:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-release-source
+          path: artifact
+      # Stable tags are a promotion decision: finish VM acceptance before signing
+      # and pushing one. A GitHub draft does not hide a tag from Git consumers.
+      - name: Create draft release notes for the already accepted stable tag
+        run: |
+          gh release create "zanken-v$RELEASE_VERSION" \
+            artifact/source.tar artifact/SHA256SUMS artifact/candidate.json \
+            --verify-tag --draft --generate-notes \
+            --title "Zanken $RELEASE_VERSION"

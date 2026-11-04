@@ -35,6 +35,10 @@ def run(evidence):
     w.key("k")
     w.wait(lambda: w.proc.poll() is not None and not list((w.root / "runtime").glob("zanken-kill.*")), 15)
     w.check("kill returns launcher selection to the recent surviving session", last() == recent)
+    subprocess.check_call([helper, "active", older], env=w.env)
+    w.check("active marks a live session as most recent", last() == older)
+    subprocess.check_call([helper, "active", "not a live session"], env=w.env)
+    w.check("active ignores a session that is not live", last() == older)
     w.check("both original workspaces stay intact",
             "KEEP_RECENT" in w.action("list-tabs", "--all", "--json", session=recent)
             and "KEEP_OLDER" in w.action("list-tabs", "--all", "--json", session=older))

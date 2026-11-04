@@ -1,0 +1,8 @@
+#!/bin/bash
+# zanken:summary=Install the Pixel Sakura password login screen for the next boot
+# zanken:args=
+set -euo pipefail
+source_dir=$(cd -- "$(dirname -- "$(readlink -f -- "$0")")/.." && pwd)
+python3 -B "$source_dir/lib/zanken/login.py" preflight "$source_dir"
+zanken-pkg-add sddm qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg
+sudo python3 -B "$source_dir/lib/zanken/login.py" apply "$source_dir"

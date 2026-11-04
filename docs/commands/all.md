@@ -1,6 +1,6 @@
 # All Commands
 
-265 public commands generated from CLI metadata.
+271 public commands generated from CLI metadata.
 
 | Command | Description |
 |---------|-------------|
@@ -23,11 +23,12 @@
 | `zanken-capture-screenrecording` | Start or stop screen recording |
 | `zanken-capture-screenshot` | Take a screenshot |
 | `zanken-capture-text-extraction` | Extract text from a selected screen region |
-| `zanken-channel-set` | Set the Zanken git release channel |
+| `zanken-channel-set` | Switch the installed Zanken desktop release mode |
 | `zanken-paste` | Paste with terminal-aware keyboard shortcuts |
-| `zanken-clipboard-key` | Emit clipboard copy/paste/cut shortcuts via ydotool with terminal-aware handling |
+| `zanken-clipboard-key` | Emit the focused application's native copy/paste/cut shortcut |
 | `zanken-cmd-missing` | Check whether any required commands are missing |
 | `zanken-cmd-present` | Check whether all required commands are available |
+| `zanken-cmd-zellij-session` | Manage Zellij sessions or permanently close the current tab |
 | `zanken-config-desktop` | Sync or adopt the managed Zanken desktop configuration |
 | `zanken-config-direct-boot` | Add or remove an EFI boot entry for the Zanken UKI, allowing the system to boot directly |
 | `zanken-debug` | Print debugging information |
@@ -104,16 +105,19 @@
 | `zanken-launch-or-focus-webapp` | Launch or focus on a given web app identified by the window-pattern. |
 | `zanken-launch-screensaver` | Lock the session from the screensaver action |
 | `zanken-launch-terminal` | Launch a terminal in the active terminal's current directory |
-| `zanken-launch-terminal-tmux` | Launch or attach to the Work tmux session in a terminal |
+| `zanken-launch-terminal-tmux` | Open the Zellij workspace through the legacy tmux launcher route |
+| `zanken-launch-terminal-zellij` | Focus a Zellij workspace or open it in a terminal |
 | `zanken-launch-tui` | Launch a TUI command in the default terminal with Zanken styling |
 | `zanken-launch-webapp` | Launch a URL as a web app in the default supported browser |
 | `zanken-launch-wifi` | Launch the Zanken wifi controls (provided by the Impala TUI). |
+| `zanken-launch-zellij` | Resume the last Zellij workspace or start a fresh session |
 | `zanken-menu` | Launch the Zanken menu or jump straight to a submenu |
 | `zanken-menu-file` | Pick a file with Walker |
 | `zanken-menu-images` | Open a generic image selector menu |
 | `zanken-menu-input` | Prompt for text input with Walker |
 | `zanken-menu-select` | Pick one option with Walker |
 | `zanken-menu-tmux-keybindings` | Display Tmux keybindings defined in your configuration using walker for an interactive search menu. |
+| `zanken-menu-zellij` | Pick an existing Zellij session to open or focus |
 | `zanken-migrate` | Run all pending migrations to bring the system in line with the installed version. |
 | `zanken-niri-keybindings` | Display niri keybindings from config.kdl using fzf or stdout |
 | `zanken-niri-launch-or-focus` | Launch an app or focus an existing Niri window matching a pattern |
@@ -153,6 +157,7 @@
 | `zanken-reinstall-configs` | Reset all Zanken user configs to the defaults |
 | `zanken-reinstall-git` | Reinstall the stable Zanken source directory from git |
 | `zanken-reinstall-pkgs` | Install all default Zanken packages |
+| `zanken-release` | Inspect, switch, update and recover Zanken desktop releases |
 | `zanken-reminder` | Set and show lightweight desktop notification reminders |
 | `zanken-reminder-set` | Set a reminder via fzf (no walker required) |
 | `zanken-remove-browser` | Remove a supported browser and clean up Zanken browser defaults |
@@ -184,6 +189,7 @@
 | `zanken-restart-wifi` | Unblock and restart the Wi-Fi service. |
 | `zanken-restart-xcompose` | Restart the XCompose input method service (fcitx5) to apply new compose key settings. |
 | `zanken-setup-dns` | Configure the system DNS provider |
+| `zanken-setup-login` | Install the Pixel Sakura password login screen for the next boot |
 | `zanken-setup-security-fido2` | Set up FIDO2 authentication for sudo and polkit |
 | `zanken-setup-security-fingerprint` | Set up fingerprint authentication for sudo and polkit |
 | `zanken-menu-share` | Share clipboard, files, or folders with LocalSend |
@@ -234,7 +240,7 @@
 | `zanken-tui-remove` | Remove terminal UI desktop launchers |
 | `zanken-tui-remove-all` | Remove all TUIs installed via zanken-tui-install. |
 | `zanken-tz-select` | Select and set the system timezone |
-| `zanken-update` | Update the Zanken repository |
+| `zanken-update` | Update the installed Zanken desktop release |
 | `zanken-update-analyze-logs` | Check the update log for known failure conditions |
 | `zanken-update-aur-pkgs` | Update AUR packages if any are installed |
 | `zanken-update-available-reset` | Clear the available-update indicator state |
@@ -248,9 +254,9 @@
 | `zanken-zanken-sync` | Sync zanken shell with remote |
 | `zanken-update-system-pkgs` | Update system packages with pacman |
 | `zanken-update-time` | Restart system time synchronization |
-| `zanken-version` | Print the installed Zanken version |
-| `zanken-version-branch` | Print the current Zanken git branch |
-| `zanken-version-channel` | Print the active Zanken git release channel |
+| `zanken-version` | Print the installed release version or unmanaged source version |
+| `zanken-version-branch` | Print the source Git branch, independently of installed release mode |
+| `zanken-version-channel` | Print the installed release mode or unmanaged |
 | `zanken-version-pkgs` | Print when system packages were last upgraded |
 | `zanken-voxtype-config` | Open the Voxtype configuration file |
 | `zanken-voxtype-install` | Install and configure Voxtype dictation |

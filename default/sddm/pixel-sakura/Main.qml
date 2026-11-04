@@ -1,0 +1,540 @@
+import Qt5Compat.GraphicalEffects
+import QtQuick
+import QtQuick.Window
+import SddmComponents 2.0
+
+Rectangle {
+    id: root
+
+    readonly property real s: Screen.height / 768
+    property bool isQuickshell: typeof sddm === "undefined" || sddm.hostName === undefined
+    property int sessionIndex: (typeof sessionModel !== "undefined" && sessionModel.lastIndex >= 0) ? sessionModel.lastIndex : 0
+    property int userIndex: (typeof userModel !== "undefined" && userModel.lastIndex >= 0) ? userModel.lastIndex : 0
+    property real ui: 0
+    property bool sessionMenuOpen: false
+    // Colors
+    readonly property color sakuraPink: "#df7a8c"
+    readonly property color slateDark: "#32354c"
+    readonly property color slateMid: "#506275"
+    readonly property color sunRed: "#e26b67"
+
+    function doLogin() {
+        var u = (userHelper.currentItem && userHelper.currentItem.uLogin) ? userHelper.currentItem.uLogin : (typeof userModel !== "undefined" ? userModel.lastUser : "");
+        if (typeof sddm !== "undefined")
+            sddm.login(u, pwdInput.text, root.sessionIndex);
+
+    }
+
+    width: Screen.width
+    height: Screen.height
+    color: "#ebf0f5"
+    Component.onCompleted: {
+        entryAnim.start();
+        keyboard.numLock = true;
+    }
+
+    // Cursor
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.ArrowCursor
+        z: -1
+    }
+
+    FontLoader {
+        id: pf
+
+        source: "font/PixelifySans-Bold.ttf"
+    }
+
+    ListView {
+        id: sessionHelper
+
+        model: typeof sessionModel !== "undefined" ? sessionModel : null
+        currentIndex: root.sessionIndex
+        visible: false
+        width: 100
+        height: 100
+
+        delegate: Item {
+            property string sName: model.name || ""
+        }
+
+    }
+
+    ListView {
+        id: userHelper
+
+        model: typeof userModel !== "undefined" ? userModel : null
+        currentIndex: root.userIndex
+        visible: false
+        width: 100
+        height: 100
+
+        delegate: Item {
+            property string uName: model.realName || model.name || ""
+            property string uLogin: model.name || ""
+        }
+
+    }
+
+    Timer {
+        interval: 300
+        running: true
+        onTriggered: pwdInput.forceActiveFocus()
+    }
+
+    NumberAnimation {
+        id: entryAnim
+
+        target: root
+        property: "ui"
+        from: 0
+        to: 1
+        duration: 1600
+        easing.type: Easing.OutCubic
+    }
+
+    // Fallback
+    Rectangle {
+        anchors.fill: parent
+        color: "#ebf0f5"
+        z: -3
+    }
+
+    Loader {
+        anchors.fill: parent
+        source: "BackgroundVideo.qml"
+    }
+
+    // Clock
+    Item {
+        id: clockZone
+
+        width: 300 * s
+        height: 120 * s
+        anchors.left: parent.left
+        anchors.leftMargin: 40 * s
+        anchors.top: parent.top
+        anchors.topMargin: 40 * s
+        opacity: root.ui
+
+        Text {
+            id: clockText
+
+            text: Qt.formatTime(new Date(), "HH:mm")
+            color: root.slateDark
+            font.family: pf.name
+            font.pixelSize: 64 * s
+            font.bold: true
+            anchors.left: parent.left
+            anchors.top: parent.top
+
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+                onTriggered: clockText.text = Qt.formatTime(new Date(), "HH:mm")
+            }
+
+        }
+
+        Text {
+            id: dateText
+
+            text: Qt.formatDate(new Date(), "dddd, MMMM d").toUpperCase()
+            color: root.sakuraPink
+            font.family: pf.name
+            font.pixelSize: 11 * s
+            font.letterSpacing: 2 * s
+            font.bold: true
+            anchors.left: parent.left
+            anchors.top: clockText.bottom
+            anchors.topMargin: -4 * s
+        }
+
+        // Divider
+        Row {
+            anchors.top: dateText.bottom
+            anchors.topMargin: 12 * s
+            anchors.left: parent.left
+            spacing: 4 * s
+
+            Repeater {
+                model: 10
+
+                Rectangle {
+                    width: 6 * s
+                    height: 1.5 * s
+                    color: root.slateMid
+                    opacity: 0.35
+                }
+
+            }
+
+        }
+
+    }
+
+    // Login
+    Item {
+        id: loginZone
+
+        width: 320 * s
+        height: 120 * s
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: 60 * s // Offset
+        opacity: root.ui
+
+        // Username
+        Item {
+            id: userPill
+
+            width: parent.width
+            height: 28 * s
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            Text {
+                text: ((userHelper.currentItem && userHelper.currentItem.uName) ? userHelper.currentItem.uName : (userModel.lastUser || "Trainer")).toUpperCase()
+                color: userMouse.containsMouse ? root.sakuraPink : root.slateDark
+                font.family: pf.name
+                font.pixelSize: 18 * s
+                font.bold: true
+                font.letterSpacing: 4 * s
+                anchors.centerIn: parent
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+
+                }
+
+            }
+
+            MouseArea {
+                id: userMouse
+
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (typeof userModel !== "undefined" && userModel.rowCount() > 1)
+                        root.userIndex = (root.userIndex + 1) % userModel.rowCount();
+
+                }
+            }
+
+        }
+
+        // Password
+        Item {
+            id: pwdContainer
+
+            width: 240 * s
+            height: 34 * s
+            anchors.top: userPill.bottom
+            anchors.topMargin: 8 * s
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            // Border
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.rgba(255, 255, 255, 0.45)
+                border.color: pwdInput.activeFocus ? root.sakuraPink : root.slateMid
+                border.width: 1.5 * s
+
+                // Corners
+                Rectangle {
+                    width: 3 * s
+                    height: 3 * s
+                    color: root.sakuraPink
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    visible: pwdInput.activeFocus
+                }
+
+                Rectangle {
+                    width: 3 * s
+                    height: 3 * s
+                    color: root.sakuraPink
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    visible: pwdInput.activeFocus
+                }
+
+                Rectangle {
+                    width: 3 * s
+                    height: 3 * s
+                    color: root.sakuraPink
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    visible: pwdInput.activeFocus
+                }
+
+                Rectangle {
+                    width: 3 * s
+                    height: 3 * s
+                    color: root.sakuraPink
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    visible: pwdInput.activeFocus
+                }
+
+            }
+
+            Text {
+                anchors.centerIn: parent
+                text: "PASSWORD"
+                color: root.slateMid
+                font.family: pf.name
+                font.pixelSize: 11 * s
+                font.letterSpacing: 2 * s
+                opacity: pwdInput.text.length === 0 ? 0.7 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                    }
+
+                }
+
+            }
+
+            TextInput {
+                id: pwdInput
+
+                property bool wasClicked: false
+
+                anchors.fill: parent
+                anchors.leftMargin: 14 * s
+                anchors.rightMargin: 14 * s
+                horizontalAlignment: TextInput.AlignHCenter
+                verticalAlignment: TextInput.AlignVCenter
+                color: root.slateDark
+                font.family: pf.name
+                font.pixelSize: 16 * s
+                font.letterSpacing: 3 * s
+                echoMode: TextInput.Password
+                passwordCharacter: "■"
+                onTextEdited: errText.text = ""
+                focus: true
+                clip: true
+                cursorVisible: false
+                selectionColor: root.sakuraPink
+                Keys.onReturnPressed: doLogin()
+                Keys.onEnterPressed: doLogin()
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        pwdInput.forceActiveFocus();
+                        pwdInput.wasClicked = true;
+                    }
+                }
+
+                cursorDelegate: Item {
+                    width: 0
+                    height: 0
+                }
+
+            }
+
+        }
+
+        // Error
+        Text {
+            id: errText
+
+            text: ""
+            color: root.sunRed
+            font.family: pf.name
+            font.pixelSize: 9 * s
+            font.bold: true
+            font.letterSpacing: 2 * s
+            anchors.top: pwdContainer.bottom
+            anchors.topMargin: 8 * s
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        // Actions
+        Row {
+            id: actionZone
+
+            anchors.top: pwdContainer.bottom
+            anchors.topMargin: 25 * s
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 16 * s
+
+            // Session
+            Item {
+                width: 90 * s
+                height: 24 * s
+
+                Row {
+                    spacing: 5 * s
+                    anchors.centerIn: parent
+
+                    // Icon
+                    Text {
+                        text: "❖"
+                        font.pixelSize: 8 * s
+                        color: sessMouse.containsMouse ? root.sakuraPink : root.slateMid
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        id: sessText
+
+                        text: (sessionHelper.currentItem && sessionHelper.currentItem.sName ? sessionHelper.currentItem.sName : "SESSION").toUpperCase()
+                        color: sessMouse.containsMouse ? root.sakuraPink : root.slateMid
+                        font.family: pf.name
+                        font.pixelSize: 11 * s
+                        font.bold: true
+                        font.letterSpacing: 1.5 * s
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                MouseArea {
+                    id: sessMouse
+
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (typeof sessionModel !== "undefined" && sessionModel.rowCount() > 1) {
+                            root.sessionIndex = (root.sessionIndex + 1) % sessionModel.rowCount()
+                        }
+                    }
+                }
+            }
+
+            // Power
+            Repeater {
+                model: [{
+                    "label": "RESTART",
+                    "action": 0
+                }, {
+                    "label": "SHUT DOWN",
+                    "action": 1
+                }]
+
+                delegate: Item {
+                    width: modelData.label === "SHUT DOWN" ? 96 * s : 78 * s
+                    height: 24 * s
+
+                    Text {
+                        text: modelData.label
+                        color: powerMouse.containsMouse ? root.sakuraPink : root.slateMid
+                        font.family: pf.name
+                        font.pixelSize: 11 * s
+                        font.bold: true
+                        font.letterSpacing: 1.5 * s
+                        anchors.centerIn: parent
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+
+                        }
+
+                    }
+
+                    MouseArea {
+                        id: powerMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (modelData.action === 0) {
+                                if (typeof sddm !== "undefined")
+                                    sddm.reboot();
+
+                            } else {
+                                if (typeof sddm !== "undefined")
+                                    sddm.powerOff();
+
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+
+        transform: Translate {
+            id: shakeTranslate
+
+            x: 0
+        }
+
+    }
+
+    // Shake
+    SequentialAnimation {
+        id: shakeAnim
+
+        NumberAnimation {
+            target: shakeTranslate
+            property: "x"
+            to: 8 * s
+            duration: 50
+        }
+
+        NumberAnimation {
+            target: shakeTranslate
+            property: "x"
+            to: -6 * s
+            duration: 50
+        }
+
+        NumberAnimation {
+            target: shakeTranslate
+            property: "x"
+            to: 4 * s
+            duration: 50
+        }
+
+        NumberAnimation {
+            target: shakeTranslate
+            property: "x"
+            to: -2 * s
+            duration: 50
+        }
+
+        NumberAnimation {
+            target: shakeTranslate
+            property: "x"
+            to: 0
+            duration: 50
+        }
+
+    }
+
+    Connections {
+        function onLoginFailed() {
+            errText.text = "ACCESS DENIED";
+            pwdInput.text = "";
+            pwdInput.focus = true;
+            shakeAnim.start();
+        }
+
+        target: typeof sddm !== "undefined" ? sddm : null
+    }
+
+}

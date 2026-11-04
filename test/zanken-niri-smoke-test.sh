@@ -50,7 +50,7 @@ assert_file_contains "Niri entry point includes managed Zanken defaults" "$NIRI_
 [[ $(readlink "$work_tree/.config/quickshell/zanken") == "$work_tree/.local/share/zanken/desktop/quickshell" ]] || fail "Quickshell entry point targets managed Zanken defaults"
 [[ -f $work_tree/.config/zanken/niri.kdl ]] || fail "desktop adoption creates a local Niri override"
 [[ -f $work_tree/.config/zanken/settings.json ]] || fail "desktop adoption creates local Zanken settings"
-rg -Fq 'spawn-sh-at-startup "QSG_RENDER_LOOP=basic qs -n -d -c zanken"' "$ROOT/default/desktop/niri/config.kdl" || fail "Quickshell uses the basic render loop"
+rg -Fq 'spawn-at-startup "qs" "-n" "-d" "-c" "zanken"' "$ROOT/default/desktop/niri/config.kdl" || fail "Quickshell starts with the managed config"
 parser_home="$TMPDIR/parser-home"
 parser_config="$parser_home/.config/niri/config.kdl"
 parser_managed="$parser_home/.local/share/zanken/desktop/niri/config.kdl"
@@ -162,22 +162,40 @@ pass "browser hotkeys use their configurable Zanken launchers"
 rg -Fq 'Mod+Ctrl+Print { spawn "zanken-capture-text-extraction"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "text extraction uses the Mod+Ctrl+Print hotkey"
 pass "text extraction uses the Mod+Ctrl+Print hotkey"
 
+rg -Fq 'Mod+C { spawn "zanken-clipboard-key" "copy"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "global copy uses the app-aware clipboard dispatcher"
+rg -Fq 'Mod+V { spawn "zanken-clipboard-key" "paste"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "global paste uses the app-aware clipboard dispatcher"
+rg -Fq 'Mod+X { spawn "zanken-clipboard-key" "cut"; }' "$ROOT/default/desktop/niri/config.kdl" || fail "global cut uses the app-aware clipboard dispatcher"
+rg -Fq 'ydotool key 29:1 42:1 46:1 46:0 42:0 29:0' "$ROOT/bin/zanken-clipboard-key" || fail "terminal copy emits Ctrl+Shift+C"
+rg -Fq 'ydotool key 29:1 42:1 47:1 47:0 42:0 29:0' "$ROOT/bin/zanken-clipboard-key" || fail "terminal paste emits Ctrl+Shift+V"
+rg -Fq 'ydotool key 29:1 45:1 45:0 29:0' "$ROOT/bin/zanken-clipboard-key" || fail "cut emits Ctrl+X"
+pass "global clipboard shortcuts share the app-aware dispatcher"
+
 rg -Fq 'readonly property bool hasTrackTimeline: Number.isFinite(trackLen) && trackLen >= 1' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress waits for a valid MPRIS timeline"
 rg -Fq 'property real displayRatio: Number.isFinite(rawRatio) ? Math.max(0, Math.min(1, rawRatio)) : 0' "$ROOT/default/desktop/quickshell/MusicPopup.qml" || fail "music progress clamps transient MPRIS ratios"
 pass "music progress stays within its popup during transient MPRIS timelines"
+
+rg -Fq 'id: quickGridScroll' "$ROOT/default/desktop/quickshell/OmniMenu.qml" || fail "expanded Quick sidebar has a bounded scroll viewport"
+rg -Fq 'interactive: quickGridScroll.colMode && contentHeight > height' "$ROOT/default/desktop/quickshell/OmniMenu.qml" || fail "expanded Quick sidebar scrolls only when its options overflow"
+rg -Fq 'quickGridScroll.ensureSelectionVisible();' "$ROOT/default/desktop/quickshell/OmniMenu.qml" || fail "keyboard navigation reveals the selected Quick option"
+pass "expanded Quick sidebar stays inside the menu"
+
+rg -Fq 'id: bodyScrollWheel' "$ROOT/default/desktop/quickshell/OmniMenu.qml" || fail "expanded Quick bodies handle wheel scrolling"
+rg -Fq 'bodyScroll.contentY = Math.max(0, Math.min(max, bodyScroll.contentY + dy));' "$ROOT/default/desktop/quickshell/OmniMenu.qml" || fail "expanded Quick bodies clamp wheel scrolling to their content"
+pass "expanded Quick bodies support bounded wheel scrolling"
 
 rg -Uq 'function closeAllCards\(\) \{\n        root\.calendarVisible' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "shared card dismissal includes the calendar"
 rg -Uq 'function openCalendar\(\) \{\n        root\.closeAllCards\(\);' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "opening the calendar dismisses the previous bar card"
 rg -Fq 'readonly property int barSurfaceThickness: barHeight + (round && isHorizontal ? 15 : 0)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "popup input margins cover the full cloud bar"
 rg -Fq 'card.theme.barSurfaceThickness' "$ROOT/default/desktop/quickshell/CardWindow.qml" || fail "shared cards leave the full bar clickable"
-rg -Fq 'root.barSurfaceThickness' "$ROOT/default/desktop/quickshell/PowerPopup.qml" || fail "power overlay leaves the full bar clickable"
+if rg -q 'WlrLayershell.margins' "$ROOT/default/desktop/quickshell/PowerPopup.qml"; then
+  fail "power overlay covers the entire screen"
+fi
 rg -Fq 'root.barSurfaceThickness' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray overlay leaves the full bar clickable"
 rg -Fq 'WlrLayershell.keyboardFocus: revealed && keyboardFocusRequested ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/CardWindow.qml" || fail "shared cards request keyboard focus only after interaction"
-rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/PowerPopup.qml" || fail "power card preserves application focus"
+rg -Fq 'WlrLayershell.keyboardFocus: root.powerVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/PowerPopup.qml" || fail "power menu captures keyboard input while open"
 rg -Fq 'WlrLayershell.keyboardFocus: WlrKeyboardFocus.None' "$ROOT/default/desktop/quickshell/TrayPopup.qml" || fail "tray card preserves application focus"
 if rg -q 'focus: (card\.revealed|root\.powerVisible|root\.trayVisible)' \
   "$ROOT/default/desktop/quickshell/CardWindow.qml" \
-  "$ROOT/default/desktop/quickshell/PowerPopup.qml" \
   "$ROOT/default/desktop/quickshell/TrayPopup.qml"; then
   fail "opening a bar card does not request keyboard focus"
 fi
@@ -198,7 +216,15 @@ rg -Fq 'function relativeTime(timestamp)' "$ROOT/default/desktop/quickshell/Noti
 rg -Fq 'function setSourceCollapsed(key, collapsed)' "$ROOT/default/desktop/quickshell/NotificationsPopup.qml" || fail "notification panel can collapse a source group"
 rg -Fq 'root.notificationDefaultAction(notification)' "$ROOT/default/desktop/quickshell/NotificationsPopup.qml" || fail "notification panel promotes real default actions"
 rg -Fq 'toastPanel.root.invokeDefaultNotificationAction(notif)' "$ROOT/default/desktop/quickshell/NotificationToast.qml" || fail "notification toasts invoke default actions"
-rg -Uq '(?s)function removeFromToast\(targetNotif\) \{.{0,500}Qt\.callLater' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification removals defer repeater model mutations"
+rg -Uq '(?s)function removeFromToast\([^)]*\) \{.{0,500}Qt\.callLater' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification removals defer repeater model mutations"
+rg -Fq 'root.toastItems = root.toastItems.concat([item]);' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification toasts retain stable snapshot records"
+rg -Fq 'required property var toastItem' "$ROOT/default/desktop/quickshell/NotificationToast.qml" || fail "notification toast delegates consume stable snapshot records"
+rg -Fq 'property int nextToastId: 0' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "notification toasts have stable dismissal identifiers"
+rg -Fq 'toastId: ++root.nextToastId' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "new notification toasts receive a stable dismissal identifier"
+rg -Fq 'removeFromToast(notif, toastItem.toastId)' "$ROOT/default/desktop/quickshell/NotificationToast.qml" || fail "notification toast controls dismiss by stable identifier"
+if rg -Fq 'notif: modelData' "$ROOT/default/desktop/quickshell/NotificationToast.qml"; then
+  fail "notification QObjects are not used directly as a repeater model"
+fi
 rg -Fxq 'import Quickshell.Io' "$ROOT/default/desktop/quickshell/shell.qml" || fail "Quickshell restart IPC imports its handler type"
 pass "notification triage, actions, replies, and default opens are wired to their sender"
 
@@ -217,12 +243,18 @@ rg -Fq 'text: "SAVED NEARBY"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" |
 rg -Fq '"NEARBY · SCANNING…" : "NEARBY"' "$ROOT/default/desktop/quickshell/WifiPopup.qml" || fail "Wi-Fi panel separates new nearby networks"
 rg -Fq 'function refreshWifiDetails()' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Wi-Fi panel can read active connection diagnostics"
 rg -Fq 'target: "wifi"' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Wi-Fi panel can be opened through Quickshell IPC"
+rg -Fq 'function parseWifiNetworks(scanText)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Wi-Fi scan results have one shared normalizer"
+rg -Fq 'const scan = root.parseWifiNetworks(wifiQuickOut.text);' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "Wi-Fi publishes cached state through its shared normalizer"
 pass "Wi-Fi panel keeps the connected network singular and diagnostics on demand"
 
 rg -Fq 'readonly property string icoCharging: String.fromCodePoint(0xf0084)' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry defines a charging glyph"
 rg -Fq 'return root.batPower >= 0.05 ? root.icoCharging : root.icoPlug;' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry uses the charging glyph while gaining charge"
 rg -Fq 'if (root.batState === "Full" || root.batState === "Not charging") return root.icoPlug;' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery telemetry uses the plug glyph when charging has stopped"
 pass "battery telemetry distinguishes charging from plugged in"
+
+rg -Fq 'id: powerProfileMonitor' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "battery profile tracks external daemon changes"
+rg -Uq '(?s)id: powerProfileMonitor.{0,500}PropertiesChanged.{0,200}powerProfileRefreshTimer\.restart' "$ROOT/default/desktop/quickshell/Navbar.qml" || fail "external power-profile changes refresh the battery panel"
+pass "battery profile follows laptop hotkey changes"
 
 nvidia_config="$TMPDIR/nvidia-config.kdl"
 printf '%s\n' \

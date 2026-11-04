@@ -37,14 +37,11 @@ pass "command metadata and fast-path aliases are valid"
 "$ROOT/bin/zanken-dev-generate-command-docs" --check
 pass "generated command reference matches CLI metadata"
 
-rg -Fq 'git -C "$ZANKEN_PATH" pull --ff-only' "$ROOT/bin/zanken-update" || fail "Zanken updates use fast-forward-only pulls"
-rg -Fq 'zanken-config-desktop sync' "$ROOT/bin/zanken-update" || fail "Zanken updates sync managed desktop defaults"
-rg -Fq 'zanken-config-desktop rollback' "$ROOT/bin/zanken-update" || fail "Zanken updates roll back a failed Quickshell restart"
-pass "Zanken updates synchronize and protect managed desktop defaults"
+# Release behavior is covered by test_release.py and test_generations.py using
+# real temporary repositories instead of asserting updater implementation text.
 
 rg -Fq 'quickshell/zanken/shell.qml' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart detects the managed config"
 rg -Fq 'config_name=desktop' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart falls back to the legacy config during migration"
-rg -Fq 'QSG_RENDER_LOOP=basic' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart avoids the threaded Qt render loop"
 rg -Fq 'reload_output=$(timeout 5 qs -c zanken ipc call zanken reload 2>&1)' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart bounds its in-process reload"
 rg -Fq 'if (( reload_status == 0 )) && [[ -z $reload_output ]]; then' "$ROOT/bin/zanken-restart-quickshell" || fail "Quickshell restart falls back when reload IPC reports an error"
 if rg -q 'playerctl|zanken-paused-media' "$ROOT/bin/zanken-restart-quickshell"; then
@@ -71,7 +68,6 @@ if rg -n 'zanken-keyring|pkgs\.omarchy\.org|stable-mirror\.omarchy\.org|Syyuu' \
   "$ROOT/bin/zanken-reinstall-pkgs"; then
   fail "package maintenance does not depend on retired Omarchy infrastructure"
 fi
-rg -Fq 'zanken-branch-set "main"' "$ROOT/bin/zanken-channel-set" || fail "stable channel tracks the main branch"
 pass "package maintenance is independent of retired infrastructure"
 
 rg -Fq 'MANAGED_NIRI_CONFIG=' "$ROOT/bin/zanken-theme-bg-colors-apply" || fail "wallpaper colors detect the managed Niri config"

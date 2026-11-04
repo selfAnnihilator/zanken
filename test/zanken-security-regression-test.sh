@@ -80,8 +80,8 @@ rg -Fxq '/usr/bin/rm -f /etc/sudoers.d/first-run' "$sudo_log" || fail "successfu
 pass "first-run privileges are narrow and failure-safe"
 
 navbar="$ROOT/default/desktop/quickshell/Navbar.qml"
-rg -Fq 'const command = ["nmcli", "device", "wifi", "connect", ssid];' "$navbar" || fail "Wi-Fi connect uses direct argv"
-rg -Fq 'wifiForgetProc.command = ["nmcli", "connection", "delete", ssid];' "$navbar" || fail "Wi-Fi forget uses direct argv"
+rg -Fq 'const command = ["nmcli", "--wait", "25", "device", "wifi", "connect", ssid];' "$navbar" || fail "Wi-Fi connect uses direct argv"
+rg -Fq 'wifiForgetProc.command = ["nmcli", "connection", "delete"].concat(profiles.map(p => p.uuid));' "$navbar" || fail "Wi-Fi forget uses direct argv"
 if rg -q 'safeSsid|safePass' "$navbar"; then
   fail "Wi-Fi credentials are not manually shell-escaped"
 fi

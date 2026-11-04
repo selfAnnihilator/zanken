@@ -22,6 +22,10 @@ Built around the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and
 > **Status: alpha.** There is no stable release yet, so every install uses the `dev`
 > channel (`ZANKEN_RELEASE_MODE=dev`). Without it the installer stops with
 > "No Zanken stable release available".
+>
+> The desktop install below has been tested end to end from GitHub on a fresh minimal
+> Arch Linux virtual machine. It has not been tested on bare metal, with NVIDIA
+> graphics, or with disk encryption.
 
 **Requirements:** x86_64 Arch Linux or an Arch-based distribution (CachyOS works), a
 regular user with `sudo`, and an internet connection. Run the installer from a TTY
@@ -39,6 +43,8 @@ ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/self
 
 Type `REPLACE` when asked, then confirm the installer prompt. When it finishes, reboot.
 You get the Pixel Sakura login screen; choose **Zanken (Niri)** from the session menu.
+The first install downloads a large package set and a 300 MB wallpaper library, so
+allow time and disk space (40 GB is comfortable).
 
 ### Full install on a fresh Arch system
 
@@ -64,6 +70,10 @@ animation is installed too, but it is not working yet on every setup.
 ```bash
 zanken update --fetch
 ```
+
+This updates desktop files (bar, scripts, themes, configuration). A release that adds
+packages or changes system setup (anything under `install/` or `migrations/`) is refused
+by `zanken update`; rerun the installer command above for those.
 
 See [Installation](docs/installation.md) and [Replace an existing Niri desktop](docs/desktop-takeover.md)
 for details, rollback and recovery.

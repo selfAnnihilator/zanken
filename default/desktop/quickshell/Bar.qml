@@ -437,17 +437,38 @@ PanelWindow {
                 root: bar.root
                 glyph: bar.root.netIcon
                 tooltip: {
-                    if (bar.root.netKind === "eth") return "Ethernet";
+                    let connection = "Offline";
+                    if (bar.root.netKind === "eth")
+                        connection = bar.root.vpnStatus.uplinkKind === "usb" ? "USB tethering" : "Ethernet";
                     if (bar.root.netKind === "wifi") {
                         const name = bar.root.wifiSsid || "(hidden)";
-                        return "Wi-Fi · " + name + " · " + bar.root.wifiSignal + "%";
+                        connection = "Wi-Fi · " + name + " · " + bar.root.wifiSignal + "%";
                     }
-                    return "Offline";
+                    return connection + (bar.root.vpnStatus.enabled
+                        ? " · " + bar.root.vpnStatus.description + " · Right-click for VPN controls" : "");
                 }
                 Component.onCompleted: bar.root.wifiAnchorItem = netMod
                 onActivated: {
                     if (bar.root.wifiVisible) bar.root.wifiVisible = false;
                     else bar.root.openWifi();
+                }
+
+                onRightActivated: bar.root.vpnStatus.open()
+
+                // A lock requires a recent verified exit and intact local routes.
+                Text {
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.rightMargin: 1
+                    anchors.bottomMargin: 2
+                    visible: bar.root.vpnStatus.enabled && bar.root.vpnStatus.state !== "disconnected"
+                    text: bar.root.vpnStatus.isProtected ? String.fromCodePoint(0xf023)
+                        : bar.root.vpnStatus.state === "paused" ? String.fromCodePoint(0xf04c) : "!"
+                    color: bar.root.vpnStatus.isProtected ? "#7ad19a" : "#e8b966"
+                    font.family: bar.root.mono
+                    font.pixelSize: 9
+                    style: Text.Outline
+                    styleColor: bar.root.bg
                 }
 
                 // Network-burst dot: traverses the wifi glyph's outermost
@@ -509,6 +530,23 @@ PanelWindow {
                     else bar.root.openAudio();
                 }
                 onRightActivated: bar.root.run("pamixer -t")
+            }
+
+            Module {
+                id: microphoneMod
+                root: bar.root
+                glyph: bar.root.audioDefaultSource && bar.root.audioDefaultSource.muted
+                       ? bar.root.icoMicOff : bar.root.icoMicOn
+                tooltip: {
+                    const source = bar.root.audioDefaultSource;
+                    if (!source) return "Microphone · No input device";
+                    return (source.muted ? "Microphone muted · " : "Microphone · ") + source.vol + "%";
+                }
+                Component.onCompleted: bar.root.microphoneAnchorItem = microphoneMod
+                onActivated: {
+                    if (bar.root.audioInputVisible) bar.root.audioInputVisible = false;
+                    else bar.root.openAudioInput();
+                }
             }
 
             Module {

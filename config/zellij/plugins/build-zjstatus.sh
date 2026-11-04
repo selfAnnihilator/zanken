@@ -18,3 +18,4 @@ cargo +1.95.0 build --locked --release --target wasm32-wasip1 --bin zjstatus -j 
 install -m 0644 "target/wasm32-wasip1/release/zjstatus.wasm" "$plugin_dir/zjstatus.wasm"
 cd -- "$plugin_dir"
 sha256sum zjstatus.wasm > zjstatus.sha256
+sha256sum *.wasm > SHA256SUMS

@@ -1,0 +1,11 @@
+[Unit]
+Description=Zanken Zellij last-good layout snapshot timer
+Requires=zanken-zellij-snapshot.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60sec
+AccuracySec=10sec
+
+[Install]
+WantedBy=timers.target

@@ -38,7 +38,7 @@ PanelWindow {
             model: root.toastItems
             delegate: ToastCard {
                 required property var modelData
-                notif: modelData
+                toastItem: modelData
                 theme: root
                 width: toastCol.width
             }
@@ -46,14 +46,15 @@ PanelWindow {
     }
 
     component ToastCard: Item {
-        required property var notif
+        required property var toastItem
         required property var theme
+        readonly property var notif: toastItem ? toastItem.notif : null
         implicitHeight: cardRect.implicitHeight
 
         Timer {
-            interval: notif.expireTimeout > 0 ? notif.expireTimeout : 5000
+            interval: toastItem && toastItem.expireTimeout > 0 ? toastItem.expireTimeout : 5000
             running: true
-            onTriggered: toastPanel.root.removeFromToast(notif)
+            onTriggered: toastPanel.root.removeFromToast(notif, toastItem.toastId)
         }
 
         Rectangle {
@@ -84,7 +85,7 @@ PanelWindow {
                 spacing: 4
 
                 Text {
-                    text: notif.appName.toUpperCase()
+                    text: (toastItem.appName || "").toUpperCase()
                     color: theme.seal
                     font.family: theme.mono
                     font.pixelSize: 9
@@ -92,7 +93,7 @@ PanelWindow {
                 }
                 Text {
                     width: parent.width
-                    text: notif.summary
+                    text: toastItem.summary || ""
                     textFormat: Text.PlainText
                     color: theme.ink
                     font.family: theme.mono
@@ -103,9 +104,9 @@ PanelWindow {
                     elide: Text.ElideRight
                 }
                 Text {
-                    visible: notif.body.length > 0
+                    visible: (toastItem.body || "").length > 0
                     width: parent.width
-                    text: notif.body
+                    text: toastItem.body || ""
                     textFormat: Text.PlainText
                     color: theme.muted
                     font.family: theme.mono
@@ -119,15 +120,19 @@ PanelWindow {
             Text {
                 id: closeBtn
                 anchors { right: parent.right; top: parent.top; rightMargin: 10; topMargin: 8 }
+                width: 20
+                height: 20
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
                 text: "×"
                 color: closeMa.containsMouse ? theme.seal : theme.muted
                 font.pixelSize: 14
                 MouseArea {
                     id: closeMa
                     anchors.fill: parent
-                    anchors.margins: -4
+                    anchors.margins: -3
                     hoverEnabled: true
-                    onClicked: toastPanel.root.removeFromToast(notif)
+                    onClicked: toastPanel.root.removeFromToast(notif, toastItem.toastId)
                 }
             }
         }

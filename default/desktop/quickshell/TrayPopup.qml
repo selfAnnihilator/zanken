@@ -8,8 +8,9 @@ PanelWindow {
     required property var root
 
     readonly property var trayItems: SystemTray.items ? SystemTray.items.values : []
-    readonly property int cols: Math.min(trayItems.length, 4)
+    readonly property int cols: Math.min(root.trayItemCount, 4)
     readonly property int pad: 6
+    property bool vpnMenuVisible: false
     property var menuHandle: null
     property var menuStack: []
     property string menuLabel: ""
@@ -18,6 +19,7 @@ PanelWindow {
 
     function openMenu(item, x, y) {
         if (!item || !item.hasMenu || !item.menu) return;
+        closeMenu();
         menuHandle = item.menu;
         menuStack = [];
         menuLabel = item.tooltipTitle || item.title || item.id || "TRAY MENU";
@@ -32,7 +34,15 @@ PanelWindow {
         menuLabel = menuEntry.text || menuLabel;
     }
 
+    function openVpnMenu(x, y) {
+      closeMenu();
+      menuX = x;
+      menuY = y;
+      vpnMenuVisible = true;
+    }
+
     function closeMenu() {
+        vpnMenuVisible = false;
         menuHandle = null;
         menuStack = [];
         menuLabel = "";
@@ -51,7 +61,7 @@ PanelWindow {
 
     // Surface dimensions: icons fill edge-to-edge with pad margin
     readonly property int surfW: cols > 0 ? cols * 36 + (cols - 1) * 4 + pad * 2 : 0
-    readonly property int rows: cols > 0 ? Math.ceil(trayItems.length / 4) : 0
+    readonly property int rows: cols > 0 ? Math.ceil(root.trayItemCount / 4) : 0
     readonly property int surfH: rows > 0 ? rows * 36 + (rows - 1) * 4 + pad * 2 : 0
 
     color: "transparent"
@@ -113,7 +123,7 @@ PanelWindow {
 
         Keys.onPressed: function(e) {
             if (e.key === Qt.Key_Escape) {
-                if (trayPopup.menuHandle) trayPopup.closeMenu();
+                if (trayPopup.menuHandle || trayPopup.vpnMenuVisible) trayPopup.closeMenu();
                 else root.trayVisible = false;
                 e.accepted = true;
             }
@@ -123,6 +133,82 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: trayPopup.pad
             spacing: 4
+
+            // The VPN monitor lives in the bar even with its controls closed.
+            Item {
+              id: vpnTrayEntry
+              objectName: "vpn-background-entry"
+              visible: trayPopup.root.vpnStatus.backgroundActive && !trayPopup.root.vpnStatus.nativeTray
+              width: 36
+              height: 36
+              property string tooltip: trayPopup.root.vpnStatus.description
+              property string shownTooltip: ""
+              readonly property color statusColor: trayPopup.root.vpnStatus.isProtected ? "#7ad19a"
+                : trayPopup.root.vpnStatus.needsAttention ? "#e8b966" : trayPopup.root.muted
+
+              function showStatus() {
+                const p = vpnTrayEntry.mapToItem(null, width / 2, height / 2);
+                shownTooltip = tooltip;
+                trayPopup.root.showTooltip(shownTooltip, p.x, p.y);
+              }
+
+              onTooltipChanged: if (vpnTrayMouse.containsMouse) showStatus()
+
+              Rectangle {
+                anchors.fill: parent
+                radius: trayPopup.root.cornerRadius
+                color: vpnTrayMouse.containsMouse
+                  ? Qt.rgba(trayPopup.root.ink.r, trayPopup.root.ink.g, trayPopup.root.ink.b, 0.10)
+                  : "transparent"
+                Behavior on color { ColorAnimation { duration: 120 } }
+              }
+
+              Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 3
+                text: String.fromCodePoint(0xf132)
+                color: vpnTrayEntry.statusColor
+                font.family: trayPopup.root.mono
+                font.pixelSize: 20
+              }
+
+              Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 2
+                text: "VPN"
+                color: vpnTrayEntry.statusColor
+                font.family: trayPopup.root.mono
+                font.pixelSize: 8
+                font.weight: Font.Medium
+              }
+
+              MouseArea {
+                id: vpnTrayMouse
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onEntered: vpnTrayEntry.showStatus()
+                onExited: {
+                  trayPopup.root.hideTooltip(vpnTrayEntry.shownTooltip);
+                  vpnTrayEntry.shownTooltip = "";
+                }
+                onClicked: (event) => {
+                  trayPopup.root.hideTooltip(vpnTrayEntry.shownTooltip);
+                  vpnTrayEntry.shownTooltip = "";
+                  if (event.button === Qt.RightButton) {
+                    const p = vpnTrayMouse.mapToItem(null, event.x, event.y);
+                    trayPopup.openVpnMenu(Math.round(p.x), Math.round(p.y));
+                  } else {
+                    trayPopup.closeMenu();
+                    trayPopup.root.trayVisible = false;
+                    trayPopup.root.vpnStatus.open();
+                  }
+                }
+              }
+            }
 
             Repeater {
                 model: trayPopup.trayItems
@@ -218,6 +304,89 @@ PanelWindow {
                 }
             }
         }
+    }
+
+    Rectangle {
+      id: vpnMenu
+      objectName: "vpn-background-menu"
+      visible: trayPopup.vpnMenuVisible
+      width: 264
+      height: vpnMenuItems.height + 12
+      x: Math.max(8, Math.min(parent.width - width - 8, trayPopup.menuX))
+      y: Math.max(8, Math.min(parent.height - height - 8, trayPopup.menuY))
+      z: 2
+      color: trayPopup.root.bg
+      border.color: trayPopup.root.sep
+      border.width: 1
+      radius: trayPopup.root.cornerRadius
+      MouseArea { anchors.fill: parent }
+
+      Column {
+        id: vpnMenuItems
+        x: 6
+        y: 6
+        width: parent.width - 12
+        Text {
+          width: parent.width
+          height: 26
+          leftPadding: 8
+          text: "VPNBOOK"
+          color: trayPopup.root.ink
+          font.family: trayPopup.root.mono
+          font.pixelSize: 10
+          font.letterSpacing: 1.5
+          verticalAlignment: Text.AlignVCenter
+        }
+        Repeater {
+          model: [
+            { label: "Open controls", detail: "", close: false },
+            { label: "Close completely", detail: "Disconnect VPN · regular internet", close: true }
+          ]
+          delegate: Item {
+            required property var modelData
+            width: vpnMenuItems.width
+            height: modelData.close ? 46 : 30
+            readonly property bool available: !modelData.close || (trayPopup.root.vpnStatus.closeCommand.length > 0 && !trayPopup.root.vpnStatus.closing)
+            Rectangle {
+              anchors.fill: parent
+              radius: trayPopup.root.cornerRadius - 1
+              color: vpnActionMouse.containsMouse && parent.available
+                ? Qt.rgba(trayPopup.root.ink.r, trayPopup.root.ink.g, trayPopup.root.ink.b, 0.10) : "transparent"
+            }
+            Text {
+              x: 8
+              y: modelData.close ? 6 : 8
+              text: modelData.close && trayPopup.root.vpnStatus.closing ? "Closing…" : modelData.label
+              color: parent.available ? trayPopup.root.fg : trayPopup.root.muted
+              font.family: trayPopup.root.mono
+              font.pixelSize: 11
+            }
+            Text {
+              x: 8
+              y: 25
+              visible: modelData.detail !== ""
+              text: modelData.detail
+              color: trayPopup.root.muted
+              font.family: trayPopup.root.mono
+              font.pixelSize: 9
+            }
+            MouseArea {
+              id: vpnActionMouse
+              anchors.fill: parent
+              enabled: parent.available
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: {
+                const shouldClose = parent.modelData.close;
+                trayPopup.closeMenu();
+                trayPopup.root.trayVisible = false;
+                if (shouldClose) trayPopup.root.vpnStatus.closeCompletely();
+                else trayPopup.root.vpnStatus.open();
+              }
+            }
+          }
+        }
+      }
     }
 
     Rectangle {

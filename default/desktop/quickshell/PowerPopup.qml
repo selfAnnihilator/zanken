@@ -11,11 +11,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "zanken-power"
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    WlrLayershell.margins.top:    root.barEdge === "top"    ? root.barSurfaceThickness : 0
-    WlrLayershell.margins.bottom: root.barEdge === "bottom" ? root.barSurfaceThickness : 0
-    WlrLayershell.margins.left:   root.barEdge === "left"   ? root.barSurfaceThickness : 0
-    WlrLayershell.margins.right:  root.barEdge === "right"  ? root.barSurfaceThickness : 0
+    WlrLayershell.keyboardFocus: root.powerVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     visible: root.powerVisible || _reveal > 0.001
 
@@ -24,6 +20,16 @@ PanelWindow {
         NumberAnimation {
             duration: powerPopup.root.powerVisible ? 220 : 140
             easing.type: powerPopup.root.powerVisible ? Easing.OutCubic : Easing.InCubic
+        }
+    }
+
+    Connections {
+        target: powerPopup.root
+        function onPowerVisibleChanged() {
+            if (powerPopup.root.powerVisible) {
+                powerPopup.kbdIndex = 0;
+                buttonKeys.forceActiveFocus();
+            }
         }
     }
 
@@ -53,10 +59,13 @@ PanelWindow {
     }
 
     Item {
+        id: buttonKeys
+        focus: root.powerVisible
         anchors.centerIn: parent
         width: buttonRow.implicitWidth
         height: buttonRow.implicitHeight
         Keys.onPressed: function(e) {
+            if (!root.powerVisible) return;
             const n = powerPopup.actions.length;
             if (e.key === Qt.Key_Escape) {
                 root.powerVisible = false; e.accepted = true;

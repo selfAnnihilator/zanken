@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# zanken:summary=Pick an existing Zellij session to open or focus
+# zanken:examples=zanken menu zellij
+
+exec qs -c zanken ipc call palette openCategory Zellij

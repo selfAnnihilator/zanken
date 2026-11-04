@@ -136,12 +136,14 @@ Item {
     property Item wifiAnchorItem:      null
     property Item bluetoothAnchorItem: null
     property Item audioAnchorItem:    null
+    property Item microphoneAnchorItem: null
     property Item musicAnchorItem:    null
     property Item batteryAnchorItem:  null
 
     property bool wifiVisible:      false
     property bool bluetoothVisible: false
     property bool audioVisible:     false
+    property bool audioInputVisible: false
     property bool musicVisible:     false
     property bool batteryVisible:   false
     property bool notificationsVisible: false
@@ -153,7 +155,7 @@ Item {
 
     property bool trayVisible: false
     property Item trayAnchorItem: null
-    readonly property int trayItemCount: SystemTray.items ? SystemTray.items.values.length : 0
+    readonly property int trayItemCount: (SystemTray.items ? SystemTray.items.values.length : 0) + (root.vpnStatus.backgroundActive && !root.vpnStatus.nativeTray ? 1 : 0)
 
     property bool powerVisible: false
 
@@ -177,11 +179,23 @@ Item {
         bodyMarkupSupported: false
         onNotification: function(n) {
             n.tracked = true;
-            const item = { appName: n.appName, summary: n.summary, body: n.body, time: Date.now(), notif: n };
+            // Keep the Repeater model independent from the lifetime of the
+            // Quickshell Notification QObject. Senders can replace or close a
+            // notification at any time, which turns direct QObject entries
+            // into null while their delegates are still being regenerated.
+            const item = {
+                appName: n.appName,
+                summary: n.summary,
+                body: n.body,
+                time: Date.now(),
+                expireTimeout: n.expireTimeout,
+                toastId: ++root.nextToastId,
+                notif: n
+            };
             root.cardItems = root.cardItems.concat([item]);
             root.saveNotifications();
             if (!root.doNotDisturb)
-                root.toastItems = root.toastItems.concat([n]);
+                root.toastItems = root.toastItems.concat([item]);
         }
     }
 
@@ -210,6 +224,7 @@ Item {
     property var cardItems: []
     readonly property int notificationCount: root.cardItems.length
     property var toastItems: []
+    property int nextToastId: 0
 
     function saveBarState() {
         barStateStore.setText(JSON.stringify({
@@ -230,12 +245,18 @@ Item {
         notifStore.setText(JSON.stringify(data));
     }
 
-    function removeFromToast(targetNotif) {
+    function removeFromToast(targetNotif, targetToastId) {
         // A toast's expiry timer runs from inside its Repeater delegate.
         // Replacing the model synchronously there can make Qt regenerate the
         // Repeater while it is still dispatching that delegate's signal.
         Qt.callLater(function() {
-            root.toastItems = root.toastItems.filter(function(n) { return n !== targetNotif; });
+            root.toastItems = root.toastItems.filter(function(item) {
+                const matchesNotif = targetNotif && item.notif === targetNotif;
+                const matchesId = targetToastId !== undefined
+                    && targetToastId !== null
+                    && item.toastId === targetToastId;
+                return !matchesNotif && !matchesId;
+            });
         });
     }
 
@@ -390,7 +411,7 @@ Item {
 
     // Wi-Fi scan state for the Quick panel. `wifiNetworks` is a list of
     // {ssid, signal, security, inUse} sorted desc by signal. Driven by
-    // nmcli; populated on demand by refreshWifi().
+    // nmcli; updated by NetworkManager events and cached reads while open.
     property var    wifiNetworks: []
     property bool   wifiRadioOn: true
     property bool   wifiScanning: false
@@ -400,67 +421,133 @@ Item {
     property string wifiConnectError: ""
     property bool   wifiDetailsLoading: false
     property var    wifiConnectionDetails: ({ address: "", gateway: "", band: "" })
+    property bool   _wifiQuickPending: false
+    property bool   _wifiKnownPending: false
+    property bool   _wifiDetailsPending: false
+    property string wifiDevice: ""
 
     // NetworkManager-based: detect the wifi device dynamically so
     // multi-radio laptops work. Reads and controls go through nmcli.
     function refreshWifi() {
-        if (wifiScanProbe.running) return;
-        root.wifiScanning = true;
-        wifiScanProbe.running = false;
-        wifiScanProbe.running = true;
+      root.refreshWifiState();
+      root.refreshWifiKnown();
+      root.refreshWifiDetails();
+      root.requestWifiScan(true);
+    }
+    function refreshWifiState() {
+      if (wifiQuickProbe.running) {
+        root._wifiQuickPending = true;
+        return;
+      }
+      root._wifiQuickPending = false;
+      wifiQuickProbe.running = true;
+    }
+    function refreshWifiKnown() {
+      if (wifiKnownProbe.running) {
+        root._wifiKnownPending = true;
+        return;
+      }
+      root._wifiKnownPending = false;
+      wifiKnownProbe.running = true;
+    }
+    function requestWifiScan(showIndicator) {
+      if (wifiScanProbe.running || !root.wifiRadioOn) return;
+      root.wifiScanning = showIndicator;
+      wifiScanProbe.running = true;
     }
     function refreshWifiDetails() {
-        if (wifiDetailsProbe.running) return;
+        if (wifiDetailsProbe.running) {
+          root._wifiDetailsPending = true;
+          return;
+        }
+        root._wifiDetailsPending = false;
         root.wifiDetailsLoading = true;
-        wifiDetailsProbe.running = false;
         wifiDetailsProbe.running = true;
     }
+    // nmcli escapes both colons and backslashes. A '%' placeholder corrupts
+    // real SSIDs containing percent signs; split before unescaping instead.
+    function splitWifiFields(line) {
+      const fields = [];
+      let field = "";
+      let escaped = false;
+      for (const ch of line) {
+        if (escaped) { field += ch; escaped = false; }
+        else if (ch === "\\") escaped = true;
+        else if (ch === ":") { fields.push(field); field = ""; }
+        else field += ch;
+      }
+      if (escaped) field += "\\";
+      fields.push(field);
+      return fields;
+    }
+    function parseWifiNetworks(scanText) {
+        const lines = scanText.split("\n").filter(s => s.length > 0);
+        let radioOn = false;
+        const networks = [];
+        for (const line of lines) {
+            if (line.startsWith("RADIO|")) {
+                radioOn = line.slice(6) === "on";
+                continue;
+            }
+            const f = root.splitWifiFields(line);
+            if (f.length < 4 || !f[1]) continue;
+            const candidate = {
+                inUse: f[0] === "*",
+                ssid: f[1],
+                signal: Math.max(0, Math.min(100, parseInt(f[3]) || 0)),
+                security: f[2]
+            };
+            const existingIndex = networks.findIndex(n => n.ssid === candidate.ssid);
+            if (existingIndex < 0) {
+                networks.push(candidate);
+                continue;
+            }
+            const existing = networks[existingIndex];
+            if ((candidate.inUse && !existing.inUse)
+                || (candidate.inUse === existing.inUse && candidate.signal > existing.signal)) {
+                networks[existingIndex] = candidate;
+            }
+        }
+        networks.sort((a, b) => (b.inUse - a.inUse) || (b.signal - a.signal));
+        return { radioOn: radioOn, networks: networks };
+    }
     function connectWifi(ssid, passphrase) {
-        if (!ssid) return;
+        if (!ssid || wifiConnectProc.running) return;
+        wifiConnectErrorTimer.stop();
         root.wifiConnectingSSID = ssid;
         root.wifiConnectError = "";
-        const command = ["nmcli", "device", "wifi", "connect", ssid];
+        const command = ["nmcli", "--wait", "25", "device", "wifi", "connect", ssid];
+        if (root.wifiDevice) command.push("ifname", root.wifiDevice);
         if (passphrase && passphrase.length > 0) {
             command.push("password", passphrase);
         }
         wifiConnectProc.command = command;
-        wifiConnectProc.running = false;
         wifiConnectProc.running = true;
     }
     function disconnectWifi() {
-        root.run("nmcli device disconnect $(nmcli -t -f DEVICE,TYPE device 2>/dev/null | grep ':802-11-wireless$\\|:wifi$' | cut -d: -f1 | head -1)");
-        root.wifiConnectionDetails = ({ address: "", gateway: "", band: "" });
-        wifiPostConnectTimer.restart();
+      if (!root.wifiDevice || wifiControlProc.running || wifiConnectProc.running) return;
+      wifiControlProc.command = ["nmcli", "--wait", "10", "device", "disconnect", root.wifiDevice];
+      wifiControlProc.running = true;
     }
     function toggleWifiRadio() {
-        const target = root.wifiRadioOn ? "off" : "on";
-        root.wifiRadioOn = !root.wifiRadioOn;
-        root.run("nmcli radio wifi " + target);
-        if (target === "off") root.wifiConnectionDetails = ({ address: "", gateway: "", band: "" });
-        wifiPostConnectTimer.restart();
+      if (wifiControlProc.running) return;
+      wifiControlProc.command = ["nmcli", "radio", "wifi", root.wifiRadioOn ? "off" : "on"];
+      wifiControlProc.running = true;
     }
     function forgetWifi(ssid) {
-        if (!ssid) return;
-        wifiForgetProc.command = ["nmcli", "connection", "delete", ssid];
-        wifiForgetProc.running = false;
-        wifiForgetProc.running = true;
-        root.wifiKnownSsids = root.wifiKnownSsids.filter(s => s !== ssid);
-        wifiKnownProbe.running = false;
-        wifiKnownProbe.running = true;
-        wifiPostConnectTimer.restart();
+      if (!ssid || wifiForgetProc.running) return;
+      const profiles = root._wifiProfiles.filter(p => p.ssid === ssid);
+      if (!profiles.length) return;
+      wifiForgetProc.command = ["nmcli", "connection", "delete"].concat(profiles.map(p => p.uuid));
+      wifiForgetProc.running = true;
     }
     Timer {
         id: wifiPostConnectTimer
-        interval: 1500
+        interval: 250
         repeat: false
         onTriggered: {
-            // Silent re-probe after connect/disconnect — no wifiScanning=true, no SCANNING animation
-            if (!wifiScanProbe.running) {
-                wifiScanProbe.running = false;
-                wifiScanProbe.running = true;
-            }
-            wifiKnownProbe.running = false;
-            wifiKnownProbe.running = true;
+            root.refreshWifiState();
+            root.refreshWifiKnown();
             root.refreshWifiDetails();
         }
     }
@@ -469,18 +556,14 @@ Item {
         running: false
         stdout: StdioCollector {}
         stderr: StdioCollector {}
-        onRunningChanged: {
-            if (!running) {
-                if (exitCode === 0) {
-                    root.wifiConnectingSSID = "";
-                    root.wifiConnectError = "";
-                    wifiPostConnectTimer.restart();
-                } else {
-                    root.wifiConnectError = root.wifiConnectingSSID;
-                    root.wifiConnectingSSID = "";
-                    wifiConnectErrorTimer.restart();
-                }
-            }
+        onExited: (code, status) => {
+          root.wifiConnectError = code === 0 && status === 0 ? "" : root.wifiConnectingSSID;
+          root.wifiConnectingSSID = "";
+          if (root.wifiConnectError) wifiConnectErrorTimer.restart();
+          root.refreshWifiState();
+          root.refreshWifiKnown();
+          root.refreshWifiDetails();
+          wifiPostConnectTimer.restart();
         }
     }
     Process {
@@ -488,6 +571,20 @@ Item {
         running: false
         stdout: StdioCollector {}
         stderr: StdioCollector {}
+        onExited: {
+          root.refreshWifiKnown();
+          root.refreshWifiState();
+        }
+    }
+    Process {
+      id: wifiControlProc
+      stdout: StdioCollector {}
+      stderr: StdioCollector {}
+      onExited: {
+        root.refreshWifiState();
+        root.refreshWifiDetails();
+        wifiPostConnectTimer.restart();
+      }
     }
     Timer {
         id: wifiConnectErrorTimer
@@ -596,6 +693,7 @@ Item {
     property var    audioStreams: []        // [{index, name, vol, muted}, ...]
     property var    audioInputSources: []  // [{id, srcName, name, vol, muted, isDefault}]
     property var    audioInputStreams: []  // [{index, name, vol, muted}]
+    readonly property var audioDefaultSource: root.audioInputSources.find(s => s.isDefault) || null
 
     function setDefaultSink(id) {
         if (!id) return;
@@ -680,7 +778,7 @@ Item {
     property string zankenLatestTag: ""
 
     function openOmarchyUpdate() {
-        root.run("zanken-launch-floating-terminal-with-presentation zanken-update");
+        root.run("zanken-launch-floating-terminal-with-presentation zanken-update --fetch");
     }
     function refreshOmarchyUpdateCheck() {
         zankenUpdateProbe.running = false;
@@ -1249,6 +1347,7 @@ Item {
         root.wifiVisible          = false;
         root.bluetoothVisible     = false;
         root.audioVisible         = false;
+        root.audioInputVisible    = false;
         root.musicVisible         = false;
         root.batteryVisible       = false;
         root.notificationsVisible = false;
@@ -1274,16 +1373,9 @@ Item {
         root.closeAllCards();
         if (root.wifiAnchorItem) root.anchorPopupTo(root.wifiAnchorItem);
         root.wifiVisible = true;
-        // Instant: read NetworkManager's cached scan list
-        wifiQuickProbe.running = false;
-        wifiQuickProbe.running = true;
-        // Silent background: trigger fresh scan, update without SCANNING indicator
-        if (!wifiScanProbe.running) {
-            wifiScanProbe.running = false;
-            wifiScanProbe.running = true;
-        }
-        wifiKnownProbe.running = false;
-        wifiKnownProbe.running = true;
+        root.refreshWifiState();
+        root.refreshWifiKnown();
+        root.requestWifiScan(false);
         root.refreshWifiDetails();
     }
     function openBluetooth() {
@@ -1298,6 +1390,11 @@ Item {
         root.audioVisible = true;
         root.refreshAudioSinks();
         root.refreshAudioStreams();
+    }
+    function openAudioInput() {
+        root.closeAllCards();
+        if (root.microphoneAnchorItem) root.anchorPopupTo(root.microphoneAnchorItem);
+        root.audioInputVisible = true;
         root.refreshAudioInputs();
     }
     function refreshWeather() { weatherProbe.running = false; weatherProbe.running = true; }
@@ -1522,6 +1619,10 @@ Item {
     Timer { interval: 500; running: true; repeat: true; triggeredOnStart: true
         onTriggered: { wsProbe.running = false; wsProbe.running = true; } }
 
+    // Optional VPN proof provider shared with the local controls app.
+    property alias vpnStatus: vpnStatusProvider
+    VPNStatus { id: vpnStatusProvider }
+
     // ---------- Network status ----------
     Process {
         id: netProbe
@@ -1547,7 +1648,6 @@ Item {
                 const t = this.text.trim();
                 if (t === "eth") {
                     root.netIcon = "󰀂"; root.netKind = "eth";
-                    root.wifiSsid = ""; root.wifiSignal = 0;
                 } else if (t.startsWith("wifi:")) {
                     // Split on the first two colons: signal pct, then SSID
                     // (which may itself contain colons, so a naive split
@@ -1557,10 +1657,8 @@ Item {
                     const sig = parseInt(c < 0 ? rest : rest.slice(0, c)) || 0;
                     const ssid = c < 0 ? "" : rest.slice(c + 1);
                     root.netIcon = root.wifiBarsGlyph(sig); root.netKind = "wifi";
-                    root.wifiSignal = sig; root.wifiSsid = ssid;
                 } else {
                     root.netIcon = "󰤮"; root.netKind = "none";
-                    root.wifiSsid = ""; root.wifiSignal = 0;
                 }
             }
         }
@@ -1741,34 +1839,77 @@ Item {
     }
 
     // ---------- Wi-Fi live-refresh timer ----------
-    // Silently rescans every 8s while popup is open so new/gone networks
-    // appear/disappear without needing a manual refresh button press.
-    // Live timer disabled — user controls refresh via the button in the popup.
+    // Events update cached state immediately. Polling covers signal changes
+    // and missed events; active scans are slower and only run while open.
+    Process {
+      id: wifiWatcher
+      running: true
+      command: ["nmcli", "monitor"]
+      environment: ({ LC_ALL: "C" })
+      stdout: SplitParser {
+        onRead: line => {
+          if (line.length && !wifiEventTimer.running) wifiEventTimer.start();
+        }
+      }
+      onExited: wifiWatcherRetry.restart()
+    }
+    Timer {
+      id: wifiWatcherRetry
+      interval: 1000
+      onTriggered: {
+        wifiWatcher.running = true;
+        root.refreshWifiState();
+        root.refreshWifiKnown();
+      }
+    }
+    Timer {
+      id: wifiEventTimer
+      interval: 120
+      onTriggered: {
+        root.refreshWifiState();
+        root.refreshWifiKnown();
+        if (root.wifiVisible) root.refreshWifiDetails();
+      }
+    }
+    Timer {
+      interval: 3000
+      repeat: true
+      running: root.wifiVisible
+      onTriggered: {
+        root.refreshWifiState();
+        root.refreshWifiDetails();
+      }
+    }
+    Timer {
+      interval: 15000
+      repeat: true
+      running: root.wifiVisible
+      onTriggered: root.requestWifiScan(false)
+    }
 
     // ---------- Wi-Fi active-link diagnostics ----------
-    // Keep this intentionally small: the popup already has scan data, while
-    // this probe supplies the live address, gateway, and radio band only when
-    // the user opens the panel or asks for details.
+    // Use the same device as the cached snapshot, including on multi-radio
+    // systems. Ignore a late diagnostics result after disconnection.
     Process {
         id: wifiDetailsProbe
         running: false
-        command: ["bash", "-lc",
-            "DEV=$(nmcli -t -f DEVICE,TYPE device 2>/dev/null"
-            + "   | awk -F: '/:wifi$/{print $1; exit}');"
-            + " [ -n \"$DEV\" ] || exit 0;"
+        command: ["bash", "-c",
+            "DEV=$1; [[ -n $DEV ]] || exit 0;"
             + " address=$(ip -o -4 addr show dev \"$DEV\" 2>/dev/null | awk '{print $4; exit}' | cut -d/ -f1);"
             + " gateway=$(ip route show default dev \"$DEV\" 2>/dev/null | awk '{print $3; exit}');"
             + " freq=$(iw dev \"$DEV\" link 2>/dev/null | awk '/freq:/{print $2; exit}');"
             + " band=\"\";"
-            + " if [ -n \"$freq\" ]; then"
-            + "   if [ \"$freq\" -ge 5925 ]; then band=\"6 GHz\";"
-            + "   elif [ \"$freq\" -ge 4900 ]; then band=\"5 GHz\";"
+            + " if [[ -n $freq ]]; then"
+            + "   if (( freq >= 5925 )); then band=\"6 GHz\";"
+            + "   elif (( freq >= 4900 )); then band=\"5 GHz\";"
             + "   else band=\"2.4 GHz\"; fi;"
             + " fi;"
-            + " printf '%s\\t%s\\t%s\\n' \"$address\" \"$gateway\" \"$band\"" ]
+            + " printf '%s\\t%s\\t%s\\n' \"$address\" \"$gateway\" \"$band\"",
+            "wifi-details", root.wifiDevice ]
         stdout: StdioCollector {
             onStreamFinished: {
-                const fields = this.text.trim().split("\t");
+                const fields = root.wifiRadioOn && root.wifiSsid
+                  ? this.text.replace(/\n$/, "").split("\t") : [];
                 root.wifiConnectionDetails = ({
                     address: fields[0] || "",
                     gateway: fields[1] || "",
@@ -1777,114 +1918,96 @@ Item {
                 root.wifiDetailsLoading = false;
             }
         }
-        onRunningChanged: {
-            if (!running) root.wifiDetailsLoading = false;
+        onExited: {
+          root.wifiDetailsLoading = false;
+          if (root._wifiDetailsPending) root.refreshWifiDetails();
         }
     }
 
     // ---------- Wi-Fi scan probe ----------
-    // nmcli path (NetworkManager owns wlan0 and holds saved credentials):
-    // check radio state, kick a non-blocking rescan, then read the cached
-    // scan list. Signal is a 0-100% percentage; SSIDs with a colon are
-    // escaped by nmcli's terse mode and unescaped before splitting.
+    // A rescan requests discovery; completion does not mean AP results are
+    // ready. Only the quick probe publishes snapshots, avoiding older scan
+    // output overwriting a newer connection or radio state.
     Process {
         id: wifiScanProbe
         running: false
-        command: ["bash", "-lc",
-            "radio=$(nmcli -t radio wifi 2>/dev/null);"
-            + " if [ \"$radio\" != enabled ]; then echo 'RADIO|off'; exit 0; fi;"
-            + " echo 'RADIO|on';"
-            + " nmcli device wifi rescan >/dev/null 2>&1;"
-            + " sleep 1;"
-            + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null"
-            + "   | sed 's/\\\\:/%/g'"
-            + "   | awk -F: '{ gsub(/%/, \":\", $2); printf \"%s\\t%s\\t%s\\t%s\\n\", $1, $2, $3, $4 }'"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const lines = this.text.split("\n").filter(s => s.length > 0);
-                let radioOn = false;
-                const networks = [];
-                for (const line of lines) {
-                    if (line.startsWith("RADIO|")) {
-                        radioOn = line.slice(6) === "on";
-                        continue;
-                    }
-                    const f = line.split("\t");
-                    if (f.length < 4 || !f[1]) continue;
-                    const pct = Math.max(0, Math.min(100, parseInt(f[3]) || 0));
-                    networks.push({
-                        inUse: f[0] === "*",
-                        ssid: f[1],
-                        signal: pct,
-                        security: f[2]
-                    });
-                }
-                networks.sort((a, b) => (b.inUse - a.inUse) || (b.signal - a.signal));
-                if (root.wifiRadioOn !== radioOn) root.wifiRadioOn = radioOn;
-                const ser = JSON.stringify(networks);
-                if (ser !== root._wifiNetworksSer) {
-                    root._wifiNetworksSer = ser;
-                    root.wifiNetworks = networks;
-                }
-                root.wifiScanning = false;
-            }
+        command: ["nmcli", "--wait", "10", "device", "wifi", "rescan"].concat(
+          root.wifiDevice ? ["ifname", root.wifiDevice] : [])
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+        onExited: {
+          root.wifiScanning = false;
+          root.refreshWifiState();
+          wifiPostConnectTimer.restart();
         }
     }
 
     // ---------- Wi-Fi quick-read probe ----------
-    // Reads NetworkManager's existing cached scan list without triggering a
-    // new scan. Used on popup open so available networks appear instantly,
-    // while wifiScanProbe runs silently in the background for fresh results.
+    // Explicit --rescan no: the default 'auto' can block on a scan. A queued
+    // read follows an in-flight read rather than killing/restarting it.
     Process {
         id: wifiQuickProbe
         running: false
-        command: ["bash", "-lc",
-            "radio=$(nmcli -t radio wifi 2>/dev/null);"
-            + " if [ \"$radio\" != enabled ]; then echo 'RADIO|off'; exit 0; fi;"
-            + " echo 'RADIO|on';"
-            + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list 2>/dev/null"
-            + "   | sed 's/\\\\:/%/g'"
-            + "   | awk -F: '{ gsub(/%/, \":\", $2); printf \"%s\\t%s\\t%s\\t%s\\n\", $1, $2, $3, $4 }'"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const lines = this.text.split("\n").filter(s => s.length > 0);
-                let radioOn = false;
-                const networks = [];
-                for (const line of lines) {
-                    if (line.startsWith("RADIO|")) {
-                        radioOn = line.slice(6) === "on";
-                        continue;
-                    }
-                    const f = line.split("\t");
-                    if (f.length < 4 || !f[1]) continue;
-                    const pct = Math.max(0, Math.min(100, parseInt(f[3]) || 0));
-                    networks.push({ inUse: f[0] === "*", ssid: f[1], signal: pct, security: f[2] });
-                }
-                networks.sort((a, b) => (b.inUse - a.inUse) || (b.signal - a.signal));
-                if (root.wifiRadioOn !== radioOn) root.wifiRadioOn = radioOn;
-                const ser = JSON.stringify(networks);
-                if (ser !== root._wifiNetworksSer) {
-                    root._wifiNetworksSer = ser;
-                    root.wifiNetworks = networks;
-                }
+        environment: ({ LC_ALL: "C" })
+        command: ["bash", "-c",
+          "radio=$(nmcli -t radio wifi) || exit $?;"
+          + " if [[ $radio != \"enabled\" ]]; then echo 'RADIO|off'; exit 0; fi;"
+          + " devices=$(nmcli -t -f DEVICE,TYPE,STATE device) || exit $?;"
+          + " DEV=$(printf '%s\\n' \"$devices\" | awk -F: '$2==\"wifi\" {if(!first)first=$1; if($3==\"connected\"){print $1; found=1; exit}} END{if(!found)print first}');"
+          + " echo 'RADIO|on'; printf 'DEVICE|%s\\n' \"$DEV\";"
+          + " [[ -n $DEV ]] || exit 0;"
+          + " nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL device wifi list ifname \"$DEV\" --rescan no"]
+        stdout: StdioCollector { id: wifiQuickOut }
+        stderr: StdioCollector {}
+        onExited: (code, status) => {
+          if (code === 0 && status === 0) {
+            const scan = root.parseWifiNetworks(wifiQuickOut.text);
+            root.wifiRadioOn = scan.radioOn;
+            const deviceLine = wifiQuickOut.text.split("\n").find(s => s.startsWith("DEVICE|"));
+            root.wifiDevice = deviceLine ? deviceLine.slice(7) : "";
+            const ser = JSON.stringify(scan.networks);
+            if (ser !== root._wifiNetworksSer) {
+              root._wifiNetworksSer = ser;
+              root.wifiNetworks = scan.networks;
             }
+            const active = scan.networks.find(n => n.inUse);
+            const nextSsid = active ? active.ssid : "";
+            const changed = root.wifiSsid !== nextSsid;
+            root.wifiSsid = nextSsid;
+            root.wifiSignal = active ? active.signal : 0;
+            if (!nextSsid) root.wifiConnectionDetails = ({address: "", gateway: "", band: ""});
+            else if (changed) root.refreshWifiDetails();
+          }
+          if (root._wifiQuickPending) root.refreshWifiState();
         }
     }
 
     // ---------- Wi-Fi known-networks probe ----------
-    // Populated at bar startup, every 30s, on openWifi(), and after forgetWifi().
-    // Uses nmcli (NetworkManager) since NM owns wlan0 and holds saved credentials.
+    // Connection names need not match SSIDs. Keep UUIDs for reliable deletion
+    // and read the actual SSID (without credentials) from each Wi-Fi profile.
+    property var _wifiProfiles: []
     Process {
         id: wifiKnownProbe
         running: false
-        command: ["bash", "-lc",
-            "nmcli -t -f NAME,TYPE connection show 2>/dev/null"
-            + " | grep ':802-11-wireless$'"
-            + " | sed 's/:802-11-wireless$//; s/\\\\:/:/g'"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.wifiKnownSsids = this.text.trim().split("\n").filter(s => s.length > 0);
-            }
+        command: ["bash", "-c",
+          "profiles=$(nmcli -t -f UUID,TYPE connection show) || exit $?;"
+          + " while IFS=: read -r uuid type; do"
+          + "   [[ $type == \"802-11-wireless\" ]] || continue;"
+          + "   ssid=$(nmcli -g 802-11-wireless.ssid connection show uuid \"$uuid\") || exit $?;"
+          + "   printf '%s:%s\\n' \"$uuid\" \"$ssid\";"
+          + " done <<< \"$profiles\""]
+        stdout: StdioCollector { id: wifiKnownOut }
+        stderr: StdioCollector {}
+        onExited: (code, status) => {
+          if (code === 0 && status === 0) {
+            root._wifiProfiles = wifiKnownOut.text.split("\n").filter(Boolean).map(line => {
+              const f = root.splitWifiFields(line);
+              return {uuid: f[0], ssid: f[1] || ""};
+            }).filter(p => p.ssid.length > 0);
+            const known = [...new Set(root._wifiProfiles.map(p => p.ssid))];
+            if (JSON.stringify(known) !== JSON.stringify(root.wifiKnownSsids)) root.wifiKnownSsids = known;
+          }
+          if (root._wifiKnownPending) root.refreshWifiKnown();
         }
     }
     Timer {
@@ -1892,10 +2015,7 @@ Item {
         interval: 30000
         repeat: true
         running: true
-        onTriggered: {
-            wifiKnownProbe.running = false;
-            wifiKnownProbe.running = true;
-        }
+        onTriggered: root.refreshWifiKnown()
     }
 
     // ---------- Audio sinks probe ----------
@@ -1984,7 +2104,7 @@ Item {
     // Each output line: id\tsrcName\tfriendlyName\tvol\tmuted\tisDefault
     Process {
         id: audioInputSourcesProbe
-        running: false
+        running: true
         command: ["bash", "-lc",
             "DEF=$(pactl info 2>/dev/null | awk '/Default Source:/{print $NF}');"
             + " pactl list sources 2>/dev/null | awk -v def=\"$DEF\" '"
@@ -2023,7 +2143,7 @@ Item {
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: function(line) {
-                if (line.indexOf("on source #") !== -1)
+                if (line.indexOf("on source #") !== -1 || line.indexOf("on server #") !== -1)
                     audioInputSourcesRefreshTimer.restart();
             }
         }
@@ -2091,13 +2211,24 @@ Item {
     }
 
     // ---------- Power-profile probe ----------
-    // On-demand only: triggered once at startup so the Battery tile has
-    // current state ready, and from setPowerProfile()/refreshPowerProfile()
-    // afterwards. Power-profiles-daemon doesn't change behind our back at
-    // any meaningful rate, so a 5s polling loop is wasted work.
+    // Probe once at startup and after local changes. Also listen for daemon
+    // property changes because laptop firmware keys can switch profiles
+    // without going through this shell.
     function refreshPowerProfile() {
         powerProfileProbe.running = false;
         powerProfileProbe.running = true;
+    }
+    Process {
+        id: powerProfileMonitor
+        running: true
+        command: ["gdbus", "monitor", "--system", "--dest", "net.hadess.PowerProfiles",
+                  "--object-path", "/net/hadess/PowerProfiles"]
+        stdout: SplitParser {
+            onRead: function(line) {
+                if (line.indexOf("PropertiesChanged") !== -1)
+                    powerProfileRefreshTimer.restart();
+            }
+        }
     }
     Process {
         id: powerProfileProbe
@@ -2122,7 +2253,8 @@ Item {
     Component.onCompleted: {
         sysProbe.running = true;
         refreshPowerProfile();
-        wifiKnownProbe.running = true;
+        root.refreshWifiKnown();
+        root.refreshWifiState();
         try {
             const text = notifStore.text();
             if (text && text.length > 0) {
@@ -2155,7 +2287,7 @@ Item {
         command: ["zanken-update-available"]
         stdout: StdioCollector { id: zankenUpdateOut }
         onExited: (code, status) => {
-            if (code === 0) {
+            if (code === 1) {
                 const m = zankenUpdateOut.text.match(/\(([^)]+)\)/);
                 root.zankenLatestTag = m ? m[1] : "";
                 root.zankenUpdateAvailable = true;
@@ -2387,10 +2519,22 @@ Item {
     WifiPopup        { root: root }
     BluetoothPopup   { root: root }
     AudioPopup       { root: root }
+    AudioInputPopup  { root: root }
     MusicPopup       { root: root }
     BatteryPopup     { root: root }
     PowerPopup       { root: root }
     SystemPopup      { root: root }
+
+  IpcHandler {
+    target: "vpn-status"
+    function status(): string {
+      return JSON.stringify({state: root.vpnStatus.state, enabled: root.vpnStatus.enabled,
+        background_active: root.vpnStatus.backgroundActive,
+        protected: root.vpnStatus.isProtected, uplink: root.vpnStatus.uplinkKind});
+    }
+    function open(): void { root.vpnStatus.open(); }
+    function refresh(): void { root.vpnStatus.poll(); }
+  }
 
     // ---------- IPC ----------
     // Lets external keybinds drive the screenshots popup. Wire up in

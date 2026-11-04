@@ -1,0 +1,15 @@
+[Unit]
+Description=Synchronize hardware power keys with the power profile service
+After=graphical-session.target
+PartOf=graphical-session.target
+ConditionPathExists=/sys/firmware/acpi/platform_profile
+
+[Service]
+Environment="PATH=%h/.local/share/zanken/current-release/source/bin:/usr/local/bin:/usr/bin"
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/share/zanken/current-release/source/lib/zanken/powerprofiles.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

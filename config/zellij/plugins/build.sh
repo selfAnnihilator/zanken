@@ -20,3 +20,4 @@ cargo +1.95.0 build --locked --release --target wasm32-wasip1 -p plugin-manager 
 for plugin in plugin-manager about configuration layout-manager share status-bar; do
   install -m 0644 "target/wasm32-wasip1/release/$plugin.wasm" "$plugin_dir/$plugin.wasm"
 done
+(cd "$plugin_dir" && sha256sum *.wasm > SHA256SUMS)

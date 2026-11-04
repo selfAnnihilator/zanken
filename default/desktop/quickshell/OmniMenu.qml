@@ -83,6 +83,7 @@ Item {
     readonly property bool themeMode:     root.categoryFilter === Data.themeCategory
     readonly property bool lockThemeMode: root.categoryFilter === Data.lockThemeCategory
     readonly property bool keybindMode:  root.categoryFilter === Data.keybindCategory
+    readonly property bool zellijMode: root.categoryFilter === Data.zellijCategory
     // Quick mode swaps the result list for a live-tile grid. Tiles bind
     // to nav telemetry for instantaneous state; clicking one drops an
     // expanded detail panel below the grid with that tile's adjustments.
@@ -336,6 +337,11 @@ Item {
     readonly property alias keybindItems:   niriKeybinds.items
     readonly property alias keybindRunning: niriKeybinds.running
 
+    ZellijSessions {
+        id: zellijSessions
+        active: root.visible_ && root.zellijMode
+    }
+
     readonly property bool previewActive: root.fileMode || root.ghMode || root.procMode || root.themeMode
     readonly property bool previewHasContent: {
         if (root.fileMode || root.ghMode)
@@ -431,6 +437,13 @@ Item {
         }
         // Keybind reference — read-only, just close.
         if (item.isKeybind) { root.close(); return; }
+        if (item.isZellijSession) {
+            // A forked Process child inherits pipes that close when its
+            // parent exits; Foot can then die on its first stderr write.
+            Quickshell.execDetached(["zanken-launch-terminal-zellij", item.sessionName]);
+            root.close();
+            return;
+        }
         // Theme apply — fire and forget; zanken-theme-set rebuilds
         // configs and reloads all the live apps that listen for it.
         if (item.isTheme) {
@@ -521,6 +534,7 @@ Item {
         else if (root.themeMode)     pool = root.themeItems;
         else if (root.lockThemeMode) pool = root.lockThemeItems;
         else if (root.keybindMode)   pool = root.keybindItems;
+        else if (root.zellijMode)    pool = zellijSessions.items;
         else if (filter !== "")  pool = root.allItems.filter(it => it.category === filter);
         else                     pool = root.navRows;
 
@@ -578,6 +592,7 @@ Item {
         if (n === 0) return;
         const next = Math.max(0, Math.min(n - 1, root.selectedIndex + delta));
         root.selectedIndex = next;
+        Qt.callLater(function() { quickGridScroll.ensureSelectionVisible(); });
     }
 
     Component.onCompleted: {
@@ -733,6 +748,20 @@ Item {
                                || (e2.key === Qt.Key_Tab && (e2.modifiers & Qt.ShiftModifier)))) {
                     root.moveQuickSelection(-1);
                     event.accepted = true;
+                } else if (root.quickMode && e2.key === Qt.Key_PageDown) {
+                    root.moveQuickSelection(8);
+                    event.accepted = true;
+                } else if (root.quickMode && e2.key === Qt.Key_PageUp) {
+                    root.moveQuickSelection(-8);
+                    event.accepted = true;
+                } else if (root.quickMode && e2.key === Qt.Key_Home) {
+                    root.selectedIndex = 0;
+                    Qt.callLater(function() { quickGridScroll.ensureSelectionVisible(); });
+                    event.accepted = true;
+                } else if (root.quickMode && e2.key === Qt.Key_End) {
+                    root.selectedIndex = Math.max(0, root.filteredQuickTiles.length - 1);
+                    Qt.callLater(function() { quickGridScroll.ensureSelectionVisible(); });
+                    event.accepted = true;
                 } else if (e2.key === Qt.Key_Down
                            || (e2.key === Qt.Key_Tab && !(e2.modifiers & Qt.ShiftModifier))) {
                     // Tab + Down step forward, Shift+Tab + Up step backward,
@@ -777,7 +806,7 @@ Item {
                     event.accepted = true;
                 } else if (e2.key === Qt.Key_S && (e2.modifiers & Qt.ControlModifier)) {
                     const it = root.filteredItems[root.selectedIndex];
-                    if (it && !it.isCategory) bookmarks.toggleFavourite(it);
+                    if (it && !it.isCategory && !it.isZellijSession) bookmarks.toggleFavourite(it);
                     event.accepted = true;
                 } else if (!root.quickMode && event.text && event.text.length === 1) {
                     const ch = event.text;
@@ -819,6 +848,10 @@ Item {
                         }
                         Text {
                             text: {
+                                if (root.zellijMode) {
+                                    const total = root.filteredItems.length;
+                                    return total + " SESSION" + (total === 1 ? "" : "S");
+                                }
                                 if (!root.appsLoaded) return "LOADING APPS…";
                                 if (root.fileMode) {
                                     if (root.query.length === 0) return "TYPE TO SEARCH ~";
@@ -900,6 +933,8 @@ Item {
                             }
                             if (root.categoryFilter === "")
                                 return "↑↓ / TAB  ·  ↵ OPEN  ·  ^S STAR  ·  ESC CLOSE";
+                            if (root.zellijMode)
+                                return "↑↓ / TAB  ·  ↵ OPEN  ·  ESC CLOSE";
                             let verb = "RUN";
                             if (root.fileMode)       verb = "OPEN FILE";
                             else if (root.ghMode)    verb = "OPEN";
@@ -927,16 +962,20 @@ Item {
                     id: quickContainer
                     visible: root.quickMode
                     width: parent.width
+                    readonly property real expandedHeight: Math.max(
+                        60, panel.height * 0.55 - 34 - 43 - 2 - 22 - 12 * 4)
                     height: visible
-                        ? Math.max(quickGrid.height,
-                                   detailPanel.visible ? detailPanel.height : 0)
+                        ? (root.quickExpanded ? expandedHeight : quickGridScroll.contentHeight)
                         : 0
+                    clip: true
 
-                Item {
-                    id: quickGrid
+                Flickable {
+                    id: quickGridScroll
                     visible: root.quickMode
                     // Expanded: compress to a narrow column on the left
                     // edge so the detail panel gets the wider right half.
+                    // Its viewport stays inside the card while the complete
+                    // tile column remains reachable by wheel, touch, or keys.
                     readonly property bool colMode: root.quickExpanded
                     anchors.top: parent.top
                     anchors.left: parent.left
@@ -946,15 +985,37 @@ Item {
                     readonly property int rows: visible
                         ? Math.ceil(root.filteredQuickTiles.length / root.quickGridCols)
                         : 0
-                    height: visible
+                    contentWidth: width
+                    contentHeight: visible
                         ? (rows * tileH + Math.max(0, rows - 1) * spacing)
                         : 0
+                    height: visible
+                        ? (colMode ? quickContainer.height : contentHeight)
+                        : 0
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    interactive: quickGridScroll.colMode && contentHeight > height
+
+                    function ensureSelectionVisible() {
+                        if (!colMode || height <= 0) return;
+                        const itemTop = root.selectedIndex * (tileH + spacing);
+                        const itemBottom = itemTop + tileH;
+                        if (itemTop < contentY)
+                            contentY = itemTop;
+                        else if (itemBottom > contentY + height)
+                            contentY = itemBottom - height;
+                    }
+
+                    onColModeChanged: contentY = 0
 
                     Grid {
-                        anchors.fill: parent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        height: quickGridScroll.contentHeight
                         columns: root.quickGridCols
-                        rowSpacing: quickGrid.spacing
-                        columnSpacing: quickGrid.spacing
+                        rowSpacing: quickGridScroll.spacing
+                        columnSpacing: quickGridScroll.spacing
 
                         Repeater {
                             model: root.filteredQuickTiles
@@ -963,9 +1024,9 @@ Item {
                                 required property var modelData
                                 required property int index
                                 readonly property bool selected: root.selectedIndex === index
-                                width: (quickGrid.width - (root.quickGridCols - 1) * quickGrid.spacing)
+                                width: (quickGridScroll.width - (root.quickGridCols - 1) * quickGridScroll.spacing)
                                        / root.quickGridCols
-                                height: quickGrid.tileH
+                                height: quickGridScroll.tileH
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -984,8 +1045,8 @@ Item {
 
                                 Column {
                                     anchors.fill: parent
-                                    anchors.margins: quickGrid.colMode ? 3 : 8
-                                    spacing: quickGrid.colMode ? 0 : 3
+                                    anchors.margins: quickGridScroll.colMode ? 3 : 8
+                                    spacing: quickGridScroll.colMode ? 0 : 3
 
                                     Text {
                                         readonly property var dyn: root.tileDyn(tileSlot.modelData)
@@ -993,7 +1054,7 @@ Item {
                                         text: dyn.glyph || ""
                                         color: dyn.tone || root.ink
                                         font.family: root.mono
-                                        font.pixelSize: quickGrid.colMode ? 14 : 20
+                                        font.pixelSize: quickGridScroll.colMode ? 14 : 20
                                     }
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
@@ -1003,17 +1064,16 @@ Item {
                                         text: root.tileDyn(tileSlot.modelData).label || ""
                                         color: root.ink
                                         font.family: root.mono
-                                        font.pixelSize: quickGrid.colMode ? 7 : 9
-                                        font.letterSpacing: quickGrid.colMode ? 0.8 : 1.4
+                                        font.pixelSize: quickGridScroll.colMode ? 7 : 9
+                                        font.letterSpacing: quickGridScroll.colMode ? 0.8 : 1.4
                                         font.weight: Font.Medium
                                     }
                                     // Sub-label is redundant in colMode —
                                     // the detail panel header above shows
                                     // the same live value. Hiding it lets
-                                    // the column fit all 12 tiles inside
-                                    // the card's vertical budget.
+                                    // the compact rail prioritize labels.
                                     Text {
-                                        visible: !quickGrid.colMode
+                                        visible: !quickGridScroll.colMode
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         width: parent.width
                                         horizontalAlignment: Text.AlignHCenter
@@ -1057,7 +1117,7 @@ Item {
                 Rectangle {
                     id: quickMidSep
                     visible: root.quickExpanded
-                    anchors.left: quickGrid.right
+                    anchors.left: quickGridScroll.right
                     anchors.leftMargin: 16
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
@@ -1083,7 +1143,7 @@ Item {
                     // budget. Body content beyond this height scrolls
                     // inside `bodyScroll` below instead of pushing the
                     // card off-screen.
-                    readonly property real _maxHeight: panel.height * 0.55
+                    readonly property real _maxHeight: quickContainer.height
                     readonly property real _wantHeight: detailHeader.implicitHeight + bodyLoader.implicitContentHeight + 18
                     height: visible ? Math.min(_wantHeight, _maxHeight) : 0
                     clip: true
@@ -1200,6 +1260,21 @@ Item {
                         boundsBehavior: Flickable.StopAtBounds
                         interactive: contentHeight > height
 
+                        // Keep wheel and touchpad movement within the visible
+                        // detail viewport, including over thumbnail delegates.
+                        WheelHandler {
+                            id: bodyScrollWheel
+                            target: null
+                            onWheel: function(event) {
+                                const step = Math.max(48, bodyScroll.height * 0.35);
+                                const dy = event.pixelDelta.y !== 0
+                                    ? -event.pixelDelta.y : -event.angleDelta.y / 120 * step;
+                                const max = Math.max(0, bodyScroll.contentHeight - bodyScroll.height);
+                                bodyScroll.contentY = Math.max(0, Math.min(max, bodyScroll.contentY + dy));
+                                event.accepted = true;
+                            }
+                        }
+
                         Loader {
                             id: bodyLoader
                             width: bodyScroll.width
@@ -1232,25 +1307,6 @@ Item {
                             }
                         }
 
-                        // Slim scroll indicator on the right edge — only
-                        // visible while overflow exists. Tracks the
-                        // viewport position so the user has a hint that
-                        // more content is below.
-                        Rectangle {
-                            visible: bodyScroll.contentHeight > bodyScroll.height
-                            anchors.right: parent.right
-                            anchors.rightMargin: 2
-                            width: 3
-                            radius: 1.5
-                            color: root.seal
-                            opacity: 0.55
-                            y: bodyScroll.contentHeight > 0
-                               ? (bodyScroll.contentY / bodyScroll.contentHeight) * bodyScroll.height
-                               : 0
-                            height: bodyScroll.contentHeight > 0
-                                    ? Math.max(20, (bodyScroll.height / bodyScroll.contentHeight) * bodyScroll.height)
-                                    : 0
-                        }
                     }
                 }
 
@@ -1293,6 +1349,7 @@ Item {
                             if (root.themeMode)     return "Type to filter themes…";
                             if (root.lockThemeMode) return "Type to filter lock screen themes…";
                             if (root.keybindMode)   return "Type to search keybindings…";
+                            if (root.zellijMode) return "Type to search sessions…";
                             return "Type to search apps, themes, settings…";
                         }
                         color: root.query.length === 0 ? root.inkDeep : root.ink
@@ -1536,6 +1593,11 @@ Item {
                                 if (root.histMode) return "NO HISTORY YET";
                                 if (root.procMode)  return processes.running ? "LOADING…" : "NO PROCESSES";
                                 if (root.themeMode) return themes.loaded ? "NO THEMES MATCH" : "LOADING THEMES…";
+                                if (root.zellijMode) {
+                                    if (zellijSessions.error) return zellijSessions.error;
+                                    if (!zellijSessions.loaded) return "LOADING SESSIONS…";
+                                    return root.query.length > 0 ? "NO SESSIONS MATCH" : "NO EXISTING SESSIONS";
+                                }
                                 return root.appsLoaded ? "NOTHING MATCHES" : "INDEXING APPS…";
                             }
                             color: root.inkDeep
@@ -1795,6 +1857,7 @@ Item {
                             if (it.isTheme)     return "↵ zanken-theme-set " + (it.themeName || "");
                             if (it.isLockTheme) return "↵ qylock-theme-set " + (it.themeName || "");
                             if (it.isKeybind)   return "󰌌 " + it.title;
+                            if (it.isZellijSession) return "↵ " + it.category;
                             return "$ " + it.exec;
                         }
                         color: root.inkDeep

@@ -9,6 +9,7 @@ const procCategory = "Processes";
 const themeCategory = "Themes";
 const lockThemeCategory = "Lock Theme";
 const keybindCategory = "Keybinds";
+const zellijCategory = "Zellij";
 
 // fd already respects .gitignore, the global ignore file, and skips
 // hidden files by default. These excludes catch build dirs that
@@ -82,7 +83,8 @@ const categoryNav = [
     { title: "Themes",    icon: "󰸌", category: "Browse", isCategory: true, target: themeCategory,        keywords: "themes theme palette color swatch switcher dark light apply" },
     { title: "Lock Theme", icon: "󰌾", category: "Browse", isCategory: true, target: lockThemeCategory, keywords: "lock theme qylock sddm lockscreen login pixel anime" },
     { title: "Keybindings", icon: "󰌌", category: "Browse", isCategory: true, target: keybindCategory,  keywords: "keybindings shortcuts hotkeys super niri binds reference cheatsheet" },
-    { title: "Update",    icon: "󰚰", category: "Browse", isCategory: true, target: "Update",       keywords: "update sync zanken git pull upgrade packages install" }
+    { title: "Update",    icon: "󰚰", category: "Browse", isCategory: true, target: "Update",       keywords: "update sync zanken git pull upgrade packages install" },
+    { title: "Zellij Sessions", icon: "", category: "Browse", isCategory: true, target: zellijCategory, keywords: "zellij terminal workspace session picker switch attach restore" }
 ];
 
 // Every leaf action zanken-menu can dispatch is flattened here with a

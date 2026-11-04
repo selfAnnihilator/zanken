@@ -16,10 +16,9 @@ CardWindow {
 
     onDismiss: wifiPopup.root.wifiVisible = false
 
-    // Active SSID: prefer inUse flag, fall back to bar's current SSID
+    // The Wi-Fi snapshot owns this state independently of the bar's uplink.
     readonly property string activeSsid: {
-        const inUse = (wifiPopup.root.wifiNetworks || []).find(n => n.inUse);
-        return inUse ? inUse.ssid : (wifiPopup.root.wifiSsid || "");
+      return wifiPopup.root.wifiRadioOn ? (wifiPopup.root.wifiSsid || "") : "";
     }
 
     // The active network is shown exactly once in its own detail block.
@@ -27,7 +26,7 @@ CardWindow {
     readonly property var activeNetwork: {
         const active = wifiPopup.activeSsid;
         const networks = wifiPopup.root.wifiNetworks || [];
-        const inUse = networks.find(n => n.inUse || (active && n.ssid === active));
+        const inUse = active ? networks.find(n => n.ssid === active) : null;
         if (inUse) return inUse;
         if (active) return { ssid: active, inUse: true, signal: wifiPopup.root.wifiSignal || 0, security: "" };
         return null;
@@ -41,6 +40,11 @@ CardWindow {
     property bool detailsExpanded: false
     // SSID awaiting password entry (shows inline password panel in available list)
     property string pendingConnectSsid: ""
+    property string pendingConnectPassword: ""
+    onPendingConnectSsidChanged: pendingConnectPassword = ""
+    onRevealedChanged: {
+      if (!revealed) pendingConnectSsid = "";
+    }
 
     // Known-available = in-range + saved to NM + not currently connected
     property var knownAvailableNetworks: {
@@ -129,6 +133,64 @@ CardWindow {
         }
 
         Rectangle { width: parent.width; height: 1; color: wifiPopup.root.sep }
+
+        // Share the bar's verified VPN state; Wi-Fi remains its own link.
+        Item {
+          id: vpnConnectionStatus
+          width: parent.width
+          height: 38
+          visible: wifiPopup.root.vpnStatus.enabled
+
+          Text {
+            id: vpnConnectionIcon
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            width: 26
+            text: wifiPopup.root.vpnStatus.isProtected ? String.fromCodePoint(0xf023)
+              : wifiPopup.root.vpnStatus.state === "paused" ? String.fromCodePoint(0xf04c)
+              : wifiPopup.root.vpnStatus.state === "disconnected" ? String.fromCodePoint(0xf09c) : "!"
+            color: wifiPopup.root.vpnStatus.isProtected ? "#7ad19a"
+              : wifiPopup.root.vpnStatus.needsAttention ? "#e8b966" : wifiPopup.root.inkDeep
+            font.family: wifiPopup.root.mono
+            font.pixelSize: 14
+          }
+
+          Column {
+            anchors.left: vpnConnectionIcon.right
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+            Text {
+              width: parent.width
+              elide: Text.ElideRight
+              text: ({
+                connected: "VPN CONNECTED · " + wifiPopup.root.vpnStatus.connectionLabel.toUpperCase(),
+                disconnected: "VPN DISCONNECTED",
+                paused: "INTERNET PAUSED · VPN GUARD ON",
+                checking: "CHECKING VPN CONNECTION",
+                unverified: "VPN CONNECTION NOT VERIFIED",
+                unprotected: "VPN PROTECTION INCOMPLETE",
+                unavailable: "VPN STATUS UNAVAILABLE"
+              })[wifiPopup.root.vpnStatus.state] || "VPN STATUS UNAVAILABLE"
+              color: vpnConnectionIcon.color
+              font.family: wifiPopup.root.mono
+              font.pixelSize: 11
+              font.letterSpacing: 1
+              font.weight: Font.Medium
+            }
+            Text {
+              width: parent.width
+              elide: Text.ElideRight
+              text: wifiPopup.root.vpnStatus.isProtected ? "Internet connection verified and protected"
+                : wifiPopup.root.vpnStatus.state === "disconnected" ? "Regular internet connection"
+                : wifiPopup.root.vpnStatus.state === "paused" ? "Open VPN controls to connect or disconnect"
+                : "Open VPN controls to check your connection"
+              color: wifiPopup.root.inkDeep
+              font.family: wifiPopup.root.mono
+              font.pixelSize: 10
+            }
+          }
+        }
 
         // Radio off state
         Text {
@@ -551,7 +613,8 @@ CardWindow {
 
                         onVisibleChanged: {
                             if (visible) {
-                                passInput.text = "";
+                                passInput.text = wifiPopup.pendingConnectPassword;
+                                passInput.cursorPosition = passInput.text.length;
                                 wifiPopup.requestKeyboardFocus(passInput);
                             }
                         }
@@ -658,6 +721,8 @@ CardWindow {
 
                             TextInput {
                                 id: passInput
+                                text: wifiPopup.pendingConnectPassword
+                                onTextEdited: wifiPopup.pendingConnectPassword = text
                                 anchors.fill: parent
                                 onActiveFocusChanged: if (activeFocus) wifiPopup.requestKeyboardFocus(passInput)
                                 TapHandler {

@@ -95,7 +95,12 @@ The configuration reloads automatically when saved.
 Super+Enter focuses the most recently used live workspace's existing Foot
 window. If it has no window, it opens a terminal attached to that workspace.
 Missing or stale history still falls back to a surviving live session.
+Running a command in a session marks it most recent, even after switching to it with the built-in picker, so Super+Enter reopens it.
 Super+Alt+Enter always opens a fresh, separate session.
+Super+S opens the searchable desktop session picker (also available as
+`zanken menu zellij` or **Zellij Sessions** in the command palette). Type to filter,
+use Up/Down to select, and Enter to focus that session's existing window or open
+it in a new terminal. Saved sessions are labelled for restoration; Escape cancels.
 `t` or `zanken-launch-zellij` resumes the last workspace from a shell;
 `zanken-launch-zellij --new` starts a fresh one. Plain `zellij` still attaches
 to main by default. Super+T remains available for a plain terminal.

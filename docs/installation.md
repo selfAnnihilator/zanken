@@ -12,9 +12,13 @@ VM-test candidate is not a published stable release.
 
 ## One-line install
 
+There is no stable release yet, so select the `dev` channel:
+
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh)
+ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh)
 ```
+
+For an existing Arch desktop, add `--desktop` and run it from a TTY (see the README).
 
 ## What the script does
 

@@ -19,9 +19,54 @@ Built around the [Niri](https://github.com/YaLTeR/niri) scrolling compositor and
 
 ## Install
 
+> **Status: alpha.** There is no stable release yet, so every install uses the `dev`
+> channel (`ZANKEN_RELEASE_MODE=dev`). Without it the installer stops with
+> "No Zanken stable release available".
+
+**Requirements:** x86_64 Arch Linux or an Arch-based distribution (CachyOS works), a
+regular user with `sudo`, and an internet connection. Run the installer from a TTY
+(log out of any graphical session first), as your regular user, never as root.
+
+### Desktop install on an existing Arch system (recommended)
+
+This replaces your Niri/Quickshell desktop configuration with Zanken's. It does not
+touch disks, partitions or the bootloader, and it backs up the configs it replaces.
+
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh) --clean
+sudo pacman -Syu --needed git python jq
+ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh) --desktop
 ```
+
+Type `REPLACE` when asked, then confirm the installer prompt. When it finishes, reboot.
+You get the Pixel Sakura login screen; choose **Zanken (Niri)** from the session menu.
+
+### Full install on a fresh Arch system
+
+For a clean x86_64 Arch install with a Btrfs root and Limine. This path provisions
+the whole system, including bootloader and snapshot configuration, so use it only on
+a machine you are happy to reconfigure.
+
+```bash
+ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh)
+```
+
+### Add the login screen to an existing Zanken install
+
+```bash
+~/zanken/bin/zanken-setup-login
+```
+
+Installs SDDM with the Pixel Sakura theme and enables it for the next boot. The boot
+animation is installed too, but it is not working yet on every setup.
+
+### Updating
+
+```bash
+zanken update --fetch
+```
+
+See [Installation](docs/installation.md) and [Replace an existing Niri desktop](docs/desktop-takeover.md)
+for details, rollback and recovery.
 
 ## What's included
 

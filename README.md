@@ -73,7 +73,9 @@ zanken update --fetch
 
 This updates desktop files (bar, scripts, themes, configuration). A release that adds
 packages or changes system setup (anything under `install/` or `migrations/`) is refused
-by `zanken update`; rerun the installer command above for those.
+by `zanken update`. The desktop installer also refuses an already managed install;
+use a documented component setup command where available, or wait for an upgrade
+path covering those system changes.
 
 See [Installation](docs/installation.md) and [Replace an existing Niri desktop](docs/desktop-takeover.md)
 for details, rollback and recovery.

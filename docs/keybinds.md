@@ -6,9 +6,10 @@
 
 | Keybind | Action |
 |---------|--------|
-| `Mod+Return` | Open terminal (foot) |
+| `Mod+Return` | Resume or focus the most recent Zellij workspace |
 | `Mod+T` | Open terminal (foot) |
-| `Mod+Alt+Return` | Open terminal in tmux session |
+| `Mod+Alt+Return` | Start a fresh Zellij session |
+| `Mod+S` | Open the Zellij session picker |
 | `Mod+Shift+Return` | Open default browser |
 | `Mod+B` | Open the configurable quick browser (qutebrowser by default) |
 | `Mod+Shift+B` | Open the preferred browser |
@@ -30,9 +31,11 @@
 |---------|--------|
 | `Mod+Q` / `Mod+W` | Close window |
 | `Mod+O` | Toggle overview |
-| `Mod+H/J/K/L` | Focus left/down/up/right |
+| `Mod+H/L` | Focus column left/right |
 | `Mod+←/↓/↑/→` | Focus column/window |
-| `Mod+Ctrl+H/J/K/L` | Move window |
+| `Mod+J/K` | Focus workspace down/up |
+| `Mod+Shift+Ctrl+←/→` | Move column left/right |
+| `Mod+Shift+Ctrl+↓/↑` | Move window down/up |
 | `Mod+Shift+H/L` | Focus monitor left/right |
 | `Mod+Shift+J/K` | Move column to workspace down/up |
 
@@ -75,7 +78,7 @@
 | `Mod+Print` | Color picker |
 | `Mod+Alt+Shift+R` | Start or stop screen recording |
 | `Ctrl+Print` | Screenshot (full screen) |
-| `Shift+Print` | Screenshot to clipboard |
+| `Shift+Print` | Screenshot (region select) |
 | `Mod+Ctrl+Print` | Extract text from a selected screen region |
 
 ## System
@@ -100,3 +103,7 @@
 | `Mod+Alt+K` | Keybinds reference |
 | `Mod+Alt+R` | Set reminder |
 | `Mod+Ctrl+Alt+R` | Show reminders |
+
+## Inside the terminal
+
+See [Zellij workflow and keybinds](zellij.md) for terminal panes, tabs and sessions.

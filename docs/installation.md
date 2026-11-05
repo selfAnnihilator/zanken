@@ -1,8 +1,7 @@
 # Installation
 
 Zanken has two installation paths: full provisioning on fresh Arch, and an
-opt-in [existing Niri desktop replacement](desktop-takeover.md). The current
-VM-test candidate is not a published stable release.
+opt-in [existing Niri desktop replacement](desktop-takeover.md). There is no published stable release yet; use the dev channel.
 
 ## Prerequisites
 
@@ -18,7 +17,17 @@ There is no stable release yet, so select the `dev` channel:
 ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh)
 ```
 
-For an existing Arch desktop, add `--desktop` and run it from a TTY (see the README).
+For the tested desktop path on an existing Arch system, run as a regular
+sudo-enabled user from a logged-out TTY:
+
+```bash
+sudo pacman -Syu --needed git python jq
+ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh) --desktop
+```
+
+This backs up and replaces desktop configuration. Full provisioning above also
+configures the bootloader and snapshots; the desktop path preserves partitions
+and the bootloader.
 
 ## What the script does
 
@@ -109,22 +118,19 @@ does **not** reverse package upgrades, driver installations or initramfs changes
 
 ### Acceptance status
 
-The implementation has isolated hardware/package, workflow, backup and real-Git
-release tests. Physical NVIDIA/hybrid testing and fresh Arch/CachyOS installation
-with screenshots remain release acceptance requirements; passing mocked hardware
-tests does not establish real driver compatibility. Do not run takeover on a
-working desktop to substitute for these checks.
+The desktop install command was confirmed end to end from GitHub on a fresh
+minimal Arch VM on 2026-11-04. This does not establish full-provisioning,
+physical NVIDIA/hybrid, disk-encryption or fresh CachyOS acceptance. Individual
+features and rollback still need their acceptance checks. Isolated tests cover
+hardware/package planning, workflow, backup and release behavior.
 
 ## After install
 
-Log out and start a Niri session:
+Reboot after installation. At the Pixel Sakura login screen, choose
+**Zanken (Niri)**. The boot animation is installed, but is not confirmed working
+on every setup. See [desktop takeover](desktop-takeover.md) for login recovery.
 
-```bash
-# From a TTY (Ctrl+Alt+F2)
-niri --session
-```
-
-Or configure your display manager to launch `niri`.
+See [Zellij workflow](zellij.md) for the terminal workspace shortcuts.
 
 ## Updating desktop defaults
 
@@ -137,6 +143,12 @@ zanken release status         # source and installed generation details
 zanken update --fetch         # update the installed mode from origin
 zanken release rollback       # restore the previous desktop generation
 ```
+
+Updates that touch `install/` or `migrations/` are refused. Desktop rollback
+does not reverse packages or system setup. An already managed installation is
+also refused by the desktop installer; do not rerun it as an upgrade workaround.
+Use a documented component setup command where available, or wait for an upgrade
+path covering the required system changes.
 
 To take ownership of existing Niri or Quickshell configuration, run:
 
@@ -165,8 +177,8 @@ quickemu --vm archlinux-latest.conf
 
 Inside the VM, run `archinstall`, then reboot and run the install script.
 
-For the unpublished candidate, follow the guarded [fresh-VM test](fresh-vm-test.md)
-instead of the stable bootstrap. For a guest with an existing custom desktop,
+For developer testing of full provisioning, use the guarded
+[fresh-VM test](fresh-vm-test.md). For a guest with an existing custom desktop,
 follow the [takeover test](desktop-takeover.md).
 
 !!! tip

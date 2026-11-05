@@ -1,6 +1,8 @@
 # Commands
 
-Zanken ships 308 `zanken-*` scripts. All are on `$PATH` via `~/zanken/bin/`.
+Zanken commands use the `zanken-*` prefix. Adopted installations resolve them
+from the active release; see [configuration](../configuration.md#path-architecture).
+The generated [command reference](all.md) lists public commands.
 
 ## Usage
 

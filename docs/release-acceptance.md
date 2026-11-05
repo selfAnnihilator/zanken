@@ -1,9 +1,10 @@
 # Disposable Arch release acceptance
 
 This is the acceptance runbook, not evidence that acceptance has passed.
-Preparation on 2026-09-09 was interrupted during the ISO download (about 550 MiB).
-The image is incomplete and no checksum receipt exists yet; the launcher refuses
-to boot it. No VM has been started or installed.
+The September 2026 preparation was interrupted during an ISO download. That
+historical state is not the current install status: the dev-channel desktop
+install was confirmed on a fresh minimal Arch VM on 2026-11-04. The complete
+release matrix below still requires evidence for its exact candidate.
 Never sign or push a stable tag until the matrix below passes for its exact
 candidate commit. GitHub environment approval does not gate Git tag visibility.
 

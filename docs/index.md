@@ -9,7 +9,7 @@
 - **Notifications**: Quickshell notification server with sender-provided actions and inline replies
 - **Terminal**: [Foot](https://codeberg.org/dnkl/foot)
 - **Launcher**: OmniMenu — built-in Quickshell search (`Mod+Space`)
-- **Scripts**: 280+ `zanken-*` shell scripts covering everything from theming to hardware detection
+- **Scripts**: `zanken-*` commands covering everything from theming to hardware detection
 - **Themes**: 21 built-in color themes, dynamic wallpaper-based palette generation via zanken-wallpaper-colors
 
 ## What it is not
@@ -18,8 +18,13 @@ Zanken is not a distro. It is a dotfiles + script layer that runs on top of Arch
 
 ## Quickstart
 
+Alpha: there is no stable release yet. From a logged-out TTY on an existing
+x86_64 Arch system, run as a regular user with sudo. This replaces desktop
+configuration with backups; see the installation page before proceeding.
+
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh) --clean
+sudo pacman -Syu --needed git python jq
+ZANKEN_RELEASE_MODE=dev bash <(curl -fsSL https://raw.githubusercontent.com/selfAnnihilator/zanken/main/boot.sh) --desktop
 ```
 
 See [Installation](installation.md) for full details.
@@ -28,7 +33,7 @@ See [Installation](installation.md) for full details.
 
 ```
 zanken/
-├── bin/          # 280+ zanken-* scripts
+├── bin/          # zanken-* commands
 ├── config/       # Base app configs
 ├── default/      # Default app and managed desktop configs
 ├── themes/       # 21 built-in color themes

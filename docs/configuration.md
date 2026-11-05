@@ -49,60 +49,19 @@ These are updated automatically when you run `zanken-theme-set <theme>`.
 
 ## Terminal workspace
 
-`Super+Alt+Enter` opens Foot attached to the `main` Zellij session. The `t`
-shell shortcut and `zanken-launch-zellij [session]` also attach or resurrect a
-workspace. Plain `zellij` attaches to `main` using the configured session name.
-Ordinary `Super+Enter` and `Super+T` still open a plain terminal.
+`Super+Enter` resumes or focuses the most recent Zellij workspace in Foot.
+`Super+Alt+Enter` creates a separate session; `Super+T` opens plain Foot.
+`Super+S` opens the searchable session picker.
 
-Zellij uses the previous tmux pane, tab, and detach keys, including
-`Ctrl+Shift+H/J/K/L` for focus and `Ctrl+Space` or `Ctrl+B` as prefix.
-See the [key reference](../config/zellij/KEYBINDINGS.md) or press prefix then `?`.
-Start locked, with frequent shortcuts available directly. `Alt+G` opens the
-native Zellij guide: `Ctrl+P` for pane controls, `Ctrl+T` for tabs, `Ctrl+N` for
-resizing, and `Ctrl+O` for sessions. The bottom status bar shows contextual hints.
-The top bar uses the pinned zjstatus plugin with the modified wiraki/hmajid2301
-style: orange active tabs, blue inactive tabs, mode labels and a session badge. Its settings are in `layouts/zanken.kdl`;
-the native two-line guide appears after `Alt+G` or the compatibility prefix and
-disappears when returning to locked mode. The guide overlays the bottom two rows
-when opened and reserves no terminal space while hidden. Pane borders and titles are disabled,
-and the top bar has the preset's two-row spacing.
-`Alt+G` locks again. Native pane/tab actions and popups return to locked mode so
-application input and the popup's own shortcuts work immediately. Enter/Escape
-also leaves a guide mode for locked mode. Unlocked normal mode is a command mode.
-The tmux-style prefix lives in its own compatibility mode,
-so it does not replace the native guided controls. Configuration reloads automatically.
-
-`Ctrl+Space`, release, then lowercase `k` resets the whole current session;
-`Ctrl+B` and uppercase `K` work too. This stops its programs, deletes the saved
-resurrection state and opens one fresh shell in your home directory under the
-same session name. Other sessions are preserved.
-
-`Ctrl+Alt+X` closes the active pane when the tab has multiple panes, otherwise
-closes that tab. Closing the final tab also deletes the saved session state.
-During Zellij search, a temporary pane frame displays the query and search
-options; leaving search restores borderless panes.
-
-Prefix `x` permanently closes the current tab and all its panes. Remaining tabs
-are saved immediately. Closing the final tab ends the session and deletes its
-saved layout, so the next launch starts fresh. Prefix `d` detaches and keeps
-the session and its programs available for reattaching. The launcher waits for
-any final-tab cleanup before opening the session again.
-
-The isolated input regression is `python3 test/zanken-zellij-input-test.py`.
-It uses a PTY and temporary configuration/layout directories to test native mode
-exits and the popup controls without taking desktop focus or changing saved layouts.
-
-Session serialization saves the layout, commands, working directories, viewport,
-and up to 50,000 scrollback lines per pane once per second. After a reboot,
-reattaching restores the workspace with ordinary commands waiting for Enter;
-detected editor files can reopen automatically. Application
-memory and unsaved editor buffers are not restored by Zellij. Existing tmux
-sessions remain available separately.
+See [Zellij workflow and keybinds](zellij.md) for panes, tabs, sessions,
+scrollback, detaching and reboot recovery. The installed reference is also
+available with `Ctrl+Space`, release, then `?`.
 
 ## Weather location
 
 ```bash
 # Set your city or coordinates
+mkdir -p ~/.config/zanken/weather
 echo "Oslo" > ~/.config/zanken/weather/location
 # or: echo "59.9139,10.7522" > ~/.config/zanken/weather/location
 ```
@@ -115,7 +74,7 @@ Zanken supports hooks that run at specific lifecycle events:
 
 ```bash
 # Location: ~/.config/zanken/hooks/<event>.d/<script>
-# Events: theme-set, post-boot, pre-shutdown
+# Examples: theme-set, font-set, post-update
 ```
 
 Example — run a script after every theme change:
@@ -198,22 +157,19 @@ continues to report the previous profile. The optional
 service, including its CPU policy and the battery panel. It preserves manual
 panel selections and leaves custom firmware profiles alone.
 
-For a development checkout at `~/zanken`, enable it with:
+The desktop installer enables this service when supported firmware and an active
+power-profiles-daemon are present and no conflicting power manager is detected.
+The unit runs the helper from the active release, so it does not require a
+checkout at `~/zanken`. Inspect it with:
 
 ```bash
-mkdir -p ~/.config/systemd/user
-install -m 0644 ~/zanken/config/systemd/user/zanken-powerprofiles-sync.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now zanken-powerprofiles-sync.service
+systemctl --user status zanken-powerprofiles-sync.service
 ```
 
-The service requires Python 3, `powerprofilesctl`, and
-`/sys/firmware/acpi/platform_profile`. Keep the checkout available at `~/zanken`;
-the unit runs its helper directly. Disable it with
+It requires Python 3, `powerprofilesctl`, and
+`/sys/firmware/acpi/platform_profile`. Disable it with
 `systemctl --user disable --now zanken-powerprofiles-sync.service`.
-It does not select profiles based on charging state. To keep the selected mode
-when plugging or unplugging, separately disable Zanken's charger-event policy
-with `sudo systemctl mask zanken-power-profile.service`.
+The portable installer does not install charger-triggered profile switching.
 
 ## Notifications
 

@@ -1,5 +1,9 @@
 # Zellij keybinding audit — 2026-10-21
 
+This is a historical development audit. For current user instructions, see
+[Zellij workflow and keybinds](zellij.md).
+
+
 The local Zellij 0.45.1 configuration was exercised through real terminal input
 in private sessions. Checks assert resulting files, pane geometry, focus, session
 connections, editor behavior, rendered search highlights, and server/token state.

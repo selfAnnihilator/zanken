@@ -19,4 +19,6 @@ Application launcher helpers.
 | `zanken-launch-tui` | Launch a TUI command in the default terminal with Zanken styling |
 | `zanken-launch-walker` | Launch Walker and ensure its Elephant data provider is running |
 | `zanken-launch-webapp` | Launch a URL as a web app in the default supported browser |
-| `zanken-launch-wifi` | Launch the Zanken wifi controls (provided by the Impala TUI). |
+| `zanken-launch-wifi` | Open nmtui for NetworkManager or Impala for iwd. |
+| `zanken-launch-zellij` | Resume the last workspace in the current terminal; `--new` creates a separate session |
+| `zanken-launch-terminal-zellij` | Focus a workspace window or open it in Foot; `--new` creates a separate session |

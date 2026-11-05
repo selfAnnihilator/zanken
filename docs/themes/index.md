@@ -1,6 +1,6 @@
 # Themes
 
-Zanken includes 21 built-in color themes. Themes update the terminal, bar colors, wallpaper palette, and all themed app configs atomically.
+Zanken includes 21 built-in color themes. Themes update the terminal, bar colors, wallpaper palette, and supported app configurations.
 
 ## Built-in themes
 
@@ -38,7 +38,8 @@ Or use the Quickshell palette: `Mod+D` → search "theme".
 
 ## Dynamic wallpaper colors
 
-Zanken supports extracting a color palette from the current wallpaper using [matugen](https://github.com/InioX/matugen). When a wallpaper is set, the bar accent colors, foot terminal, and qutebrowser all update to match.
+`zanken-wallpaper-colors` extracts an accent with ImageMagick. Setting a wallpaper
+applies the accent to Niri, GTK and Quickshell.
 
 ```bash
 zanken-theme-bg-set ~/Pictures/my-wallpaper.jpg
@@ -47,15 +48,15 @@ zanken-theme-bg-set ~/Pictures/my-wallpaper.jpg
 ## Creating a custom theme
 
 ```bash
-mkdir -p ~/zanken/themes/my-theme
+mkdir -p ~/.config/zanken/themes
 ```
 
 Copy an existing theme as a base:
 ```bash
-cp -r ~/zanken/themes/tokyo-night ~/zanken/themes/my-theme
+cp -r ~/.local/share/zanken/current-release/source/themes/tokyo-night ~/.config/zanken/themes/my-theme
 ```
 
-Edit `colors.toml`:
+Edit `~/.config/zanken/themes/my-theme/colors.toml`:
 ```toml
 accent = "#your-color"
 foreground = "#your-fg"

@@ -8,13 +8,13 @@ Log out of the graphical session and use a TTY as your regular sudo-enabled user
 Use a clean, verified release checkout and the normal release bootstrap, adding:
 
 ```bash
-bash boot.sh --desktop
+ZANKEN_RELEASE_MODE=dev bash boot.sh --desktop
 ```
 
-Stable requires an available trusted signed release. Do not use this command to
-pretend the current VM-test branch is a published stable release. For testing an
-unpublished candidate, use a disposable QEMU/KVM Arch guest that already has a
-custom Niri config, from a logged-out TTY in a clean candidate checkout:
+There is no stable release yet. The dev-channel GitHub desktop install has been
+confirmed on a fresh minimal Arch VM; see [installation](installation.md).
+For developer testing of a specific unpublished candidate in a disposable
+QEMU/KVM guest with an existing custom Niri config:
 
 ```bash
 bash test/install-existing-niri-vm.sh --check

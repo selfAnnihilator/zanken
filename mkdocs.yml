@@ -60,6 +60,7 @@ nav:
   - Installation: installation.md
   - Configuration: configuration.md
   - Keybinds: keybinds.md
+  - Zellij: zellij.md
   - Themes: themes/index.md
   - Development:
     - Documentation: development.md

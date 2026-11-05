@@ -1,6 +1,6 @@
 # All Commands
 
-271 public commands generated from CLI metadata.
+272 public commands generated from CLI metadata.
 
 | Command | Description |
 |---------|-------------|
@@ -32,6 +32,7 @@
 | `zanken-config-desktop` | Sync or adopt the managed Zanken desktop configuration |
 | `zanken-config-direct-boot` | Add or remove an EFI boot entry for the Zanken UKI, allowing the system to boot directly |
 | `zanken-debug` | Print debugging information |
+| `zanken-debug-login` | Collect read-only login screen and boot animation diagnostics |
 | `zanken-default-browser` | Set the default browser for Zanken and XDG handlers |
 | `zanken-default-editor` | Set the default editor for $EDITOR |
 | `zanken-default-quick-browser` | Set the browser launched by the Mod+B quick-browser hotkey |
@@ -189,7 +190,7 @@
 | `zanken-restart-wifi` | Unblock and restart the Wi-Fi service. |
 | `zanken-restart-xcompose` | Restart the XCompose input method service (fcitx5) to apply new compose key settings. |
 | `zanken-setup-dns` | Configure the system DNS provider |
-| `zanken-setup-login` | Install the Pixel Sakura password login screen for the next boot |
+| `zanken-setup-login` | Install the Pixel Sakura login screen and boot animation for the next boot |
 | `zanken-setup-security-fido2` | Set up FIDO2 authentication for sudo and polkit |
 | `zanken-setup-security-fingerprint` | Set up fingerprint authentication for sudo and polkit |
 | `zanken-menu-share` | Share clipboard, files, or folders with LocalSend |
